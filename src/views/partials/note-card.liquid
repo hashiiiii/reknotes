@@ -1,0 +1,16 @@
+<article class="note-card" id="note-{{ note.id }}">
+  <a href="/notes/{{ note.id }}" class="note-card-link">
+    <h3>{{ note.title | default: "無題" }}</h3>
+    <p class="note-snippet">{{ note.body | truncate: 120 }}</p>
+  </a>
+  <div class="note-meta">
+    <time>{{ note.created_at }}</time>
+    {% if note.tags %}
+      <div class="tag-list">
+        {% for tag in note.tags %}
+          <a href="/tags/{{ tag }}" class="tag-chip-sm">{{ tag }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</article>

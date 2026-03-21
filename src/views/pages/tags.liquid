@@ -1,0 +1,11 @@
+{% layout 'base' %}
+{% block content %}
+<h2>タグ一覧</h2>
+<div class="tag-cloud">
+  {% for tag in tags %}
+    <a href="/tags/{{ tag.name }}" class="tag-chip tag-size-{{ tag.size }}">
+      {{ tag.name }} <span class="tag-count">{{ tag.count }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% layout 'base' %}
+{% block content %}
+<section class="search-section">
+  <input
+    type="search"
+    name="q"
+    placeholder="ナレッジを検索..."
+    value="{{ query }}"
+    class="input-search"
+    hx-get="/api/search"
+    hx-trigger="input changed delay:300ms, search"
+    hx-target="#search-results"
+    hx-swap="innerHTML"
+    autofocus
+  >
+</section>
+
+<section id="search-results" class="note-list">
+  {% if query %}
+    {% render 'search-results', results: results, query: query %}
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% layout 'base' %}
+{% block content %}
+<article class="note-detail">
+  <header>
+    <h1>{{ note.title | default: "無題" }}</h1>
+    <time>{{ note.created_at }}</time>
+    <div class="tag-list">
+      {% for tag in tags %}
+        <a href="/tags/{{ tag.name }}" class="tag-chip">{{ tag.name }}</a>
+      {% endfor %}
+      <form class="inline-form" hx-post="/api/notes/{{ note.id }}/tags" hx-target="closest .tag-list" hx-swap="outerHTML">
+        <input type="text" name="name" placeholder="+ タグ追加" class="input-tag-add">
+      </form>
+    </div>
+  </header>
+
+  <div class="note-body znc">{{ bodyHtml }}</div>
+
+  <section class="note-links">
+    {% if linkedNotes.size > 0 %}
+      <h3>リンク先</h3>
+      <ul>
+        {% for linked in linkedNotes %}
+          <li><a href="/notes/{{ linked.id }}">{{ linked.title | default: "無題" }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    {% if backlinks.size > 0 %}
+      <h3>バックリンク</h3>
+      <ul>
+        {% for bl in backlinks %}
+          <li><a href="/notes/{{ bl.id }}">{{ bl.title | default: "無題" }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+
+  <footer class="note-actions">
+    <button class="btn" onclick="document.getElementById('edit-form').toggleAttribute('hidden')">編集</button>
+    <button class="btn btn-danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body" hx-push-url="/">削除</button>
+  </footer>
+
+  <form id="edit-form" hidden hx-put="/api/notes/{{ note.id }}" hx-target="body" hx-push-url="/notes/{{ note.id }}">
+    <input type="text" name="title" value="{{ note.title }}" placeholder="タイトル" class="input-title">
+    <textarea name="body" rows="10" class="input-body">{{ note.body }}</textarea>
+    <button type="submit" class="btn btn-primary">保存</button>
+  </form>
+</article>
+
+{% if graphData %}
+  <section class="mini-graph">
+    <h3>ナレッジマップ</h3>
+    <div id="mini-graph-container"></div>
+    <script src="/static/js/force-graph.min.js"></script>
+    <script>
+      const graphData = {{ graphData }};
+      new ForceGraph(document.getElementById('mini-graph-container'))
+        .graphData(graphData)
+        .nodeLabel('label')
+        .nodeColor(n => n.id === 'note-{{ note.id }}' ? '#e74c3c' : n.type === 'tag' ? '#f39c12' : '#3498db')
+        .nodeVal('val')
+        .linkColor(l => l.type === 'tag' ? '#ddd' : '#999')
+        .width(document.querySelector('.mini-graph').clientWidth)
+        .height(300)
+        .onNodeClick(n => {
+          if (n.type === 'note') window.location.href = '/notes/' + n.id.replace('note-', '');
+        });
+    </script>
+  </section>
+{% endif %}
+{% endblock %}

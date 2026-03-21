@@ -1,0 +1,9 @@
+{% layout 'base' %}
+{% block content %}
+<h2>タグ: {{ tagName }}</h2>
+<section class="note-list">
+  {% for note in notes %}
+    {% render 'note-card', note: note %}
+  {% endfor %}
+</section>
+{% endblock %}

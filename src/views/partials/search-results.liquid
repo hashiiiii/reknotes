@@ -1,0 +1,14 @@
+{% if results.size > 0 %}
+  <p class="search-count">{{ results.size }}件の結果</p>
+  {% for result in results %}
+    <article class="note-card">
+      <a href="/notes/{{ result.id }}" class="note-card-link">
+        <h3>{{ result.highlightedTitle | default: result.title | default: "無題" }}</h3>
+        <p class="note-snippet">{{ result.highlightedBody }}</p>
+      </a>
+      <time>{{ result.created_at }}</time>
+    </article>
+  {% endfor %}
+{% else %}
+  <p class="no-results">「{{ query }}」に一致するナレッジが見つかりませんでした。</p>
+{% endif %}

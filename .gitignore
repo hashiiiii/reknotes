@@ -1,0 +1,9 @@
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite
+.env
+.env.local
+.vscode/
+.idea/
+docs/
+node_modules/

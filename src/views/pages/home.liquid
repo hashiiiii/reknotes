@@ -1,0 +1,22 @@
+{% layout 'base' %}
+{% block content %}
+<section class="post-section">
+  <form hx-post="/api/notes" hx-target="#note-list" hx-swap="afterbegin" hx-on::after-request="this.reset()">
+    <input type="text" name="title" placeholder="タイトル（任意）" class="input-title">
+    <textarea name="body" placeholder="ナレッジを書く..." rows="3" required class="input-body"></textarea>
+    <div class="form-actions">
+      <input type="text" name="tags" placeholder="タグ（カンマ区切り）" class="input-tags">
+      <button type="submit" class="btn btn-primary">投稿</button>
+    </div>
+  </form>
+</section>
+
+<section id="note-list" class="note-list">
+  {% for note in notes %}
+    {% render 'note-card', note: note %}
+  {% endfor %}
+  {% if hasMore %}
+    <div hx-get="/api/notes?cursor={{ nextCursor }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+  {% endif %}
+</section>
+{% endblock %}

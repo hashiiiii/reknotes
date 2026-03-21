@@ -1,0 +1,27 @@
+services:
+  knowmap:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - knowmap-data:/data
+    environment:
+      - DB_PATH=/data/knowmap.sqlite
+      - AI_PROVIDER=${AI_PROVIDER:-none}
+      - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+    restart: unless-stopped
+
+  # Ollama (optional): uncomment to enable local AI
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   ports:
+  #     - "11434:11434"
+
+volumes:
+  knowmap-data:
+  # ollama-data:
