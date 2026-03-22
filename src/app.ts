@@ -42,6 +42,7 @@ app.use("*", async (c, next) => {
 });
 
 // 静的ファイル配信
+app.use("/static/css/zenn.css", serveStatic({ path: "./node_modules/zenn-content-css/lib/index.css" }));
 app.use("/static/*", serveStatic({ root: "./public/", rewriteRequestPath: (path) => path.replace("/static", "") }));
 
 // ルート登録

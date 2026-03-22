@@ -30,8 +30,6 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 
 /* Container */
 .container { max-width: 960px; margin: 0 auto; padding: var(--gap); }
-.container-full { width: 100%; padding: 0; }
-
 /* Compose bar (Google Keep style) */
 .compose-bar {
   max-width: 600px; margin: 0 auto var(--gap); background: var(--bg-card);
@@ -63,7 +61,6 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .btn:hover { border-color: var(--text-secondary); background: var(--bg-secondary); }
 .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-.btn-danger { color: var(--danger); border-color: var(--danger); }
 
 /* Note grid (masonry) */
 .note-grid {

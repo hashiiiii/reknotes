@@ -82,8 +82,3 @@ export function addLink(sourceId: number, targetId: number): void {
   const db = getDb();
   db.prepare("INSERT OR IGNORE INTO note_links (source_id, target_id) VALUES (?, ?)").run(sourceId, targetId);
 }
-
-export function removeLink(sourceId: number, targetId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM note_links WHERE source_id = ? AND target_id = ?").run(sourceId, targetId);
-}

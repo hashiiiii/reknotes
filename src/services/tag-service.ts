@@ -21,17 +21,6 @@ export function addTagsToNote(noteId: number, tagNames: string[]): void {
   }
 }
 
-export function removeTagFromNote(noteId: number, tagId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM note_tags WHERE note_id = ? AND tag_id = ?").run(noteId, tagId);
-
-  // 孤立タグを削除
-  db.prepare("DELETE FROM tags WHERE id = ? AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = ?)").run(
-    tagId,
-    tagId,
-  );
-}
-
 export function clearNoteTags(noteId: number): void {
   const db = getDb();
   db.prepare("DELETE FROM note_tags WHERE note_id = ?").run(noteId);
@@ -50,16 +39,4 @@ export function getAllTags(): (Tag & { count: number })[] {
        ORDER BY count DESC`,
     )
     .all() as (Tag & { count: number })[];
-}
-
-export function getNotesByTag(tagName: string): number[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT nt.note_id FROM note_tags nt
-       JOIN tags t ON t.id = nt.tag_id
-       WHERE t.name = ?`,
-    )
-    .all(tagName) as { note_id: number }[];
-  return rows.map((r) => r.note_id);
 }

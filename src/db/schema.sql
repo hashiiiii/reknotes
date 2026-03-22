@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_notes_created_at ON notes(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notes_updated_at ON notes(updated_at DESC);
 
 -- タグ
 CREATE TABLE IF NOT EXISTS tags (

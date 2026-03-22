@@ -11,16 +11,6 @@ export interface Tag {
   name: string;
 }
 
-export interface NoteTag {
-  note_id: number;
-  tag_id: number;
-}
-
-export interface NoteLink {
-  source_id: number;
-  target_id: number;
-}
-
 export interface GraphNode {
   id: string;
   label: string;
