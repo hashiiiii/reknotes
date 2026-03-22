@@ -2,7 +2,7 @@ import { Database } from "bun:sqlite";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const DB_PATH = process.env.DB_PATH ?? "knowmap.sqlite";
+const DB_PATH = process.env.DB_PATH ?? "reknotes.sqlite";
 
 let db: Database | null = null;
 

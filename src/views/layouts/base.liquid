@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if title %}{{ title }} - {% endif %}knowmap</title>
+  <title>{% if title %}{{ title }} - {% endif %}reknotes</title>
   <link rel="stylesheet" href="/static/css/zenn.css">
   <link rel="stylesheet" href="/static/css/style.css">
   <script src="/static/js/htmx.min.js"></script>
@@ -11,7 +11,7 @@
 <body>
   <nav class="nav">
     <div class="nav-inner">
-      <a href="/" class="nav-brand">knowmap</a>
+      <a href="/" class="nav-brand">reknotes</a>
       <div class="nav-links">
         <a href="/" {% if currentPath == "/" %}class="active"{% endif %}>Home</a>
         <a href="/search" {% if currentPath == "/search" %}class="active"{% endif %}>Search</a>

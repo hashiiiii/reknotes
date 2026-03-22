@@ -1,4 +1,4 @@
--- knowmap database schema
+-- reknotes database schema
 
 -- ナレッジノート（原子的アイデア単位 = Zettelkasten原則）
 CREATE TABLE IF NOT EXISTS notes (

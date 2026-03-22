@@ -1,6 +1,6 @@
-# knowmap
+# reknotes
 
-Personal knowledge management with auto-organization and fast search.
+**re** + **know** + **notes** — Personal knowledge management with auto-organization and fast search.
 
 ## Stack
 

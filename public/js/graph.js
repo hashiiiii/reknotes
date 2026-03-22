@@ -1,4 +1,4 @@
-// knowmap - knowledge graph visualization
+// reknotes - knowledge graph visualization
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("graph-container");
   if (!container) return;

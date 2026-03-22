@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "knowmap",
+      "name": "reknotes",
       "dependencies": {
         "hono": "^4.7.0",
         "liquidjs": "^10.21.0",

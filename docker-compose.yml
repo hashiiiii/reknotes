@@ -1,12 +1,12 @@
 services:
-  knowmap:
+  reknotes:
     build: .
     ports:
       - "3000:3000"
     volumes:
-      - knowmap-data:/data
+      - reknotes-data:/data
     environment:
-      - DB_PATH=/data/knowmap.sqlite
+      - DB_PATH=/data/reknotes.sqlite
       - AI_PROVIDER=${AI_PROVIDER:-none}
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2}
@@ -23,5 +23,5 @@ services:
   #     - "11434:11434"
 
 volumes:
-  knowmap-data:
+  reknotes-data:
   # ollama-data:

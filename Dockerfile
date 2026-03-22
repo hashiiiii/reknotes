@@ -10,7 +10,7 @@ COPY public/ public/
 RUN mkdir -p /data
 
 ENV NODE_ENV=production
-ENV DB_PATH=/data/knowmap.sqlite
+ENV DB_PATH=/data/reknotes.sqlite
 
 EXPOSE 3000
 
