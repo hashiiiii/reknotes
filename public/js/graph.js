@@ -45,19 +45,20 @@ function initGraph(container, data) {
         selector: 'node[type="note"]',
         style: {
           label: "data(label)",
-          "background-color": "#3b82f6",
-          width: "mapData(val, 1, 10, 28, 64)",
-          height: "mapData(val, 1, 10, 28, 64)",
-          "font-size": "11px",
-          color: "#1a1a1a",
+          "background-color": "#6bb873",
+          width: "mapData(val, 1, 10, 16, 36)",
+          height: "mapData(val, 1, 10, 16, 36)",
+          "font-size": "10px",
+          color: "#a9a49a",
           "text-valign": "bottom",
-          "text-margin-y": 6,
-          "text-max-width": "100px",
+          "text-margin-y": 4,
+          "text-max-width": "90px",
           "text-wrap": "ellipsis",
-          "border-width": 2,
-          "border-color": "#2563eb",
-          "text-outline-color": "#fff",
+          "border-width": 1.5,
+          "border-color": "#4a9952",
+          "text-outline-color": "#191816",
           "text-outline-width": 2,
+          "overlay-opacity": 0,
         },
       },
       // ── タグ ノード ──
@@ -66,75 +67,83 @@ function initGraph(container, data) {
         style: {
           label: "data(label)",
           shape: "round-diamond",
-          "background-color": "#f59e0b",
-          width: "mapData(val, 1, 10, 24, 56)",
-          height: "mapData(val, 1, 10, 24, 56)",
-          "font-size": "12px",
-          "font-weight": "bold",
-          color: "#92400e",
+          "background-color": "#7e7a71",
+          width: "mapData(val, 1, 10, 12, 30)",
+          height: "mapData(val, 1, 10, 12, 30)",
+          "font-size": "9px",
+          color: "#5c5850",
           "text-valign": "bottom",
-          "text-margin-y": 6,
-          "text-outline-color": "#fff",
+          "text-margin-y": 4,
+          "text-outline-color": "#191816",
           "text-outline-width": 2,
+          "overlay-opacity": 0,
         },
       },
       // ── 選択中 ──
       {
         selector: "node:selected",
         style: {
-          "border-width": 4,
-          "border-color": "#ef4444",
-          "background-color": "#ef4444",
+          "border-width": 3,
+          "border-color": "#8dd498",
+          "background-color": "#e7e2d8",
+          "overlay-opacity": 0,
+          width: "mapData(val, 1, 10, 24, 44)",
+          height: "mapData(val, 1, 10, 24, 44)",
         },
       },
-      // ── ハイライト ──
+      // ── ハイライト（クリック選択） ──
       {
         selector: "node.highlighted",
         style: {
           "border-width": 3,
-          "border-color": "#10b981",
+          "border-color": "#8dd498",
+          "background-color": "#e7e2d8",
           "background-opacity": 1,
+          "overlay-opacity": 0,
+          width: "mapData(val, 1, 10, 24, 44)",
+          height: "mapData(val, 1, 10, 24, 44)",
         },
       },
       // ── フェード ──
       {
         selector: "node.faded",
         style: {
-          opacity: 0.15,
+          opacity: 0.1,
         },
       },
       {
         selector: "edge.faded",
         style: {
-          opacity: 0.08,
+          opacity: 0.05,
         },
       },
       // ── note-note エッジ ──
       {
         selector: 'edge[type="link"]',
         style: {
-          "line-color": "#94a3b8",
-          width: 2,
+          "line-color": "#6bb873",
+          width: 1.5,
           "curve-style": "bezier",
-          opacity: 0.7,
+          opacity: 0.3,
         },
       },
       // ── note-tag エッジ ──
       {
         selector: 'edge[type="tag"]',
         style: {
-          "line-color": "#fcd34d",
-          width: 1,
+          "line-color": "#5c5850",
+          width: 0.8,
           "line-style": "dashed",
           "curve-style": "bezier",
-          opacity: 0.4,
+          opacity: 0.2,
         },
       },
       {
         selector: "edge.highlighted",
         style: {
-          opacity: 1,
-          width: 3,
+          opacity: 0.8,
+          width: 2,
+          "line-color": "#8dd498",
         },
       },
     ],
@@ -216,12 +225,12 @@ function showPanel(cy, node, data) {
   const content = document.getElementById("panel-content");
   if (!panel || !content) return;
 
-  // ハイライト: 選択ノードと隣接ノードだけ目立たせる
+  // ハイライト: 選択ノードだけ光らせる（関連ノードはフェードしない程度）
   clearHighlights(cy);
   cy.elements().addClass("faded");
   node.removeClass("faded").addClass("highlighted");
-  node.connectedEdges().removeClass("faded").addClass("highlighted");
-  node.neighborhood("node").removeClass("faded").addClass("highlighted");
+  node.connectedEdges().removeClass("faded");
+  node.neighborhood("node").removeClass("faded");
 
   const d = node.data();
 
