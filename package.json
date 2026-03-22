@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "seed": "bun run lib/seed.ts"
+    "seed": "bun run lib/seed.ts",
+    "check": "bunx biome check --write && tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
     "hono": "^4.7.0",
