@@ -1,9 +1,9 @@
+import { join } from "node:path";
 import { Hono } from "hono";
 import { Liquid } from "liquidjs";
-import { join } from "path";
 import type { AppEnv } from "../app";
-import * as noteService from "../services/note-service";
 import { processNoteWithAi } from "../services/ai-service";
+import * as noteService from "../services/note-service";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -109,6 +109,5 @@ noteRoutes.delete("/:id", async (c) => {
   });
   return c.html(html);
 });
-
 
 export { noteRoutes };

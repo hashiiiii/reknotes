@@ -1,12 +1,12 @@
+import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { Liquid } from "liquidjs";
-import { join } from "path";
 import { getDb } from "./db/connection";
-import { pageRoutes } from "./routes/pages";
-import { noteRoutes } from "./routes/notes";
-import { searchRoutes } from "./routes/search";
 import { graphRoutes } from "./routes/graph";
+import { noteRoutes } from "./routes/notes";
+import { pageRoutes } from "./routes/pages";
+import { searchRoutes } from "./routes/search";
 import { tagRoutes } from "./routes/tags";
 
 // LiquidJS エンジン初期化

@@ -1,5 +1,5 @@
 import { getDb } from "../db/connection";
-import type { GraphData, GraphNode, GraphLink } from "../types";
+import type { GraphData, GraphLink, GraphNode } from "../types";
 
 export function getFullGraphData(): GraphData {
   const db = getDb();
@@ -10,7 +10,7 @@ export function getFullGraphData(): GraphData {
       `SELECT n.id, n.title, n.created_at, SUBSTR(n.body, 1, 120) as snippet,
         (SELECT COUNT(*) FROM note_links WHERE source_id = n.id OR target_id = n.id) +
         (SELECT COUNT(*) FROM note_tags WHERE note_id = n.id) as link_count
-      FROM notes n`
+      FROM notes n`,
     )
     .all() as { id: number; title: string; created_at: string; snippet: string; link_count: number }[];
 
@@ -20,19 +20,18 @@ export function getFullGraphData(): GraphData {
       `SELECT t.id, t.name, COUNT(nt.note_id) as note_count
        FROM tags t
        JOIN note_tags nt ON t.id = nt.tag_id
-       GROUP BY t.id`
+       GROUP BY t.id`,
     )
     .all() as { id: number; name: string; note_count: number }[];
 
   // ノート間リンク
-  const noteLinks = db
-    .prepare("SELECT source_id, target_id FROM note_links")
-    .all() as { source_id: number; target_id: number }[];
+  const noteLinks = db.prepare("SELECT source_id, target_id FROM note_links").all() as {
+    source_id: number;
+    target_id: number;
+  }[];
 
   // ノート-タグリンク
-  const tagLinks = db
-    .prepare("SELECT note_id, tag_id FROM note_tags")
-    .all() as { note_id: number; tag_id: number }[];
+  const tagLinks = db.prepare("SELECT note_id, tag_id FROM note_tags").all() as { note_id: number; tag_id: number }[];
 
   const nodes: GraphNode[] = [
     ...notes.map((n) => ({
@@ -82,8 +81,6 @@ export function getNoteSubgraph(noteId: number, depth = 1): GraphData {
 
   return {
     nodes: full.nodes.filter((n) => collected.has(n.id)),
-    links: full.links.filter(
-      (l) => collected.has(l.source) && collected.has(l.target)
-    ),
+    links: full.links.filter((l) => collected.has(l.source) && collected.has(l.target)),
   };
 }

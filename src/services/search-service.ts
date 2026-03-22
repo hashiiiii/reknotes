@@ -7,7 +7,7 @@ export interface SearchResult extends Note {
 }
 
 export function search(query: string): SearchResult[] {
-  const db = getDb();
+  const _db = getDb();
   const trimmed = query.trim();
   if (!trimmed) return [];
 
@@ -34,7 +34,7 @@ function searchWithFts(query: string): SearchResult[] {
       JOIN notes n ON n.id = notes_fts.rowid
       WHERE notes_fts MATCH ?
       ORDER BY rank
-      LIMIT 50`
+      LIMIT 50`,
     )
     .all(escaped) as SearchResult[];
 
@@ -51,7 +51,7 @@ function searchWithLike(query: string): SearchResult[] {
        FROM notes
        WHERE title LIKE ? OR body LIKE ?
        ORDER BY created_at DESC
-       LIMIT 50`
+       LIMIT 50`,
     )
     .all(pattern, pattern) as SearchResult[];
 
@@ -75,7 +75,7 @@ function highlightSnippet(text: string, query: string, contextLen = 80): string 
   const start = Math.max(0, idx - contextLen);
   const end = Math.min(text.length, idx + query.length + contextLen);
   let snippet = text.slice(start, end);
-  if (start > 0) snippet = "..." + snippet;
+  if (start > 0) snippet = `...${snippet}`;
   if (end < text.length) snippet += "...";
 
   return highlightText(snippet, query);

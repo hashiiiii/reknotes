@@ -1,9 +1,9 @@
+import { join } from "node:path";
 import { Hono } from "hono";
 import { Liquid } from "liquidjs";
-import { join } from "path";
 import type { AppEnv } from "../app";
-import { search } from "../services/search-service";
 import * as noteService from "../services/note-service";
+import { search } from "../services/search-service";
 
 const searchRoutes = new Hono<AppEnv>();
 

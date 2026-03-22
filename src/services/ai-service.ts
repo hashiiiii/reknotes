@@ -1,6 +1,6 @@
 import { getDb } from "../db/connection";
-import * as tagService from "./tag-service";
 import * as noteService from "./note-service";
+import * as tagService from "./tag-service";
 
 type AiProvider = "ollama" | "openai" | "none";
 
@@ -81,9 +81,7 @@ async function chat(prompt: string): Promise<string | null> {
 // 自動タグ付与
 async function suggestTags(noteBody: string): Promise<string[]> {
   const db = getDb();
-  const existingTags = db
-    .prepare("SELECT name FROM tags ORDER BY name")
-    .all() as { name: string }[];
+  const existingTags = db.prepare("SELECT name FROM tags ORDER BY name").all() as { name: string }[];
   const tagList = existingTags.map((t) => t.name).join(", ");
 
   const prompt = `以下のナレッジノートに適切なタグを3-5個付与してください。
@@ -99,7 +97,7 @@ ${noteBody.slice(0, 1000)}`;
 
   return response
     .split(",")
-    .map((t) => t.trim().replace(/^[「\[#]|[」\]]$/g, ""))
+    .map((t) => t.trim().replace(/^[「[#]|[」\]]$/g, ""))
     .filter((t) => t.length > 0 && t.length < 30);
 }
 
@@ -107,14 +105,14 @@ ${noteBody.slice(0, 1000)}`;
 async function suggestLinks(noteId: number, noteBody: string): Promise<number[]> {
   const db = getDb();
   const otherNotes = db
-    .prepare("SELECT id, title, substr(body, 1, 100) as snippet FROM notes WHERE id != ? ORDER BY created_at DESC LIMIT 50")
+    .prepare(
+      "SELECT id, title, substr(body, 1, 100) as snippet FROM notes WHERE id != ? ORDER BY created_at DESC LIMIT 50",
+    )
     .all(noteId) as { id: number; title: string; snippet: string }[];
 
   if (otherNotes.length === 0) return [];
 
-  const noteList = otherNotes
-    .map((n) => `[${n.id}] ${n.title}: ${n.snippet}`)
-    .join("\n");
+  const noteList = otherNotes.map((n) => `[${n.id}] ${n.title}: ${n.snippet}`).join("\n");
 
   const prompt = `以下の新しいノートと、既存ノートのリストが与えられます。
 内容的に関連の強いノートIDを最大5件、数字のみをカンマ区切りで返してください。
@@ -129,11 +127,13 @@ ${noteList}`;
   const response = await chat(prompt);
   if (!response) return [];
 
-  return response
-    .match(/\d+/g)
-    ?.map(Number)
-    .filter((id) => otherNotes.some((n) => n.id === id))
-    .slice(0, 5) ?? [];
+  return (
+    response
+      .match(/\d+/g)
+      ?.map(Number)
+      .filter((id) => otherNotes.some((n) => n.id === id))
+      .slice(0, 5) ?? []
+  );
 }
 
 // FTS5フォールバック: AI未設定時の類似ノート検索
@@ -153,9 +153,7 @@ function findSimilarNotesByFts(noteId: number, noteBody: string): number[] {
     try {
       const escaped = `"${word.replace(/"/g, '""')}"`;
       const rows = db
-        .prepare(
-          `SELECT rowid FROM notes_fts WHERE notes_fts MATCH ? AND rowid != ? LIMIT 3`
-        )
+        .prepare(`SELECT rowid FROM notes_fts WHERE notes_fts MATCH ? AND rowid != ? LIMIT 3`)
         .all(escaped, noteId) as { rowid: number }[];
       for (const r of rows) ids.add(r.rowid);
     } catch {
@@ -171,12 +169,8 @@ function extractTagsByKeywords(noteBody: string): string[] {
   const db = getDb();
 
   // 既存タグを取得し、本文に含まれるものを優先採用
-  const existingTags = db
-    .prepare("SELECT name FROM tags ORDER BY name")
-    .all() as { name: string }[];
-  const matched = existingTags
-    .filter((t) => noteBody.toLowerCase().includes(t.name.toLowerCase()))
-    .map((t) => t.name);
+  const existingTags = db.prepare("SELECT name FROM tags ORDER BY name").all() as { name: string }[];
+  const matched = existingTags.filter((t) => noteBody.toLowerCase().includes(t.name.toLowerCase())).map((t) => t.name);
 
   if (matched.length >= 2) return matched.slice(0, 5);
 
