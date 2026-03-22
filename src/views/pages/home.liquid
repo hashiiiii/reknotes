@@ -103,14 +103,19 @@
   fullLayout();
 
   document.body.addEventListener('htmx:afterSettle', function(e) {
-    if (e.detail.elt === grid || grid.contains(e.detail.elt)) {
-      // 新規投稿（afterbegin）はフルレイアウト、スクロール追加はインクリメンタル
-      if (e.detail.elt === grid) {
-        fullLayout();
-      } else {
-        if (colCount() !== currentCols) { fullLayout(); return; }
-        placeNew();
-      }
+    // 未配置のカードがあるかチェック（outerHTML swap で elt が DOM から外れる問題を回避）
+    var hasUnplaced = false;
+    grid.querySelectorAll('.note-card').forEach(function(card) {
+      if (!placed.has(card)) hasUnplaced = true;
+    });
+    if (!hasUnplaced) return;
+
+    // 新規投稿（target が grid 自体 = afterbegin swap）はフルレイアウト
+    if (e.detail.target === grid) {
+      fullLayout();
+    } else {
+      if (colCount() !== currentCols) { fullLayout(); return; }
+      placeNew();
     }
   });
 
