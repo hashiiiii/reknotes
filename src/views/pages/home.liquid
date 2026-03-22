@@ -1,22 +1,120 @@
 {% layout 'base' %}
 {% block content %}
-<section class="post-section">
-  <form hx-post="/api/notes" hx-target="#note-list" hx-swap="afterbegin" hx-on::after-request="this.reset()">
-    <input type="text" name="title" placeholder="タイトル（任意）" class="input-title">
-    <textarea name="body" placeholder="ナレッジを書く..." rows="3" required class="input-body"></textarea>
-    <div class="form-actions">
-      <input type="text" name="tags" placeholder="タグ（カンマ区切り）" class="input-tags">
-      <button type="submit" class="btn btn-primary">投稿</button>
+<section class="compose-bar" id="compose">
+  <form hx-post="/api/notes" hx-target="#note-grid" hx-swap="afterbegin" hx-on::after-request="collapseCompose(this)">
+    <div class="compose-collapsed" id="compose-trigger" onclick="expandCompose()">
+      ノートを入力...
+    </div>
+    <div class="compose-expanded" id="compose-body" hidden>
+      <input type="text" name="title" placeholder="タイトル" required class="compose-title">
+      <textarea name="body" placeholder="ノートを書く..." rows="4" required class="compose-body"></textarea>
+      <div class="compose-actions">
+        <button type="submit" class="btn btn-primary">投稿</button>
+        <button type="button" class="btn" onclick="collapseCompose(this.closest('form'))">閉じる</button>
+      </div>
     </div>
   </form>
 </section>
 
-<section id="note-list" class="note-list">
+<script>
+  function expandCompose() {
+    document.getElementById('compose-trigger').hidden = true;
+    document.getElementById('compose-body').hidden = false;
+    document.querySelector('.compose-title').focus();
+  }
+  function collapseCompose(form) {
+    form.reset();
+    document.getElementById('compose-trigger').hidden = false;
+    document.getElementById('compose-body').hidden = true;
+  }
+</script>
+
+<section id="note-grid" class="note-grid">
   {% for note in notes %}
     {% render 'note-card', note: note %}
   {% endfor %}
   {% if hasMore %}
-    <div hx-get="/api/notes?cursor={{ nextCursor }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+    <div class="note-grid-sentinel" hx-get="/api/notes?cursor={{ nextCursor }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
   {% endif %}
 </section>
+
+<script>
+(function() {
+  var grid = document.getElementById('note-grid');
+  if (!grid) return;
+
+  var GAP = 12;
+  var colHeights = [];
+  var placed = new WeakSet();
+  var currentCols = 0;
+
+  function colCount() {
+    var w = grid.clientWidth;
+    return w <= 480 ? 1 : w <= 768 ? 2 : 3;
+  }
+
+  // 新しいカードだけを配置（インクリメンタル）
+  function placeNew() {
+    var cols = colCount();
+    var colW = (grid.clientWidth - GAP * (cols - 1)) / cols;
+
+    var newCards = [];
+    grid.querySelectorAll('.note-card').forEach(function(card) {
+      if (!placed.has(card)) newCards.push(card);
+    });
+    if (newCards.length === 0) return;
+
+    // 配置前は非表示（フラッシュ防止）
+    newCards.forEach(function(card) {
+      card.style.visibility = 'hidden';
+      card.style.position = 'absolute';
+      card.style.width = colW + 'px';
+    });
+    grid.offsetHeight; // 幅に応じた高さを確定
+
+    newCards.forEach(function(card) {
+      var min = 0;
+      for (var i = 1; i < cols; i++) {
+        if (colHeights[i] < colHeights[min]) min = i;
+      }
+      card.style.left = min * (colW + GAP) + 'px';
+      card.style.top = colHeights[min] + 'px';
+      card.style.visibility = '';
+      colHeights[min] += card.offsetHeight + GAP;
+      placed.add(card);
+    });
+
+    var maxH = Math.max.apply(null, colHeights.concat(0));
+    grid.style.height = maxH + 'px';
+    var sentinel = grid.querySelector('.note-grid-sentinel');
+    if (sentinel) sentinel.style.top = maxH + 'px';
+  }
+
+  // 全カードを再配置（リサイズ・新規投稿時）
+  function fullLayout() {
+    var cols = colCount();
+    currentCols = cols;
+    colHeights = [];
+    for (var i = 0; i < cols; i++) colHeights[i] = 0;
+    placed = new WeakSet();
+    placeNew();
+  }
+
+  fullLayout();
+
+  document.body.addEventListener('htmx:afterSettle', function(e) {
+    if (e.detail.elt === grid || grid.contains(e.detail.elt)) {
+      // 新規投稿（afterbegin）はフルレイアウト、スクロール追加はインクリメンタル
+      if (e.detail.elt === grid) {
+        fullLayout();
+      } else {
+        if (colCount() !== currentCols) { fullLayout(); return; }
+        placeNew();
+      }
+    }
+  });
+
+  window.addEventListener('resize', fullLayout);
+})();
+</script>
 {% endblock %}

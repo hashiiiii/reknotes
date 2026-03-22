@@ -166,30 +166,67 @@ function findSimilarNotesByFts(noteId: number, noteBody: string): number[] {
   return [...ids].slice(0, 5);
 }
 
-// メインエントリポイント: ノート投稿後のバックグラウンド処理
+// FTS5フォールバック: 本文からキーワードを抽出してタグ化
+function extractTagsByKeywords(noteBody: string): string[] {
+  const db = getDb();
+
+  // 既存タグを取得し、本文に含まれるものを優先採用
+  const existingTags = db
+    .prepare("SELECT name FROM tags ORDER BY name")
+    .all() as { name: string }[];
+  const matched = existingTags
+    .filter((t) => noteBody.toLowerCase().includes(t.name.toLowerCase()))
+    .map((t) => t.name);
+
+  if (matched.length >= 2) return matched.slice(0, 5);
+
+  // 既存タグで足りなければ、本文から意味のある単語を抽出
+  const words = noteBody
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3)
+    .reduce((acc, w) => {
+      const key = w.toLowerCase();
+      acc.set(key, (acc.get(key) ?? 0) + 1);
+      return acc;
+    }, new Map<string, number>());
+
+  // 出現頻度順にソートして上位を返す
+  const topWords = [...words.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([w]) => w);
+
+  return [...new Set([...matched, ...topWords])].slice(0, 5);
+}
+
+// メインエントリポイント: ノート作成・更新後のバックグラウンド処理
 export async function processNoteWithAi(noteId: number): Promise<void> {
   const note = noteService.getNote(noteId);
   if (!note) return;
 
   const provider = getProvider();
 
-  if (provider !== "none") {
-    // AI自動タグ
-    const suggestedTags = await suggestTags(note.body);
-    if (suggestedTags.length > 0) {
-      tagService.addTagsToNote(noteId, suggestedTags);
-    }
+  // 先に新しいタグ・リンクを計算（この間は既存データが維持される）
+  let newTags: string[] = [];
+  let newLinks: number[] = [];
 
-    // AI自動リンク
-    const suggestedLinks = await suggestLinks(noteId, note.body);
-    for (const targetId of suggestedLinks) {
-      noteService.addLink(noteId, targetId);
-    }
+  if (provider !== "none") {
+    newTags = await suggestTags(note.body);
+    newLinks = await suggestLinks(noteId, note.body);
   } else {
-    // フォールバック: FTS5類似ノート検索でリンク
-    const similarIds = findSimilarNotesByFts(noteId, note.body);
-    for (const targetId of similarIds) {
-      noteService.addLink(noteId, targetId);
-    }
+    newTags = extractTagsByKeywords(note.body);
+    newLinks = findSimilarNotesByFts(noteId, note.body);
+  }
+
+  // 計算完了後にクリア→追加をアトミックに実行
+  tagService.clearNoteTags(noteId);
+  noteService.clearLinks(noteId);
+
+  if (newTags.length > 0) {
+    tagService.addTagsToNote(noteId, newTags);
+  }
+  for (const targetId of newLinks) {
+    noteService.addLink(noteId, targetId);
   }
 }

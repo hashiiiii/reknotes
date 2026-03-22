@@ -7,12 +7,12 @@ export function getFullGraphData(): GraphData {
   // ノートノード
   const notes = db
     .prepare(
-      `SELECT n.id, n.title,
+      `SELECT n.id, n.title, n.created_at, SUBSTR(n.body, 1, 120) as snippet,
         (SELECT COUNT(*) FROM note_links WHERE source_id = n.id OR target_id = n.id) +
         (SELECT COUNT(*) FROM note_tags WHERE note_id = n.id) as link_count
       FROM notes n`
     )
-    .all() as { id: number; title: string; link_count: number }[];
+    .all() as { id: number; title: string; created_at: string; snippet: string; link_count: number }[];
 
   // タグノード
   const tags = db
@@ -40,6 +40,8 @@ export function getFullGraphData(): GraphData {
       label: n.title || "無題",
       type: "note" as const,
       val: Math.max(1, n.link_count),
+      created_at: n.created_at,
+      snippet: n.snippet,
     })),
     ...tags.map((t) => ({
       id: `tag-${t.id}`,

@@ -59,7 +59,7 @@ pageRoutes.get("/search", async (c) => {
 
 // グラフページ
 pageRoutes.get("/graph", async (c) => {
-  const html = await c.var.render("graph", { title: "ナレッジマップ" });
+  const html = await c.var.render("graph", { title: "ナレッジマップ", containerClass: "container-full" });
   return c.html(html);
 });
 

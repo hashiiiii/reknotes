@@ -36,6 +36,15 @@ export function removeTagFromNote(noteId: number, tagId: number): void {
   ).run(tagId, tagId);
 }
 
+export function clearNoteTags(noteId: number): void {
+  const db = getDb();
+  db.prepare("DELETE FROM note_tags WHERE note_id = ?").run(noteId);
+  // 孤立タグを一括削除
+  db.prepare(
+    "DELETE FROM tags WHERE NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = tags.id)"
+  ).run();
+}
+
 export function getAllTags(): (Tag & { count: number })[] {
   const db = getDb();
   return db

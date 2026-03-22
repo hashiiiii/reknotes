@@ -39,11 +39,11 @@ export function listNotes(cursor?: number): { notes: Note[]; hasMore: boolean; n
 
   if (cursor) {
     notes = db
-      .prepare("SELECT * FROM notes WHERE id < ? ORDER BY created_at DESC LIMIT ?")
+      .prepare("SELECT * FROM notes WHERE id < ? ORDER BY id DESC LIMIT ?")
       .all(cursor, PAGE_SIZE + 1) as Note[];
   } else {
     notes = db
-      .prepare("SELECT * FROM notes ORDER BY created_at DESC LIMIT ?")
+      .prepare("SELECT * FROM notes ORDER BY id DESC LIMIT ?")
       .all(PAGE_SIZE + 1) as Note[];
   }
 
@@ -83,6 +83,11 @@ export function getBacklinks(noteId: number): Note[] {
       "SELECT n.* FROM notes n JOIN note_links nl ON n.id = nl.source_id WHERE nl.target_id = ?"
     )
     .all(noteId) as Note[];
+}
+
+export function clearLinks(noteId: number): void {
+  const db = getDb();
+  db.prepare("DELETE FROM note_links WHERE source_id = ?").run(noteId);
 }
 
 export function addLink(sourceId: number, targetId: number): void {

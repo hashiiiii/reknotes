@@ -26,6 +26,8 @@ export interface GraphNode {
   label: string;
   type: "note" | "tag";
   val: number;
+  created_at?: string;
+  snippet?: string;
 }
 
 export interface GraphLink {

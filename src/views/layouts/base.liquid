@@ -12,16 +12,33 @@
   <nav class="nav">
     <div class="nav-inner">
       <a href="/" class="nav-brand">reknotes</a>
+      <div class="nav-search">
+        <input
+          type="search"
+          name="q"
+          placeholder="検索"
+          class="nav-search-input"
+          hx-get="/api/search"
+          hx-trigger="input changed delay:300ms, search"
+          hx-target="#note-grid"
+          hx-swap="innerHTML"
+        >
+      </div>
       <div class="nav-links">
         <a href="/" {% if currentPath == "/" %}class="active"{% endif %}>Home</a>
-        <a href="/search" {% if currentPath == "/search" %}class="active"{% endif %}>Search</a>
-        <a href="/graph" {% if currentPath == "/graph" %}class="active"{% endif %}>Map</a>
-        <a href="/tags" {% if currentPath == "/tags" %}class="active"{% endif %}>Tags</a>
+        <a href="/graph" {% if currentPath == "/graph" %}class="active"{% endif %}>Graph</a>
       </div>
     </div>
   </nav>
-  <main class="container">
+  <main class="{{ containerClass | default: 'container' }}">
     {% block content %}{% endblock %}
   </main>
+  <script>
+    document.addEventListener('click', function(e) {
+      document.querySelectorAll('.kebab-menu.open').forEach(function(m) {
+        if (!m.contains(e.target)) m.classList.remove('open');
+      });
+    });
+  </script>
 </body>
 </html>

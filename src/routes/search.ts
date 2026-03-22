@@ -3,6 +3,7 @@ import { Liquid } from "liquidjs";
 import { join } from "path";
 import type { AppEnv } from "../app";
 import { search } from "../services/search-service";
+import * as noteService from "../services/note-service";
 
 const searchRoutes = new Hono<AppEnv>();
 
@@ -12,11 +13,24 @@ const engine = new Liquid({
   extname: ".liquid",
 });
 
-// htmx インクリメンタルサーチ
+// htmx インクリメンタルサーチ（グリッド絞り込み）
 searchRoutes.get("/", async (c) => {
   const query = c.req.query("q") ?? "";
-  const results = query.trim() ? search(query) : [];
 
+  if (!query.trim()) {
+    // クエリが空 → 通常のノート一覧を返す
+    const { notes, hasMore, nextCursor } = noteService.listNotes();
+    let html = "";
+    for (const note of notes) {
+      html += await engine.renderFile("partials/note-card", { note });
+    }
+    if (hasMore) {
+      html += `<div class="note-grid-sentinel" hx-get="/api/notes?cursor=${nextCursor}" hx-trigger="revealed" hx-swap="outerHTML"></div>`;
+    }
+    return c.html(html);
+  }
+
+  const results = search(query);
   const html = await engine.renderFile("partials/search-results", {
     results,
     query,
