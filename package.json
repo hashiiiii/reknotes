@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "seed": "bun run lib/seed.ts",
-    "check": "bunx biome check --write && tsc --noEmit",
+    "check": "bunx biome check --write && bunx tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
