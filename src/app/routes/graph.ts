@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { AppEnv } from "../app";
+import type { AppEnv } from "..";
 import * as graphService from "../services/graph-service";
 
 const graphRoutes = new Hono<AppEnv>();

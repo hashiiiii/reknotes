@@ -1,7 +1,7 @@
 import { join } from "node:path";
 import { Hono } from "hono";
 import { Liquid } from "liquidjs";
-import type { AppEnv } from "../app";
+import type { AppEnv } from "..";
 import { processNoteWithAi } from "../services/ai-service";
 import * as noteService from "../services/note-service";
 

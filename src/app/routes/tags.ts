@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { AppEnv } from "../app";
+import type { AppEnv } from "..";
 import { getDb } from "../db/connection";
 import * as tagService from "../services/tag-service";
 

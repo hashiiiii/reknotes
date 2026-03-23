@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import markdownToHtml from "zenn-markdown-html";
-import type { AppEnv } from "../app";
+import type { AppEnv } from "..";
 import * as graphService from "../services/graph-service";
 import * as noteService from "../services/note-service";
 import { search } from "../services/search-service";
