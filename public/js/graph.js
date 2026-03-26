@@ -25,7 +25,9 @@ function initGraph(container, data) {
     });
   }
 
+  const nodeIds = new Set(data.nodes.map((n) => n.id));
   for (const link of data.links) {
+    if (!nodeIds.has(link.source) || !nodeIds.has(link.target)) continue;
     elements.push({
       data: {
         id: link.source + "->" + link.target,

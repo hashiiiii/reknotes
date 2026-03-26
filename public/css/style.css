@@ -30,6 +30,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 
 /* Container */
 .container { max-width: 960px; margin: 0 auto; padding: var(--gap); }
+.container-full { width: 100%; padding: 0; overflow: hidden; }
 /* Compose bar (Google Keep style) */
 .compose-bar {
   max-width: 600px; margin: 0 auto var(--gap); background: var(--bg-card);

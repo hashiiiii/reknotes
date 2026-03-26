@@ -24,8 +24,14 @@ export function getFullGraphData(): GraphData {
     )
     .all() as { id: number; name: string; note_count: number }[];
 
-  // ノート間リンク
-  const noteLinks = db.prepare("SELECT source_id, target_id FROM note_links").all() as {
+  // ノート間リンク（両端のノートが存在するもののみ）
+  const noteLinks = db
+    .prepare(
+      `SELECT nl.source_id, nl.target_id FROM note_links nl
+       JOIN notes s ON s.id = nl.source_id
+       JOIN notes t ON t.id = nl.target_id`,
+    )
+    .all() as {
     source_id: number;
     target_id: number;
   }[];
