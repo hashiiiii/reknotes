@@ -70,6 +70,8 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.75rem 1rem;
   transition: box-shadow 0.15s, border-color 0.15s;
+  /* masonry JS が配置するまで非表示（フラッシュ防止） */
+  position: absolute; visibility: hidden;
 }
 .note-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.3); border-color: var(--text-secondary); }
 .note-card-link { text-decoration: none; color: inherit; display: block; }

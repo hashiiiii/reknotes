@@ -64,10 +64,8 @@
     });
     if (newCards.length === 0) return;
 
-    // 配置前は非表示（フラッシュ防止）
+    // 幅を設定して高さを確定（CSS側で既に absolute + hidden）
     newCards.forEach(function(card) {
-      card.style.visibility = 'hidden';
-      card.style.position = 'absolute';
       card.style.width = colW + 'px';
     });
     grid.offsetHeight; // 幅に応じた高さを確定
@@ -79,7 +77,7 @@
       }
       card.style.left = min * (colW + GAP) + 'px';
       card.style.top = colHeights[min] + 'px';
-      card.style.visibility = '';
+      card.style.visibility = 'visible';
       colHeights[min] += card.offsetHeight + GAP;
       placed.add(card);
     });
@@ -101,6 +99,9 @@
   }
 
   fullLayout();
+
+  // Webフォント読み込み後にカード高さが変わるため再配置
+  document.fonts.ready.then(function() { fullLayout(); });
 
   document.body.addEventListener('htmx:afterSettle', function(e) {
     // 未配置のカードがあるかチェック（outerHTML swap で elt が DOM から外れる問題を回避）

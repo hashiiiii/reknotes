@@ -1,4 +1,4 @@
-import { closeDb, getDb } from "../src/db/connection";
+import { closeDb, getDb } from "../src/app/db/connection";
 
 const db = getDb();
 
