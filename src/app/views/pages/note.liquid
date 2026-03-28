@@ -12,7 +12,7 @@
         </div>
       </div>
     </div>
-    <time>{{ note.created_at }}</time>
+    <time datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
   </header>
 
   <div class="note-body znc">{{ bodyHtml }}</div>

@@ -6,10 +6,10 @@ export const notes = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     title: text("title").notNull().default(""),
     body: text("body").notNull(),
-    createdAt: integer("created_at")
+    createdAt: integer("created_at", { mode: "number" })
       .notNull()
       .$defaultFn(() => Date.now()),
-    updatedAt: integer("updated_at")
+    updatedAt: integer("updated_at", { mode: "number" })
       .notNull()
       .$defaultFn(() => Date.now()),
   },

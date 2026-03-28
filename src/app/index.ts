@@ -18,6 +18,14 @@ const engine = new Liquid({
   cache: process.env.NODE_ENV === "production",
 });
 
+// カスタムフィルター: unixtime → 人間が読める日時
+engine.registerFilter("formatDate", (timestamp: number) => {
+  if (!timestamp) return "";
+  const d = new Date(timestamp);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+});
+
 export type AppEnv = {
   Variables: {
     render: (template: string, data?: Record<string, unknown>) => Promise<string>;
