@@ -54,48 +54,22 @@
     <h3>Graph</h3>
     <div id="mini-graph-container"></div>
     <script src="/static/js/cytoscape.min.js"></script>
+    <script src="/static/js/graph-common.js"></script>
     <script>
       (function() {
-        const raw = {{ graphData }};
-        const currentId = 'note-{{ note.id }}';
-        const elements = [];
-        for (const n of raw.nodes) {
-          elements.push({ data: { id: n.id, label: n.label, type: n.type, val: n.val } });
-        }
-        for (const l of raw.links) {
-          elements.push({ data: { id: l.source + '->' + l.target, source: l.source, target: l.target, type: l.type } });
-        }
-        const cy = cytoscape({
-          container: document.getElementById('mini-graph-container'),
-          elements: elements,
-          style: [
-            { selector: 'node[type="note"]', style: {
-              label: 'data(label)', 'background-color': '#6bb873',
-              width: 'mapData(val, 1, 10, 8, 18)', height: 'mapData(val, 1, 10, 8, 18)',
-              'font-size': '7px', color: '#7a7568', 'text-valign': 'bottom', 'text-margin-y': 3,
-              'text-outline-color': '#191816', 'text-outline-width': 2,
-              'text-max-width': '70px', 'text-wrap': 'ellipsis',
-              'border-width': 0, opacity: 0.75, 'overlay-opacity': 0
-            }},
-            { selector: 'node[type="tag"]', style: {
-              label: 'data(label)', shape: 'round-diamond', 'background-color': '#c8c2b4',
-              width: 'mapData(val, 1, 10, 20, 40)', height: 'mapData(val, 1, 10, 20, 40)',
-              'font-size': '9px', 'font-weight': 'bold', color: '#e7e2d8',
-              'text-valign': 'bottom', 'text-margin-y': 4,
-              'text-outline-color': '#191816', 'text-outline-width': 2,
-              'border-width': 1, 'border-color': '#a9a49a', 'overlay-opacity': 0
-            }},
-            { selector: '#' + CSS.escape(currentId), style: {
-              'background-color': '#e7e2d8', 'border-color': '#8dd498', 'border-width': 2,
-              width: 14, height: 14, opacity: 1, color: '#e7e2d8', 'overlay-opacity': 0
-            }},
-            { selector: 'edge[type="tag"]', style: { 'line-color': '#5c5850', width: 0.5, 'curve-style': 'bezier', opacity: 0.15 }}
-          ],
+        var raw = {{ graphData }};
+        var currentId = 'note-{{ note.id }}';
+        var container = document.getElementById('mini-graph-container');
+        var cy = cytoscape({
+          container: container,
+          elements: GraphCommon.toElements(raw),
+          style: GraphCommon.stylesWithFocus(currentId),
           layout: { name: 'cose', animate: false, nodeDimensionsIncludeLabels: true, nodeRepulsion: function() { return 4000; }, padding: 20 },
           minZoom: 0.5, maxZoom: 2
         });
+        GraphCommon.bindHover(cy, container);
         cy.on('tap', 'node[type="note"]', function(evt) {
-          const id = evt.target.data('id').replace('note-', '');
+          var id = evt.target.data('id').replace('note-', '');
           window.location.href = '/notes/' + id;
         });
       })();
