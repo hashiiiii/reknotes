@@ -3,7 +3,7 @@ export interface GraphNode {
   label: string;
   type: "note" | "tag";
   val: number;
-  created_at?: string;
+  created_at?: number;
   snippet?: string;
 }
 
