@@ -58,3 +58,12 @@ export function getNoteTags(noteId: number): string[] {
     .all(noteId) as { name: string }[];
   return rows.map((r) => r.name);
 }
+
+export function listNotesWithTags(cursor?: number) {
+  const result = listNotes(cursor);
+  const notes = result.notes.map((n) => ({
+    ...n,
+    tags: getNoteTags(n.id),
+  }));
+  return { ...result, notes };
+}

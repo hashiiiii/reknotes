@@ -32,10 +32,16 @@ function initGraph(container, data) {
     maxZoom: 3,
   });
 
-  // ホバー
   GraphCommon.bindHover(cy, container);
 
-  // ── ノード クリック → サイドパネル表示 + URL更新 ──
+  function dismissPanel() {
+    closePanel();
+    GraphCommon.clearHighlights(cy);
+    var url = new URL(window.location);
+    url.searchParams.delete("node");
+    history.pushState({}, "", url);
+  }
+
   cy.on("tap", "node", function (evt) {
     var node = evt.target;
     showPanel(cy, node, data);
@@ -44,30 +50,13 @@ function initGraph(container, data) {
     history.pushState({ nodeId: node.data().id }, "", url);
   });
 
-  // 背景クリックでパネル閉じる & フェード解除
   cy.on("tap", function (evt) {
-    if (evt.target === cy) {
-      closePanel();
-      GraphCommon.clearHighlights(cy);
-      var url = new URL(window.location);
-      url.searchParams.delete("node");
-      history.pushState({}, "", url);
-    }
+    if (evt.target === cy) dismissPanel();
   });
 
-  // パネル閉じるボタン
   var closeBtn = document.getElementById("panel-close");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", function () {
-      closePanel();
-      GraphCommon.clearHighlights(cy);
-      var url = new URL(window.location);
-      url.searchParams.delete("node");
-      history.pushState({}, "", url);
-    });
-  }
+  if (closeBtn) closeBtn.addEventListener("click", dismissPanel);
 
-  // ブラウザバック/フォワード
   window.addEventListener("popstate", function (evt) {
     var nodeId = evt.state && evt.state.nodeId;
     if (nodeId) {
@@ -79,7 +68,6 @@ function initGraph(container, data) {
     }
   });
 
-  // 初期表示
   var initNodeId = new URL(window.location).searchParams.get("node");
   if (initNodeId) {
     var node = cy.getElementById(initNodeId);

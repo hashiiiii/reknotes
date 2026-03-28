@@ -9,14 +9,10 @@ const pageRoutes = new Hono<AppEnv>();
 
 // ホーム
 pageRoutes.get("/", async (c) => {
-  const { notes, hasMore, nextCursor } = noteService.listNotes();
-  const notesWithTags = notes.map((n) => ({
-    ...n,
-    tags: noteService.getNoteTags(n.id),
-  }));
+  const { notes, hasMore, nextCursor } = noteService.listNotesWithTags();
   const html = await c.var.render("home", {
     title: "Home",
-    notes: notesWithTags,
+    notes,
     hasMore,
     nextCursor,
   });

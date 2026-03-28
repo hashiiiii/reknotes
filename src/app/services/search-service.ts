@@ -10,39 +10,8 @@ export function search(query: string): SearchResult[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  // trigram は3文字以上必要。2文字以下はLIKEフォールバック
-  if (trimmed.length < 3) {
-    return searchWithLike(trimmed);
-  }
-
-  return searchWithFts(trimmed);
-}
-
-function searchWithFts(query: string): SearchResult[] {
   const db = getDb();
-  // FTS5 の特殊文字をエスケープ
-  const escaped = `"${query.replace(/"/g, '""')}"`;
-
-  const rows = db
-    .prepare(
-      `SELECT
-        n.id, n.title, n.body, n.created_at, n.updated_at,
-        highlight(notes_fts, 0, '<mark>', '</mark>') as highlightedTitle,
-        highlight(notes_fts, 1, '<mark>', '</mark>') as highlightedBody
-      FROM notes_fts
-      JOIN notes n ON n.id = notes_fts.rowid
-      WHERE notes_fts MATCH ?
-      ORDER BY rank
-      LIMIT 50`,
-    )
-    .all(escaped) as SearchResult[];
-
-  return rows;
-}
-
-function searchWithLike(query: string): SearchResult[] {
-  const db = getDb();
-  const pattern = `%${query}%`;
+  const pattern = `%${trimmed}%`;
 
   const rows = db
     .prepare(
@@ -54,11 +23,10 @@ function searchWithLike(query: string): SearchResult[] {
     )
     .all(pattern, pattern) as SearchResult[];
 
-  // 手動ハイライト
   return rows.map((r) => ({
     ...r,
-    highlightedTitle: highlightText(r.title, query),
-    highlightedBody: highlightSnippet(r.body, query),
+    highlightedTitle: highlightText(r.title, trimmed),
+    highlightedBody: highlightSnippet(r.body, trimmed),
   }));
 }
 

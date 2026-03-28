@@ -11,12 +11,10 @@ tagRoutes.get("/", (c) => {
   return c.json(tags);
 });
 
-// タグ削除
+// タグ削除（CASCADE で note_tags も自動削除）
 tagRoutes.delete("/:id", (c) => {
   const id = Number(c.req.param("id"));
-  const db = getDb();
-  db.prepare("DELETE FROM note_tags WHERE tag_id = ?").run(id);
-  db.prepare("DELETE FROM tags WHERE id = ?").run(id);
+  getDb().prepare("DELETE FROM tags WHERE id = ?").run(id);
   return c.text("OK");
 });
 

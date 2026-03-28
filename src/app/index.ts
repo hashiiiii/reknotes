@@ -25,6 +25,8 @@ export type AppEnv = {
   };
 };
 
+export { engine };
+
 const app = new Hono<AppEnv>();
 
 // DB初期化

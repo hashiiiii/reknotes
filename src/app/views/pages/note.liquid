@@ -8,7 +8,7 @@
         <button class="kebab-btn" aria-label="メニュー" onclick="this.parentElement.classList.toggle('open')">&#x22EE;</button>
         <div class="kebab-dropdown">
           <button onclick="this.closest('.kebab-menu').classList.remove('open'); enterEditMode()">編集</button>
-          <button class="danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body" hx-push-url="/">削除</button>
+          <button class="danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body">削除</button>
         </div>
       </div>
     </div>
@@ -24,7 +24,7 @@
   <header>
     <h1>編集</h1>
   </header>
-  <form hx-put="/api/notes/{{ note.id }}" hx-target="body" hx-push-url="/notes/{{ note.id }}">
+  <form hx-put="/api/notes/{{ note.id }}" hx-target="body">
     <input type="text" name="title" value="{{ note.title }}" placeholder="タイトル" class="input-title">
     <textarea name="body" rows="15" class="input-body">{{ note.body }}</textarea>
     <div class="form-actions">

@@ -47,16 +47,11 @@ async function embedTag(tagName: string): Promise<Float32Array> {
   return emb;
 }
 
-function cosineSimilarity(a: Float32Array, b: Float32Array): number {
+// 正規化済みベクトル同士の cosine similarity = 内積
+function dotProduct(a: Float32Array, b: Float32Array): number {
   let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < DIMENSIONS; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-8);
+  for (let i = 0; i < DIMENSIONS; i++) dot += a[i] * b[i];
+  return dot;
 }
 
 // ノートの embedding を生成して保存
@@ -86,7 +81,7 @@ export async function suggestTags(noteId: number, title: string, body: string): 
   const tagScores: { name: string; score: number }[] = [];
   for (const tag of tags) {
     const tagEmb = await embedTag(tag.name);
-    tagScores.push({ name: tag.name, score: cosineSimilarity(noteEmbedding, tagEmb) });
+    tagScores.push({ name: tag.name, score: dotProduct(noteEmbedding, tagEmb) });
   }
 
   // mean + 2σ の閾値で上位タグを採用

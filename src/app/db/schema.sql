@@ -26,14 +26,12 @@ CREATE TABLE IF NOT EXISTS note_tags (
 
 CREATE INDEX IF NOT EXISTS idx_note_tags_tag_id ON note_tags(tag_id);
 
--- FTS5 trigram 全文検索（日本語対応）
-CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
-    title,
-    body,
-    content='notes',
-    content_rowid='id',
-    tokenize='trigram case_sensitive 1'
-);
+-- 孤立タグ自動削除（note_tags から行が消えたとき、どのノートにも紐づかないタグを削除）
+CREATE TRIGGER IF NOT EXISTS cleanup_orphan_tags AFTER DELETE ON note_tags
+BEGIN
+    DELETE FROM tags WHERE id = OLD.tag_id
+      AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = OLD.tag_id);
+END;
 
 -- ノート embedding テーブル（384次元ベクトルを BLOB で保存）
 CREATE TABLE IF NOT EXISTS note_embeddings (
@@ -41,16 +39,3 @@ CREATE TABLE IF NOT EXISTS note_embeddings (
     embedding BLOB NOT NULL
 );
 
--- FTS5同期トリガー
-CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN
-    INSERT INTO notes_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
-END;
-
-CREATE TRIGGER IF NOT EXISTS notes_ad AFTER DELETE ON notes BEGIN
-    INSERT INTO notes_fts(notes_fts, rowid, title, body) VALUES('delete', old.id, old.title, old.body);
-END;
-
-CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
-    INSERT INTO notes_fts(notes_fts, rowid, title, body) VALUES('delete', old.id, old.title, old.body);
-    INSERT INTO notes_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
-END;

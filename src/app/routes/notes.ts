@@ -1,18 +1,11 @@
-import { join } from "node:path";
 import { Hono } from "hono";
-import { Liquid } from "liquidjs";
 import type { AppEnv } from "..";
+import { engine } from "..";
 import { suggestTags, upsertNoteEmbedding } from "../services/embedding-service";
 import * as noteService from "../services/note-service";
 import * as tagService from "../services/tag-service";
 
 const noteRoutes = new Hono<AppEnv>();
-
-const engine = new Liquid({
-  root: join(import.meta.dir, "..", "views"),
-  partials: join(import.meta.dir, "..", "views", "partials"),
-  extname: ".liquid",
-});
 
 // ノート作成
 noteRoutes.post("/", async (c) => {
@@ -39,15 +32,10 @@ noteRoutes.post("/", async (c) => {
 // ノート一覧（無限スクロール用）
 noteRoutes.get("/", async (c) => {
   const cursor = c.req.query("cursor") ? Number(c.req.query("cursor")) : undefined;
-  const { notes, hasMore, nextCursor } = noteService.listNotes(cursor);
-
-  const notesWithTags = notes.map((n) => ({
-    ...n,
-    tags: noteService.getNoteTags(n.id),
-  }));
+  const { notes, hasMore, nextCursor } = noteService.listNotesWithTags(cursor);
 
   let html = "";
-  for (const note of notesWithTags) {
+  for (const note of notes) {
     html += await engine.renderFile("partials/note-card", { note });
   }
   if (hasMore) {
@@ -85,44 +73,14 @@ noteRoutes.put("/:id", async (c) => {
   const generatedTags = await suggestTags(id, title, body);
   if (generatedTags.length > 0) tagService.addTagsToNote(id, generatedTags);
 
-  // 更新後は詳細ページにリダイレクト（htmxがbodyを入れ替え）
-  const render = c.var.render;
-  const tags = noteService.getNoteTags(id).map((name) => ({ name }));
-  const markdownToHtml = (await import("zenn-markdown-html")).default;
-  const bodyHtml = markdownToHtml(note.body);
-  const { getNoteSubgraph } = await import("../services/graph-service");
-  const subgraph = getNoteSubgraph(id);
-  const graphData = subgraph.nodes.length > 1 ? JSON.stringify(subgraph) : null;
-
-  const html = await render("note", {
-    title: note.title || "無題",
-    note,
-    tags,
-    bodyHtml,
-    graphData,
-  });
-  return c.html(html);
+  return c.redirect(`/notes/${id}`, 303);
 });
 
 // ノート削除
-noteRoutes.delete("/:id", async (c) => {
+noteRoutes.delete("/:id", (c) => {
   const id = Number(c.req.param("id"));
   noteService.deleteNote(id);
-
-  // ホームページを返却
-  const render = c.var.render;
-  const { notes, hasMore, nextCursor } = noteService.listNotes();
-  const notesWithTags = notes.map((n) => ({
-    ...n,
-    tags: noteService.getNoteTags(n.id),
-  }));
-  const html = await render("home", {
-    title: "Home",
-    notes: notesWithTags,
-    hasMore,
-    nextCursor,
-  });
-  return c.html(html);
+  return c.redirect("/", 303);
 });
 
 export { noteRoutes };
