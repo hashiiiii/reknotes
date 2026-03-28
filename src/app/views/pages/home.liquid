@@ -119,9 +119,10 @@
   });
 
   // カード削除後にレイアウトを再計算
-  document.body.addEventListener('htmx:afterSwap', function(e) {
+  // htmx:beforeSwap で検知（delete swap 後は要素が DOM から外れ afterSwap がバブルしないため）
+  document.body.addEventListener('htmx:beforeSwap', function(e) {
     if (e.detail.requestConfig && e.detail.requestConfig.verb === 'delete') {
-      fullLayout();
+      requestAnimationFrame(fullLayout);
     }
   });
 
