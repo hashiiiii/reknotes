@@ -59,26 +59,3 @@ export function getNoteTags(noteId: number): string[] {
   return rows.map((r) => r.name);
 }
 
-export function getLinkedNotes(noteId: number): Note[] {
-  const db = getDb();
-  return db
-    .prepare("SELECT n.* FROM notes n JOIN note_links nl ON n.id = nl.target_id WHERE nl.source_id = ?")
-    .all(noteId) as Note[];
-}
-
-export function getBacklinks(noteId: number): Note[] {
-  const db = getDb();
-  return db
-    .prepare("SELECT n.* FROM notes n JOIN note_links nl ON n.id = nl.source_id WHERE nl.target_id = ?")
-    .all(noteId) as Note[];
-}
-
-export function clearLinks(noteId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM note_links WHERE source_id = ?").run(noteId);
-}
-
-export function addLink(sourceId: number, targetId: number): void {
-  const db = getDb();
-  db.prepare("INSERT OR IGNORE INTO note_links (source_id, target_id) VALUES (?, ?)").run(sourceId, targetId);
-}

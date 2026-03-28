@@ -10,9 +10,13 @@ const pageRoutes = new Hono<AppEnv>();
 // ホーム
 pageRoutes.get("/", async (c) => {
   const { notes, hasMore, nextCursor } = noteService.listNotes();
+  const notesWithTags = notes.map((n) => ({
+    ...n,
+    tags: noteService.getNoteTags(n.id),
+  }));
   const html = await c.var.render("home", {
     title: "Home",
-    notes,
+    notes: notesWithTags,
     hasMore,
     nextCursor,
   });
@@ -26,6 +30,7 @@ pageRoutes.get("/notes/:id", async (c) => {
   if (!note) return c.notFound();
 
   const bodyHtml = markdownToHtml(note.body);
+  const tags = noteService.getNoteTags(id);
   const subgraph = graphService.getNoteSubgraph(id);
   const graphData = subgraph.nodes.length > 1 ? JSON.stringify(subgraph) : null;
 
@@ -33,6 +38,7 @@ pageRoutes.get("/notes/:id", async (c) => {
     title: note.title || "無題",
     note,
     bodyHtml,
+    tags,
     graphData,
   });
   return c.html(html);

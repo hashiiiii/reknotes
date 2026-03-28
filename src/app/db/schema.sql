@@ -26,15 +26,6 @@ CREATE TABLE IF NOT EXISTS note_tags (
 
 CREATE INDEX IF NOT EXISTS idx_note_tags_tag_id ON note_tags(tag_id);
 
--- ノート間リンク（ナレッジマップのエッジ）
-CREATE TABLE IF NOT EXISTS note_links (
-    source_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    target_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    PRIMARY KEY (source_id, target_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_note_links_target ON note_links(target_id);
-
 -- FTS5 trigram 全文検索（日本語対応）
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
     title,
@@ -42,6 +33,12 @@ CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
     content='notes',
     content_rowid='id',
     tokenize='trigram case_sensitive 1'
+);
+
+-- ノート embedding テーブル（384次元ベクトルを BLOB で保存）
+CREATE TABLE IF NOT EXISTS note_embeddings (
+    note_id INTEGER PRIMARY KEY REFERENCES notes(id) ON DELETE CASCADE,
+    embedding BLOB NOT NULL
 );
 
 -- FTS5同期トリガー

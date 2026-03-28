@@ -8,7 +8,6 @@ export function getFullGraphData(): GraphData {
   const notes = db
     .prepare(
       `SELECT n.id, n.title, n.created_at, SUBSTR(n.body, 1, 120) as snippet,
-        (SELECT COUNT(*) FROM note_links WHERE source_id = n.id OR target_id = n.id) +
         (SELECT COUNT(*) FROM note_tags WHERE note_id = n.id) as link_count
       FROM notes n`,
     )
@@ -23,18 +22,6 @@ export function getFullGraphData(): GraphData {
        GROUP BY t.id`,
     )
     .all() as { id: number; name: string; note_count: number }[];
-
-  // ノート間リンク（両端のノートが存在するもののみ）
-  const noteLinks = db
-    .prepare(
-      `SELECT nl.source_id, nl.target_id FROM note_links nl
-       JOIN notes s ON s.id = nl.source_id
-       JOIN notes t ON t.id = nl.target_id`,
-    )
-    .all() as {
-    source_id: number;
-    target_id: number;
-  }[];
 
   // ノート-タグリンク
   const tagLinks = db.prepare("SELECT note_id, tag_id FROM note_tags").all() as { note_id: number; tag_id: number }[];
@@ -56,18 +43,11 @@ export function getFullGraphData(): GraphData {
     })),
   ];
 
-  const links: GraphLink[] = [
-    ...noteLinks.map((l) => ({
-      source: `note-${l.source_id}`,
-      target: `note-${l.target_id}`,
-      type: "link" as const,
-    })),
-    ...tagLinks.map((l) => ({
-      source: `note-${l.note_id}`,
-      target: `tag-${l.tag_id}`,
-      type: "tag" as const,
-    })),
-  ];
+  const links: GraphLink[] = tagLinks.map((l) => ({
+    source: `note-${l.note_id}`,
+    target: `tag-${l.tag_id}`,
+    type: "tag" as const,
+  }));
 
   return { nodes, links };
 }

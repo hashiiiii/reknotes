@@ -3,5 +3,7 @@
     <h3>{{ note.title | default: "無題" }}</h3>
     <p class="note-snippet">{{ note.body | truncate: 500 }}</p>
   </a>
+
   <time class="note-card-time">{{ note.created_at }}</time>
+  <div class="note-card-ai-status" id="ai-status-{{ note.id }}"></div>
 </article>

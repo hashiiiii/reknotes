@@ -100,8 +100,12 @@
 
   fullLayout();
 
-  // Webフォント読み込み後にカード高さが変わるため再配置
-  document.fonts.ready.then(function() { fullLayout(); });
+  // Webフォント読み込み後にカード高さが変わるため再配置（スクロール位置を保持）
+  document.fonts.ready.then(function() {
+    var scrollY = window.scrollY;
+    fullLayout();
+    window.scrollTo(0, scrollY);
+  });
 
   document.body.addEventListener('htmx:afterSettle', function(e) {
     // 未配置のカードがあるかチェック（outerHTML swap で elt が DOM から外れる問題を回避）

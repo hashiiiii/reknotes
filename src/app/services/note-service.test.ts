@@ -4,12 +4,8 @@ process.env.DB_PATH = ":memory:";
 import { afterAll, describe, expect, test } from "bun:test";
 import { closeDb } from "../db/connection";
 import {
-  addLink,
-  clearLinks,
   createNote,
   deleteNote,
-  getBacklinks,
-  getLinkedNotes,
   getNote,
   getNoteTags,
   listNotes,
@@ -68,26 +64,6 @@ describe("note-service", () => {
     const result = listNotes();
     expect(result.notes.length).toBeGreaterThan(0);
     expect(typeof result.hasMore).toBe("boolean");
-  });
-
-  test("addLink / getLinkedNotes / getBacklinks でリンクを管理できる", () => {
-    const a = createNote("ノートA", "A");
-    const b = createNote("ノートB", "B");
-    addLink(a.id, b.id);
-
-    const linked = getLinkedNotes(a.id);
-    expect(linked.some((n) => n.id === b.id)).toBe(true);
-
-    const backlinks = getBacklinks(b.id);
-    expect(backlinks.some((n) => n.id === a.id)).toBe(true);
-  });
-
-  test("clearLinks でリンクを削除できる", () => {
-    const a = createNote("リンク元", "A");
-    const b = createNote("リンク先", "B");
-    addLink(a.id, b.id);
-    clearLinks(a.id);
-    expect(getLinkedNotes(a.id)).toEqual([]);
   });
 
   test("タグの追加と取得ができる", () => {

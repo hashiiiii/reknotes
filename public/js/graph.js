@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initGraph(container, data) {
-  // force-graph 形式 → Cytoscape elements に変換
   const elements = [];
 
   for (const node of data.nodes) {
@@ -42,109 +41,107 @@ function initGraph(container, data) {
     container: container,
     elements: elements,
     style: [
-      // ── ノート ノード ──
+      // ── ノート ノード（小さめ・ラベル常時表示） ──
       {
         selector: 'node[type="note"]',
         style: {
           label: "data(label)",
           "background-color": "#6bb873",
-          width: "mapData(val, 1, 10, 16, 36)",
-          height: "mapData(val, 1, 10, 16, 36)",
-          "font-size": "10px",
-          color: "#a9a49a",
+          width: "mapData(val, 1, 10, 10, 22)",
+          height: "mapData(val, 1, 10, 10, 22)",
+          "font-size": "8px",
+          color: "#7a7568",
           "text-valign": "bottom",
           "text-margin-y": 4,
-          "text-max-width": "90px",
-          "text-wrap": "ellipsis",
-          "border-width": 1.5,
-          "border-color": "#4a9952",
           "text-outline-color": "#191816",
           "text-outline-width": 2,
+          "text-max-width": "80px",
+          "text-wrap": "ellipsis",
+          "border-width": 0,
+          opacity: 0.75,
           "overlay-opacity": 0,
         },
       },
-      // ── タグ ノード ──
+      // ── タグ ノード（大きめ・目立つ道標） ──
       {
         selector: 'node[type="tag"]',
         style: {
           label: "data(label)",
           shape: "round-diamond",
-          "background-color": "#7e7a71",
-          width: "mapData(val, 1, 10, 12, 30)",
-          height: "mapData(val, 1, 10, 12, 30)",
-          "font-size": "9px",
-          color: "#5c5850",
+          "background-color": "#c8c2b4",
+          width: "mapData(val, 1, 10, 24, 52)",
+          height: "mapData(val, 1, 10, 24, 52)",
+          "font-size": "11px",
+          "font-weight": "bold",
+          color: "#e7e2d8",
           "text-valign": "bottom",
-          "text-margin-y": 4,
+          "text-margin-y": 5,
           "text-outline-color": "#191816",
           "text-outline-width": 2,
+          "border-width": 1.5,
+          "border-color": "#a9a49a",
           "overlay-opacity": 0,
         },
       },
-      // ── 選択中 ──
+      // ── ノートのホバー ──
       {
-        selector: "node:selected",
+        selector: 'node[type="note"].hover',
         style: {
-          "border-width": 3,
-          "border-color": "#8dd498",
+          opacity: 1,
+          "background-color": "#8dd498",
+          color: "#e7e2d8",
+          "z-index": 999,
+        },
+      },
+      // ── タグのホバー ──
+      {
+        selector: 'node[type="tag"].hover',
+        style: {
           "background-color": "#e7e2d8",
-          "overlay-opacity": 0,
-          width: "mapData(val, 1, 10, 24, 44)",
-          height: "mapData(val, 1, 10, 24, 44)",
+          "border-color": "#8dd498",
+          color: "#e7e2d8",
+          "z-index": 999,
         },
       },
       // ── ハイライト（クリック選択） ──
       {
         selector: "node.highlighted",
         style: {
-          "border-width": 3,
-          "border-color": "#8dd498",
           "background-color": "#e7e2d8",
-          "background-opacity": 1,
-          "overlay-opacity": 0,
-          width: "mapData(val, 1, 10, 24, 44)",
-          height: "mapData(val, 1, 10, 24, 44)",
+          "border-width": 2,
+          "border-color": "#8dd498",
+          opacity: 1,
+          "z-index": 999,
         },
       },
       // ── フェード ──
       {
         selector: "node.faded",
         style: {
-          opacity: 0.1,
+          opacity: 0.08,
         },
       },
       {
         selector: "edge.faded",
         style: {
-          opacity: 0.05,
+          opacity: 0.03,
         },
       },
-      // ── note-note エッジ ──
-      {
-        selector: 'edge[type="link"]',
-        style: {
-          "line-color": "#6bb873",
-          width: 1.5,
-          "curve-style": "bezier",
-          opacity: 0.3,
-        },
-      },
-      // ── note-tag エッジ ──
+      // ── エッジ ──
       {
         selector: 'edge[type="tag"]',
         style: {
           "line-color": "#5c5850",
-          width: 0.8,
-          "line-style": "dashed",
+          width: 0.6,
           "curve-style": "bezier",
-          opacity: 0.2,
+          opacity: 0.15,
         },
       },
       {
         selector: "edge.highlighted",
         style: {
-          opacity: 0.8,
-          width: 2,
+          opacity: 0.6,
+          width: 1.5,
           "line-color": "#8dd498",
         },
       },
@@ -164,6 +161,16 @@ function initGraph(container, data) {
     },
     minZoom: 0.2,
     maxZoom: 3,
+  });
+
+  // ── ホバーでノートタイトルを表示 ──
+  cy.on("mouseover", "node", (evt) => {
+    evt.target.addClass("hover");
+    container.style.cursor = "pointer";
+  });
+  cy.on("mouseout", "node", (evt) => {
+    evt.target.removeClass("hover");
+    container.style.cursor = "default";
   });
 
   // ── ノード クリック → サイドパネル表示 + URL更新 ──
@@ -227,22 +234,22 @@ function showPanel(cy, node, data) {
   const content = document.getElementById("panel-content");
   if (!panel || !content) return;
 
-  // ハイライト: 選択ノードだけ光らせる（関連ノードはフェードしない程度）
+  // ハイライト
   clearHighlights(cy);
   cy.elements().addClass("faded");
   node.removeClass("faded").addClass("highlighted");
-  node.connectedEdges().removeClass("faded");
+  node.connectedEdges().removeClass("faded").addClass("highlighted");
   node.neighborhood("node").removeClass("faded");
 
   const d = node.data();
 
-  // 関連ノート一覧を生成（共通）
+  // 関連ノート一覧
   const noteNeighbors = node.neighborhood('node[type="note"]');
   const noteList = noteNeighbors
     .map((n) => {
       const nd = n.data();
       return `<a href="/notes/${nd.id.replace("note-", "")}" class="panel-note-link">
-        <span class="panel-note-title">${nd.label}</span>
+        <span class="panel-note-title">${escapeHtml(nd.label)}</span>
         <span class="panel-note-date">${formatDate(nd.created_at)}</span>
       </a>`;
     })
@@ -251,14 +258,14 @@ function showPanel(cy, node, data) {
   if (d.type === "note") {
     content.innerHTML = `
       <div class="panel-header">
-        <h2 class="panel-title">${d.label}</h2>
+        <h2 class="panel-title">${escapeHtml(d.label)}</h2>
         <time class="panel-date">${formatDate(d.created_at)}</time>
       </div>
       ${d.snippet ? `<p class="panel-snippet">${escapeHtml(d.snippet)}...</p>` : ""}
       <a href="/notes/${d.id.replace("note-", "")}" class="btn btn-primary panel-open-btn">ノートを開く</a>
       ${noteNeighbors.length > 0 ? `
         <div class="panel-section">
-          <h3>関連ノート (${noteNeighbors.length})</h3>
+          <h3>同じタグのノート (${noteNeighbors.length})</h3>
           <div class="panel-note-list">${noteList}</div>
         </div>
       ` : ""}
@@ -266,11 +273,12 @@ function showPanel(cy, node, data) {
   } else if (d.type === "tag") {
     content.innerHTML = `
       <div class="panel-header">
-        <h2 class="panel-title">#${d.label}</h2>
+        <h2 class="panel-title">#${escapeHtml(d.label)}</h2>
+        <p class="panel-tag-count">${noteNeighbors.length} ノート</p>
       </div>
       ${noteNeighbors.length > 0 ? `
         <div class="panel-section">
-          <h3>関連ノート (${noteNeighbors.length})</h3>
+          <h3>ノート一覧</h3>
           <div class="panel-note-list">${noteList}</div>
         </div>
       ` : ""}
@@ -286,7 +294,7 @@ function closePanel() {
 }
 
 function clearHighlights(cy) {
-  cy.elements().removeClass("faded highlighted");
+  cy.elements().removeClass("faded highlighted hover");
 }
 
 function formatDate(dateStr) {
