@@ -33,9 +33,4 @@ BEGIN
       AND NOT EXISTS (SELECT 1 FROM note_tags WHERE tag_id = OLD.tag_id);
 END;
 
--- ノート embedding テーブル（384次元ベクトルを BLOB で保存）
-CREATE TABLE IF NOT EXISTS note_embeddings (
-    note_id INTEGER PRIMARY KEY REFERENCES notes(id) ON DELETE CASCADE,
-    embedding BLOB NOT NULL
-);
 

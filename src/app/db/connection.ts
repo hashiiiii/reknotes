@@ -11,15 +11,15 @@ export function getDb(): Database {
   db = new Database(dbPath, { create: true });
 
   // パフォーマンス最適化
-  db.exec("PRAGMA journal_mode = WAL");
-  db.exec("PRAGMA synchronous = NORMAL");
-  db.exec("PRAGMA cache_size = -64000"); // 64MB
-  db.exec("PRAGMA foreign_keys = ON");
+  db.run("PRAGMA journal_mode = WAL");
+  db.run("PRAGMA synchronous = NORMAL");
+  db.run("PRAGMA cache_size = -64000"); // 64MB
+  db.run("PRAGMA foreign_keys = ON");
 
   // スキーマ適用
   const schemaPath = join(import.meta.dir, "schema.sql");
   const schema = readFileSync(schemaPath, "utf-8");
-  db.exec(schema);
+  db.run(schema);
 
   return db;
 }

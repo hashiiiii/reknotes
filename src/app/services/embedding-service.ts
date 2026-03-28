@@ -18,6 +18,7 @@ async function getExtractor(): Promise<FeatureExtractionPipeline> {
     const { pipeline, env } = await import("@huggingface/transformers");
     env.allowRemoteModels = true;
     env.allowLocalModels = true;
+    // @ts-expect-error -- pipeline() overloads produce a union too complex for TS
     extractor = await pipeline("feature-extraction", MODEL_NAME, {
       dtype: "fp32",
     });
@@ -54,20 +55,8 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
   return dot;
 }
 
-// ノートの embedding を生成して保存
-export async function upsertNoteEmbedding(noteId: number, title: string, body: string): Promise<void> {
-  const text = `${title}\n${body}`.slice(0, 512);
-  const embedding = await embedPassage(text);
-
-  const db = getDb();
-  db.prepare("INSERT OR REPLACE INTO note_embeddings(note_id, embedding) VALUES (?, ?)").run(
-    noteId,
-    Buffer.from(embedding.buffer),
-  );
-}
-
 // タグ推薦：タグ名の embedding とノートの embedding を直接比較
-export async function suggestTags(noteId: number, title: string, body: string): Promise<string[]> {
+export async function suggestTags(title: string, body: string): Promise<string[]> {
   const db = getDb();
   const text = `${title}\n${body}`.slice(0, 512);
   const noteEmbedding = await embedPassage(text);
@@ -133,23 +122,6 @@ export async function preload(): Promise<void> {
   await getExtractor();
 }
 
-// 全ノートの embedding を一括生成
-export async function backfillEmbeddings(): Promise<number> {
-  const db = getDb();
-  const notes = db
-    .prepare(
-      `SELECT id, title, body FROM notes
-       WHERE id NOT IN (SELECT note_id FROM note_embeddings)`,
-    )
-    .all() as { id: number; title: string; body: string }[];
-
-  for (const note of notes) {
-    await upsertNoteEmbedding(note.id, note.title, note.body);
-  }
-
-  return notes.length;
-}
-
 // 全ノートのタグを再生成
 export async function rebuildAllTags(): Promise<void> {
   const db = getDb();
@@ -165,7 +137,7 @@ export async function rebuildAllTags(): Promise<void> {
   }[];
 
   for (const note of notes) {
-    const tags = await suggestTags(note.id, note.title, note.body);
+    const tags = await suggestTags(note.title, note.body);
     if (tags.length > 0) tagService.addTagsToNote(note.id, tags);
   }
 

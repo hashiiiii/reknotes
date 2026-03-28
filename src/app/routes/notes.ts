@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "..";
 import { engine } from "..";
-import { suggestTags, upsertNoteEmbedding } from "../services/embedding-service";
+import { suggestTags } from "../services/embedding-service";
 import * as noteService from "../services/note-service";
 import * as tagService from "../services/tag-service";
 
@@ -17,9 +17,7 @@ noteRoutes.post("/", async (c) => {
 
   const note = noteService.createNote(title, body);
 
-  // embedding 生成 → タグ推薦・類似ノートリンク
-  await upsertNoteEmbedding(note.id, title, body);
-  const generatedTags = await suggestTags(note.id, title, body);
+  const generatedTags = await suggestTags(title, body);
   if (generatedTags.length > 0) tagService.addTagsToNote(note.id, generatedTags);
 
   const tags = noteService.getNoteTags(note.id);
@@ -67,10 +65,8 @@ noteRoutes.put("/:id", async (c) => {
   const note = noteService.updateNote(id, title, body);
   if (!note) return c.notFound();
 
-  // embedding 再生成 → タグ・リンク再生成
-  await upsertNoteEmbedding(id, title, body);
   tagService.clearNoteTags(id);
-  const generatedTags = await suggestTags(id, title, body);
+  const generatedTags = await suggestTags(title, body);
   if (generatedTags.length > 0) tagService.addTagsToNote(id, generatedTags);
 
   return c.redirect(`/notes/${id}`, 303);

@@ -2,7 +2,7 @@ import { closeDb, getDb } from "../src/app/db/connection";
 
 const db = getDb();
 
-// 既存データをクリア（notes 削除で note_tags, note_embeddings も CASCADE 削除される）
+// 既存データをクリア（notes 削除で note_tags も CASCADE 削除される）
 db.prepare("DELETE FROM notes").run();
 db.prepare("DELETE FROM tags").run();
 
