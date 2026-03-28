@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
-import { noteTags, notes, tags } from "../db/schema";
+import { notes, noteTags, tags } from "../db/schema";
 
 export function findAllNoteNodes() {
   return db

@@ -4,8 +4,8 @@ export interface SearchResult {
   id: number;
   title: string;
   body: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: number;
+  updatedAt: number;
   highlightedTitle: string;
   highlightedBody: string;
 }

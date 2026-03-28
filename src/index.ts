@@ -1,7 +1,7 @@
 import { app } from "./app";
 import { buildTagCache, preload, rebuildAllTags } from "./app/services/embedding-service";
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT);
 
 console.log(`reknotes running at http://localhost:${port}`);
 

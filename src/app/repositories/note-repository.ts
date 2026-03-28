@@ -1,6 +1,6 @@
 import { desc, eq, lt, sql } from "drizzle-orm";
 import { db } from "../db";
-import { noteTags, notes, tags } from "../db/schema";
+import { notes, noteTags, tags } from "../db/schema";
 
 const PAGE_SIZE = 20;
 
@@ -14,12 +14,8 @@ export function findById(id: number) {
 
 export function update(id: number, title: string, body: string) {
   return (
-    db
-      .update(notes)
-      .set({ title, body, updatedAt: sql`datetime('now')` })
-      .where(eq(notes.id, id))
-      .returning()
-      .get() ?? null
+    db.update(notes).set({ title, body, updatedAt: sql`datetime('now')` }).where(eq(notes.id, id)).returning().get() ??
+    null
   );
 }
 
@@ -87,9 +83,5 @@ export function search(pattern: string) {
 }
 
 export function findAll() {
-  return db
-    .select({ id: notes.id, title: notes.title, body: notes.body })
-    .from(notes)
-    .orderBy(notes.id)
-    .all();
+  return db.select({ id: notes.id, title: notes.title, body: notes.body }).from(notes).orderBy(notes.id).all();
 }
