@@ -1,9 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "..";
 import { engine } from "..";
-import { suggestTags } from "../services/embedding-service";
 import * as noteService from "../services/note-service";
-import * as tagService from "../services/tag-service";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -15,12 +13,7 @@ noteRoutes.post("/", async (c) => {
 
   if (!body.trim()) return c.text("本文を入力してください", 400);
 
-  const note = noteService.createNote(title, body);
-
-  const generatedTags = await suggestTags(title, body);
-  if (generatedTags.length > 0) tagService.addTagsToNote(note.id, generatedTags);
-
-  const tags = noteService.getNoteTags(note.id);
+  const { note, tags } = await noteService.createNoteWithTags(title, body);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
   });
@@ -62,12 +55,8 @@ noteRoutes.put("/:id", async (c) => {
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
 
-  const note = noteService.updateNote(id, title, body);
+  const note = await noteService.updateNoteWithTags(id, title, body);
   if (!note) return c.notFound();
-
-  tagService.clearNoteTags(id);
-  const generatedTags = await suggestTags(title, body);
-  if (generatedTags.length > 0) tagService.addTagsToNote(id, generatedTags);
 
   return c.redirect(`/notes/${id}`, 303);
 });

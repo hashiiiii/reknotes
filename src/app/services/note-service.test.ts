@@ -1,14 +1,6 @@
-// import より前に設定し、connection.ts が必ずインメモリDBを使うようにする
-process.env.DB_PATH = ":memory:";
-
-import { afterAll, describe, expect, test } from "bun:test";
-import { closeDb } from "../db/connection";
+import { describe, expect, test } from "bun:test";
 import { createNote, deleteNote, getNote, getNoteTags, listNotes, updateNote } from "./note-service";
 import { addTagsToNote } from "./tag-service";
-
-afterAll(() => {
-  closeDb();
-});
 
 describe("note-service", () => {
   test("createNote でノートを作成できる", () => {
@@ -53,7 +45,6 @@ describe("note-service", () => {
   });
 
   test("listNotes でページネーションが動作する", () => {
-    // 既に上のテストでいくつか作成済み
     const result = listNotes();
     expect(result.notes.length).toBeGreaterThan(0);
     expect(typeof result.hasMore).toBe("boolean");

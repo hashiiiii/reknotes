@@ -1,10 +1,9 @@
-import { closeDb, getDb } from "../src/app/db/connection";
-
-const db = getDb();
+import { db } from "../src/app/db";
+import { notes, tags } from "../src/app/db/schema";
 
 // 既存データをクリア（notes 削除で note_tags も CASCADE 削除される）
-db.prepare("DELETE FROM notes").run();
-db.prepare("DELETE FROM tags").run();
+db.delete(notes).run();
+db.delete(tags).run();
 
 const sampleNotes: { title: string; body: string; tags: string[] }[] = [
   // ── 認知科学・心理学 ──
@@ -367,21 +366,15 @@ const sampleNotes: { title: string; body: string; tags: string[] }[] = [
 
 console.log("Seeding database...");
 
-const insertNote = db.prepare("INSERT INTO notes (title, body) VALUES (?, ?) RETURNING id");
-const insertTag = db.prepare("INSERT OR IGNORE INTO tags (name) VALUES (?)");
-const getTag = db.prepare("SELECT id FROM tags WHERE name = ?");
-const insertNoteTag = db.prepare("INSERT OR IGNORE INTO note_tags (note_id, tag_id) VALUES (?, ?)");
+import * as noteRepo from "../src/app/repositories/note-repository";
+import * as tagRepo from "../src/app/repositories/tag-repository";
 
 for (const sample of sampleNotes) {
-  const result = insertNote.get(sample.title, sample.body) as { id: number };
-
-  for (const tag of sample.tags) {
-    insertTag.run(tag);
-    const tagRow = getTag.get(tag) as { id: number };
-    insertNoteTag.run(result.id, tagRow.id);
+  const note = noteRepo.create(sample.title, sample.body);
+  for (const tagName of sample.tags) {
+    const tag = tagRepo.findOrCreate(tagName);
+    tagRepo.linkToNote(note.id, tag.id);
   }
 }
 
 console.log(`Created ${sampleNotes.length} notes, ${new Set(sampleNotes.flatMap((n) => n.tags)).size} tags.`);
-
-closeDb();

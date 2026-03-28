@@ -1,72 +1,68 @@
-import { getDb } from "../db/connection";
+import * as graphRepo from "../repositories/graph-repository";
 import type { GraphData, GraphLink, GraphNode } from "../types";
 
 export function getFullGraphData(): GraphData {
-  const db = getDb();
-
-  // ノートノード
-  const notes = db
-    .prepare(
-      `SELECT n.id, n.title, n.created_at, SUBSTR(n.body, 1, 120) as snippet,
-        (SELECT COUNT(*) FROM note_tags WHERE note_id = n.id) as link_count
-      FROM notes n`,
-    )
-    .all() as { id: number; title: string; created_at: string; snippet: string; link_count: number }[];
-
-  // タグノード
-  const tags = db
-    .prepare(
-      `SELECT t.id, t.name, COUNT(nt.note_id) as note_count
-       FROM tags t
-       JOIN note_tags nt ON t.id = nt.tag_id
-       GROUP BY t.id`,
-    )
-    .all() as { id: number; name: string; note_count: number }[];
-
-  // ノート-タグリンク
-  const tagLinks = db.prepare("SELECT note_id, tag_id FROM note_tags").all() as { note_id: number; tag_id: number }[];
+  const noteRows = graphRepo.findAllNoteNodes();
+  const tagRows = graphRepo.findAllTagNodes();
+  const linkRows = graphRepo.findAllLinks();
 
   const nodes: GraphNode[] = [
-    ...notes.map((n) => ({
+    ...noteRows.map((n) => ({
       id: `note-${n.id}`,
       label: n.title || "無題",
       type: "note" as const,
-      val: Math.max(1, n.link_count),
-      created_at: n.created_at,
+      val: Math.max(1, n.linkCount),
+      created_at: n.createdAt,
       snippet: n.snippet,
     })),
-    ...tags.map((t) => ({
+    ...tagRows.map((t) => ({
       id: `tag-${t.id}`,
       label: t.name,
       type: "tag" as const,
-      val: Math.max(1, t.note_count),
+      val: Math.max(1, t.noteCount),
     })),
   ];
 
-  const links: GraphLink[] = tagLinks.map((l) => ({
-    source: `note-${l.note_id}`,
-    target: `tag-${l.tag_id}`,
+  const links: GraphLink[] = linkRows.map((l) => ({
+    source: `note-${l.noteId}`,
+    target: `tag-${l.tagId}`,
     type: "tag" as const,
   }));
 
   return { nodes, links };
 }
 
-export function getNoteSubgraph(noteId: number, depth = 1): GraphData {
-  const full = getFullGraphData();
-  const targetId = `note-${noteId}`;
+export function getNoteSubgraph(noteId: number): GraphData {
+  const relatedNotes = graphRepo.findRelatedNotes(noteId);
+  const relatedTags = graphRepo.findRelatedTags(noteId);
+  const linkRows = graphRepo.findRelatedLinks(noteId);
 
-  // 対象ノードから depth 階層以内のノードを収集
-  const collected = new Set<string>([targetId]);
-  for (let d = 0; d < depth; d++) {
-    for (const link of full.links) {
-      if (collected.has(link.source)) collected.add(link.target);
-      if (collected.has(link.target)) collected.add(link.source);
-    }
-  }
+  const relatedNoteIds = new Set(relatedNotes.map((n) => n.id));
 
-  return {
-    nodes: full.nodes.filter((n) => collected.has(n.id)),
-    links: full.links.filter((l) => collected.has(l.source) && collected.has(l.target)),
-  };
+  const nodes: GraphNode[] = [
+    ...relatedNotes.map((n) => ({
+      id: `note-${n.id}`,
+      label: n.title || "無題",
+      type: "note" as const,
+      val: Math.max(1, n.linkCount),
+      created_at: n.createdAt,
+      snippet: n.snippet,
+    })),
+    ...relatedTags.map((t) => ({
+      id: `tag-${t.id}`,
+      label: t.name,
+      type: "tag" as const,
+      val: Math.max(1, t.noteCount),
+    })),
+  ];
+
+  const links: GraphLink[] = linkRows
+    .filter((l) => relatedNoteIds.has(l.noteId))
+    .map((l) => ({
+      source: `note-${l.noteId}`,
+      target: `tag-${l.tagId}`,
+      type: "tag" as const,
+    }));
+
+  return { nodes, links };
 }

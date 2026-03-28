@@ -1,7 +1,11 @@
-import { getDb } from "../db/connection";
-import type { Note } from "../types";
+import * as noteRepo from "../repositories/note-repository";
 
-export interface SearchResult extends Note {
+export interface SearchResult {
+  id: number;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
   highlightedTitle: string;
   highlightedBody: string;
 }
@@ -10,18 +14,8 @@ export function search(query: string): SearchResult[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const db = getDb();
   const pattern = `%${trimmed}%`;
-
-  const rows = db
-    .prepare(
-      `SELECT *, title as highlightedTitle, body as highlightedBody
-       FROM notes
-       WHERE title LIKE ? OR body LIKE ?
-       ORDER BY created_at DESC
-       LIMIT 50`,
-    )
-    .all(pattern, pattern) as SearchResult[];
+  const rows = noteRepo.search(pattern);
 
   return rows.map((r) => ({
     ...r,

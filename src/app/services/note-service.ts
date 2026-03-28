@@ -1,66 +1,65 @@
-import { getDb } from "../db/connection";
-import type { Note } from "../types";
+import * as noteRepo from "../repositories/note-repository";
+import { suggestTags } from "./embedding-service";
+import * as tagService from "./tag-service";
 
-const PAGE_SIZE = 20;
-
-export function createNote(title: string, body: string): Note {
-  const db = getDb();
+export function createNote(title: string, body: string) {
   const autoTitle = title.trim() || body.slice(0, 30).trim();
-  const stmt = db.prepare("INSERT INTO notes (title, body) VALUES (?, ?) RETURNING *");
-  return stmt.get(autoTitle, body) as Note;
+  return noteRepo.create(autoTitle, body);
 }
 
-export function getNote(id: number): Note | null {
-  const db = getDb();
-  return db.prepare("SELECT * FROM notes WHERE id = ?").get(id) as Note | null;
+export async function createNoteWithTags(title: string, body: string) {
+  const note = createNote(title, body);
+  const generatedTags = await suggestTags(title, body);
+  if (generatedTags.length > 0) tagService.addTagsToNote(note.id, generatedTags);
+  const tags = getNoteTags(note.id);
+  return { note, tags };
 }
 
-export function updateNote(id: number, title: string, body: string): Note | null {
-  const db = getDb();
+export function getNote(id: number) {
+  return noteRepo.findById(id);
+}
+
+export function updateNote(id: number, title: string, body: string) {
   const autoTitle = title.trim() || body.slice(0, 30).trim();
-  return db
-    .prepare("UPDATE notes SET title = ?, body = ?, updated_at = datetime('now') WHERE id = ? RETURNING *")
-    .get(autoTitle, body, id) as Note | null;
+  return noteRepo.update(id, autoTitle, body);
 }
 
-export function deleteNote(id: number): boolean {
-  const db = getDb();
-  const result = db.prepare("DELETE FROM notes WHERE id = ?").run(id);
-  return result.changes > 0;
+export async function updateNoteWithTags(id: number, title: string, body: string) {
+  const note = updateNote(id, title, body);
+  if (!note) return null;
+  tagService.clearNoteTags(id);
+  const generatedTags = await suggestTags(title, body);
+  if (generatedTags.length > 0) tagService.addTagsToNote(id, generatedTags);
+  return note;
 }
 
-export function listNotes(cursor?: number): { notes: Note[]; hasMore: boolean; nextCursor?: number } {
-  const db = getDb();
-  let notes: Note[];
+export function deleteNote(id: number) {
+  // ノート削除前に紐付くタグ名を取得
+  const tagNames = noteRepo.findTagsByNoteId(id);
 
-  if (cursor) {
-    notes = db
-      .prepare("SELECT * FROM notes WHERE id < ? ORDER BY id DESC LIMIT ?")
-      .all(cursor, PAGE_SIZE + 1) as Note[];
-  } else {
-    notes = db.prepare("SELECT * FROM notes ORDER BY id DESC LIMIT ?").all(PAGE_SIZE + 1) as Note[];
+  // ノート削除（cascade で note_tags も削除される）
+  const result = noteRepo.remove(id);
+
+  // 孤立したタグを削除
+  if (result && tagNames.length > 0) {
+    for (const tagName of tagNames) {
+      tagService.removeOrphanTag(tagName);
+    }
   }
 
-  const hasMore = notes.length > PAGE_SIZE;
-  if (hasMore) notes.pop();
-
-  return {
-    notes,
-    hasMore,
-    nextCursor: hasMore ? notes[notes.length - 1]?.id : undefined,
-  };
+  return result;
 }
 
-export function getNoteTags(noteId: number): string[] {
-  const db = getDb();
-  const rows = db
-    .prepare("SELECT t.name FROM tags t JOIN note_tags nt ON t.id = nt.tag_id WHERE nt.note_id = ?")
-    .all(noteId) as { name: string }[];
-  return rows.map((r) => r.name);
+export function listNotes(cursor?: number) {
+  return noteRepo.list(cursor);
+}
+
+export function getNoteTags(noteId: number) {
+  return noteRepo.findTagsByNoteId(noteId);
 }
 
 export function listNotesWithTags(cursor?: number) {
-  const result = listNotes(cursor);
+  const result = noteRepo.list(cursor);
   const notes = result.notes.map((n) => ({
     ...n,
     tags: getNoteTags(n.id),

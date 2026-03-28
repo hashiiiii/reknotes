@@ -1,5 +1,6 @@
 import type { FeatureExtractionPipeline } from "@huggingface/transformers";
-import { getDb } from "../db/connection";
+import * as noteRepo from "../repositories/note-repository";
+import * as tagRepo from "../repositories/tag-repository";
 
 const MODEL_NAME = "Xenova/multilingual-e5-small";
 const DIMENSIONS = 384;
@@ -57,12 +58,11 @@ function dotProduct(a: Float32Array, b: Float32Array): number {
 
 // タグ推薦：タグ名の embedding とノートの embedding を直接比較
 export async function suggestTags(title: string, body: string): Promise<string[]> {
-  const db = getDb();
   const text = `${title}\n${body}`.slice(0, 512);
   const noteEmbedding = await embedPassage(text);
 
   // 全既存タグを取得（note_tags の有無に関係なく）
-  const tags = db.prepare("SELECT id, name FROM tags ORDER BY name").all() as { id: number; name: string }[];
+  const tags = tagRepo.findAllNames();
 
   if (tags.length === 0) return [];
 
@@ -109,8 +109,7 @@ function extractKeywordsFromTitle(title: string): string[] {
 
 // 起動時にタグ embedding キャッシュを構築
 export async function buildTagCache(): Promise<void> {
-  const db = getDb();
-  const tags = db.prepare("SELECT name FROM tags").all() as { name: string }[];
+  const tags = tagRepo.findAllNames();
   for (const tag of tags) {
     await embedTag(tag.name);
   }
@@ -124,25 +123,17 @@ export async function preload(): Promise<void> {
 
 // 全ノートのタグを再生成
 export async function rebuildAllTags(): Promise<void> {
-  const db = getDb();
   const tagService = await import("./tag-service");
 
   // 全 note_tags をクリア
-  db.prepare("DELETE FROM note_tags").run();
+  tagRepo.deleteAllNoteTagLinks();
 
-  const notes = db.prepare("SELECT id, title, body FROM notes ORDER BY id").all() as {
-    id: number;
-    title: string;
-    body: string;
-  }[];
+  const allNotes = noteRepo.findAll();
 
-  for (const note of notes) {
+  for (const note of allNotes) {
     const tags = await suggestTags(note.title, note.body);
     if (tags.length > 0) tagService.addTagsToNote(note.id, tags);
   }
-
-  // 使われていないタグを削除
-  db.prepare("DELETE FROM tags WHERE id NOT IN (SELECT DISTINCT tag_id FROM note_tags)").run();
 
   // キャッシュを再構築
   tagEmbeddingCache.clear();

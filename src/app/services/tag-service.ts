@@ -1,40 +1,30 @@
-import { getDb } from "../db/connection";
-import type { Tag } from "../types";
+import * as tagRepo from "../repositories/tag-repository";
 
-export function addTagToNote(noteId: number, tagName: string): Tag {
-  const db = getDb();
+export function addTagToNote(noteId: number, tagName: string) {
   const name = tagName.trim().toLowerCase();
-
-  // タグが無ければ作成
-  db.prepare("INSERT OR IGNORE INTO tags (name) VALUES (?)").run(name);
-  const tag = db.prepare("SELECT * FROM tags WHERE name = ?").get(name) as Tag;
-
-  // ノートに紐付け
-  db.prepare("INSERT OR IGNORE INTO note_tags (note_id, tag_id) VALUES (?, ?)").run(noteId, tag.id);
-
+  const tag = tagRepo.findOrCreate(name);
+  tagRepo.linkToNote(noteId, tag.id);
   return tag;
 }
 
-export function addTagsToNote(noteId: number, tagNames: string[]): void {
+export function addTagsToNote(noteId: number, tagNames: string[]) {
   for (const name of tagNames) {
     if (name.trim()) addTagToNote(noteId, name);
   }
 }
 
-export function clearNoteTags(noteId: number): void {
-  const db = getDb();
-  db.prepare("DELETE FROM note_tags WHERE note_id = ?").run(noteId);
+export function clearNoteTags(noteId: number) {
+  tagRepo.clearByNoteId(noteId);
 }
 
-export function getAllTags(): (Tag & { count: number })[] {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT t.*, COUNT(nt.note_id) as count
-       FROM tags t
-       JOIN note_tags nt ON t.id = nt.tag_id
-       GROUP BY t.id
-       ORDER BY count DESC`,
-    )
-    .all() as (Tag & { count: number })[];
+export function removeOrphanTag(tagName: string) {
+  const name = tagName.trim().toLowerCase();
+  const tag = tagRepo.findByName(name);
+  if (tag) {
+    tagRepo.removeOrphanTag(tag.id);
+  }
+}
+
+export function getAllTags() {
+  return tagRepo.findAllWithCount();
 }

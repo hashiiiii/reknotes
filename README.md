@@ -18,6 +18,7 @@
 
 ```bash
 bun install
+bun run migrate
 ```
 
 ## Scripts
@@ -25,6 +26,7 @@ bun install
 | Command | Description |
 |---|---|
 | `bun run dev` | Start dev server (watch mode) |
+| `bun run migrate` | Run database migrations |
 | `bun run seed` | Insert sample data |
 
 ## Pages

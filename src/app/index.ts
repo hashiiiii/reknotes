@@ -2,7 +2,6 @@ import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { Liquid } from "liquidjs";
-import { getDb } from "./db/connection";
 import { graphRoutes } from "./routes/graph";
 import { noteRoutes } from "./routes/notes";
 import { pageRoutes } from "./routes/pages";
@@ -28,9 +27,6 @@ export type AppEnv = {
 export { engine };
 
 const app = new Hono<AppEnv>();
-
-// DB初期化
-getDb();
 
 // LiquidJS ミドルウェア
 app.use("*", async (c, next) => {
