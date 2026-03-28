@@ -4,5 +4,17 @@
     <p class="note-snippet">{{ note.body | truncate: 500 }}</p>
   </a>
 
-  <time class="note-card-time" datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
+  <div class="note-card-footer">
+    <time class="note-card-time" datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
+    <div class="note-card-kebab">
+      <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleCardMenu(this)">&#x22EE;</button>
+      <div class="kebab-dropdown">
+        <button class="danger"
+          hx-delete="/api/notes/{{ note.id }}"
+          hx-target="#note-{{ note.id }}"
+          hx-swap="delete"
+          onclick="event.stopPropagation()">削除</button>
+      </div>
+    </div>
+  </div>
 </article>

@@ -17,6 +17,17 @@
 </section>
 
 <script>
+  function toggleCardMenu(btn) {
+    var menu = btn.parentElement;
+    var wasOpen = menu.classList.contains('open');
+    // 他のメニューを閉じる
+    document.querySelectorAll('.note-card-kebab.open').forEach(function(m) { m.classList.remove('open'); });
+    if (!wasOpen) menu.classList.add('open');
+  }
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.note-card-kebab.open').forEach(function(m) { m.classList.remove('open'); });
+  });
+
   function expandCompose() {
     document.getElementById('compose-trigger').hidden = true;
     document.getElementById('compose-body').hidden = false;
@@ -105,6 +116,13 @@
     var scrollY = window.scrollY;
     fullLayout();
     window.scrollTo(0, scrollY);
+  });
+
+  // カード削除後にレイアウトを再計算
+  document.body.addEventListener('htmx:afterSwap', function(e) {
+    if (e.detail.requestConfig && e.detail.requestConfig.verb === 'delete') {
+      fullLayout();
+    }
   });
 
   document.body.addEventListener('htmx:afterSettle', function(e) {

@@ -65,6 +65,11 @@ noteRoutes.put("/:id", async (c) => {
 noteRoutes.delete("/:id", (c) => {
   const id = Number(c.req.param("id"));
   noteService.deleteNote(id);
+
+  // HTMX リクエスト（ホームのカード削除）は 200 を返す
+  if (c.req.header("HX-Request")) {
+    return c.body(null, 200);
+  }
   return c.redirect("/", 303);
 });
 
