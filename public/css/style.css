@@ -188,5 +188,8 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 /* Note card tags */
 .note-card-ai-status { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
 
+/* Upload (drag & drop) */
+textarea.uploading { opacity: 0.7; }
+
 /* FTS highlight */
 mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; border-radius: 2px; }

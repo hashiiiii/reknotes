@@ -7,6 +7,7 @@ import { noteRoutes } from "./routes/notes";
 import { pageRoutes } from "./routes/pages";
 import { searchRoutes } from "./routes/search";
 import { tagRoutes } from "./routes/tags";
+import { uploadRoutes } from "./routes/upload";
 
 // LiquidJS エンジン初期化
 const viewsDir = join(import.meta.dir, "views");
@@ -57,5 +58,6 @@ app.route("/api/notes", noteRoutes);
 app.route("/api/search", searchRoutes);
 app.route("/api/graph", graphRoutes);
 app.route("/api/tags", tagRoutes);
+app.route("/api/upload", uploadRoutes);
 
 export { app };
