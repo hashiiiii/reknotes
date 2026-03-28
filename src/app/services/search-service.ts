@@ -7,7 +7,6 @@ export interface SearchResult extends Note {
 }
 
 export function search(query: string): SearchResult[] {
-  const _db = getDb();
   const trimmed = query.trim();
   if (!trimmed) return [];
 

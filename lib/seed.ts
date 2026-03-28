@@ -111,7 +111,7 @@ const sampleNotes: { title: string; body: string; tags: string[] }[] = [
   },
   {
     title: "ESM と CommonJS の移行戦略",
-    body: "Node.jsエコシステムはCJSからESMへの移行期にある。`\"type\": \"module\"` の設定、拡張子 `.mjs` / `.cjs` の使い分け、Dynamic Import によるCJSモジュールの読み込みなど、段階的な移行パスがある。Dual Package対応は `exports` フィールドで実現。",
+    body: 'Node.jsエコシステムはCJSからESMへの移行期にある。`"type": "module"` の設定、拡張子 `.mjs` / `.cjs` の使い分け、Dynamic Import によるCJSモジュールの読み込みなど、段階的な移行パスがある。Dual Package対応は `exports` フィールドで実現。',
     tags: ["JavaScript", "Node.js"],
   },
 
@@ -172,7 +172,7 @@ const sampleNotes: { title: string; body: string; tags: string[] }[] = [
   // ── インフラ・デプロイ ──
   {
     title: "Docker のレイヤーキャッシュ戦略",
-    body: "Dockerfileの各命令はレイヤーとして保存される。依存インストールをアプリコードCOPYの前に配置するとキャッシュが効く。\n\n```dockerfile\nFROM node:20-slim AS builder\nWORKDIR /app\nCOPY package.json bun.lockb ./\nRUN npm install\nCOPY . .\nRUN npm run build\n\nFROM node:20-slim\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCMD [\"node\", \"dist/index.js\"]\n```\n\nマルチステージビルドで最終イメージサイズも削減可能。",
+    body: 'Dockerfileの各命令はレイヤーとして保存される。依存インストールをアプリコードCOPYの前に配置するとキャッシュが効く。\n\n```dockerfile\nFROM node:20-slim AS builder\nWORKDIR /app\nCOPY package.json bun.lockb ./\nRUN npm install\nCOPY . .\nRUN npm run build\n\nFROM node:20-slim\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCMD ["node", "dist/index.js"]\n```\n\nマルチステージビルドで最終イメージサイズも削減可能。',
     tags: ["Docker", "デプロイ", "インフラ"],
   },
   {
@@ -382,8 +382,6 @@ for (const sample of sampleNotes) {
   }
 }
 
-console.log(
-  `Created ${sampleNotes.length} notes, ${new Set(sampleNotes.flatMap((n) => n.tags)).size} tags.`,
-);
+console.log(`Created ${sampleNotes.length} notes, ${new Set(sampleNotes.flatMap((n) => n.tags)).size} tags.`);
 
 closeDb();

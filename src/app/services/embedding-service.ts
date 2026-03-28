@@ -65,9 +65,10 @@ export async function upsertNoteEmbedding(noteId: number, title: string, body: s
   const embedding = await embedPassage(text);
 
   const db = getDb();
-  db.prepare(
-    "INSERT OR REPLACE INTO note_embeddings(note_id, embedding) VALUES (?, ?)",
-  ).run(noteId, Buffer.from(embedding.buffer));
+  db.prepare("INSERT OR REPLACE INTO note_embeddings(note_id, embedding) VALUES (?, ?)").run(
+    noteId,
+    Buffer.from(embedding.buffer),
+  );
 }
 
 // タグ推薦：タグ名の embedding とノートの embedding を直接比較
@@ -77,9 +78,7 @@ export async function suggestTags(noteId: number, title: string, body: string): 
   const noteEmbedding = await embedPassage(text);
 
   // 全既存タグを取得（note_tags の有無に関係なく）
-  const tags = db
-    .prepare("SELECT id, name FROM tags ORDER BY name")
-    .all() as { id: number; name: string }[];
+  const tags = db.prepare("SELECT id, name FROM tags ORDER BY name").all() as { id: number; name: string }[];
 
   if (tags.length === 0) return [];
 
@@ -164,9 +163,11 @@ export async function rebuildAllTags(): Promise<void> {
   // 全 note_tags をクリア
   db.prepare("DELETE FROM note_tags").run();
 
-  const notes = db
-    .prepare("SELECT id, title, body FROM notes ORDER BY id")
-    .all() as { id: number; title: string; body: string }[];
+  const notes = db.prepare("SELECT id, title, body FROM notes ORDER BY id").all() as {
+    id: number;
+    title: string;
+    body: string;
+  }[];
 
   for (const note of notes) {
     const tags = await suggestTags(note.id, note.title, note.body);

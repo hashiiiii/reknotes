@@ -3,14 +3,7 @@ process.env.DB_PATH = ":memory:";
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { closeDb } from "../db/connection";
-import {
-  createNote,
-  deleteNote,
-  getNote,
-  getNoteTags,
-  listNotes,
-  updateNote,
-} from "./note-service";
+import { createNote, deleteNote, getNote, getNoteTags, listNotes, updateNote } from "./note-service";
 import { addTagsToNote } from "./tag-service";
 
 afterAll(() => {

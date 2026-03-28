@@ -58,4 +58,3 @@ export function getNoteTags(noteId: number): string[] {
     .all(noteId) as { name: string }[];
   return rows.map((r) => r.name);
 }
-
