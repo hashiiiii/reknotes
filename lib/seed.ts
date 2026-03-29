@@ -1,5 +1,5 @@
-import { db } from "../src/app/db";
-import { notes, tags } from "../src/app/db/schema";
+import { db } from "../src/app/infrastructure/db";
+import { notes, tags } from "../src/app/infrastructure/db/schema";
 
 // 既存データをクリア（notes 削除で note_tags も CASCADE 削除される）
 await db.delete(notes);
@@ -366,14 +366,13 @@ const sampleNotes: { title: string; body: string; tags: string[] }[] = [
 
 console.log("Seeding database...");
 
-import * as noteRepo from "../src/app/repositories/note-repository";
-import * as tagRepo from "../src/app/repositories/tag-repository";
+import { noteRepository, tagRepository } from "../src/app/infrastructure/container";
 
 for (const sample of sampleNotes) {
-  const note = await noteRepo.create(sample.title, sample.body);
+  const note = await noteRepository.create(sample.title, sample.body);
   for (const tagName of sample.tags) {
-    const tag = await tagRepo.findOrCreate(tagName);
-    await tagRepo.linkToNote(note.id, tag.id);
+    const tag = await tagRepository.findOrCreate(tagName);
+    await tagRepository.linkToNote(note.id, tag.id);
   }
 }
 

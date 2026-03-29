@@ -1,19 +1,22 @@
 import { app } from "./app";
-import { buildTagCache, preload, rebuildAllTags } from "./app/services/embedding-service";
+import { buildTagCache } from "./app/application/embedding/build-tag-cache";
+import { rebuildAllTags } from "./app/application/embedding/rebuild-all-tags";
+import { embeddingService, noteRepository, tagRepository } from "./app/infrastructure/container";
 
 const port = Number(process.env.PORT);
 
 console.log(`reknotes running at http://localhost:${port}`);
 
 // Embedding モデルをバックグラウンドでロード＆初期化
-preload()
+embeddingService
+  .preload()
   .then(async () => {
-    await buildTagCache();
+    await buildTagCache(embeddingService, tagRepository);
 
     // REBUILD_TAGS=1 で起動すると全タグを再生成
     if (process.env.REBUILD_TAGS === "1") {
       console.log("Rebuilding all tags...");
-      await rebuildAllTags();
+      await rebuildAllTags(embeddingService, noteRepository, tagRepository);
       console.log("Tag rebuild complete");
     }
   })

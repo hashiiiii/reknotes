@@ -2,16 +2,16 @@ import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { Liquid } from "liquidjs";
-import { fileRoutes } from "./routes/files";
-import { graphRoutes } from "./routes/graph";
-import { noteRoutes } from "./routes/notes";
-import { pageRoutes } from "./routes/pages";
-import { searchRoutes } from "./routes/search";
-import { tagRoutes } from "./routes/tags";
-import { uploadRoutes } from "./routes/upload";
+import { fileRoutes } from "./presentation/routes/files";
+import { graphRoutes } from "./presentation/routes/graph";
+import { noteRoutes } from "./presentation/routes/notes";
+import { pageRoutes } from "./presentation/routes/pages";
+import { searchRoutes } from "./presentation/routes/search";
+import { tagRoutes } from "./presentation/routes/tags";
+import { uploadRoutes } from "./presentation/routes/upload";
 
 // LiquidJS エンジン初期化
-const viewsDir = join(import.meta.dir, "views");
+const viewsDir = join(import.meta.dir, "presentation/views");
 const engine = new Liquid({
   root: viewsDir,
   layouts: join(viewsDir, "layouts"),
