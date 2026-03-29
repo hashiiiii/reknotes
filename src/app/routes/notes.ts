@@ -1,9 +1,19 @@
 import { Hono } from "hono";
+import markdownToHtml from "zenn-markdown-html";
 import type { AppEnv } from "..";
 import { engine } from "..";
 import * as noteService from "../services/note-service";
 
 const noteRoutes = new Hono<AppEnv>();
+
+// マークダウンプレビュー
+noteRoutes.post("/preview", async (c) => {
+  const form = await c.req.parseBody();
+  const body = String(form.body ?? "");
+  if (!body.trim()) return c.html('<p style="color:var(--muted)">本文を入力してください</p>');
+  const html = markdownToHtml(body);
+  return c.html(`<div class="znc">${html}</div>`);
+});
 
 // ノート作成
 noteRoutes.post("/", async (c) => {

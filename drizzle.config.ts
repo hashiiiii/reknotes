@@ -4,6 +4,6 @@ export default defineConfig({
   dialect: "sqlite",
   schema: "./src/app/db/schema.ts",
   dbCredentials: {
-    url: process.env.DB_PATH ?? "data/reknotes.sqlite",
+    url: process.env.DB_PATH as string,
   },
 });

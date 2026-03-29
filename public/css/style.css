@@ -22,6 +22,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 }
 .nav-search-input:focus { outline: none; border-color: var(--accent); }
 .nav-search-input::placeholder { color: var(--muted); }
+.nav-search-input:disabled { opacity: 0.4; cursor: not-allowed; }
 .nav-links { display: flex; gap: 1rem; flex-shrink: 0; }
 .nav-links a { text-decoration: none; color: var(--text-secondary); font-size: 0.9rem; }
 .nav-links a:hover { color: var(--fg); }
@@ -55,6 +56,11 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 }
 .compose-body:focus { outline: none; }
 .compose-body::placeholder { color: var(--muted); }
+.compose-preview {
+  display: none;
+  min-height: 80px; max-height: 400px; overflow-y: auto;
+  font-size: 0.95rem; line-height: 1.8; color: var(--fg);
+}
 .compose-actions { display: flex; gap: 0.5rem; justify-content: flex-end; padding-top: 0.25rem; }
 
 /* Buttons - Switch-inspired compact pill style */

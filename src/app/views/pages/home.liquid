@@ -7,8 +7,10 @@
     </div>
     <div class="compose-expanded" id="compose-body" hidden>
       <input type="text" name="title" placeholder="タイトル" required class="compose-title">
-      <textarea name="body" placeholder="ノートを書く..." rows="4" required class="compose-body"></textarea>
+      <textarea name="body" placeholder="ノートを書く..." rows="4" required class="compose-body" id="compose-textarea"></textarea>
+      <div class="compose-preview" id="compose-preview"></div>
       <div class="compose-actions">
+        <button type="button" class="btn" id="preview-btn" onclick="togglePreview()">プレビュー</button>
         <button type="submit" class="btn btn-primary">投稿</button>
         <button type="button" class="btn" onclick="collapseCompose(this.closest('form'))">閉じる</button>
       </div>
@@ -37,6 +39,37 @@
     form.reset();
     document.getElementById('compose-trigger').hidden = false;
     document.getElementById('compose-body').hidden = true;
+    // プレビューをリセット
+    document.getElementById('compose-preview').style.display = 'none';
+    document.getElementById('compose-textarea').style.display = '';
+    document.getElementById('preview-btn').textContent = 'プレビュー';
+  }
+
+  function togglePreview() {
+    var textarea = document.getElementById('compose-textarea');
+    var preview = document.getElementById('compose-preview');
+    var btn = document.getElementById('preview-btn');
+    var showing = preview.style.display === 'block';
+    if (!showing) {
+      // プレビュー表示
+      var body = textarea.value;
+      if (!body.trim()) return;
+      var fd = new FormData();
+      fd.append('body', body);
+      fetch('/api/notes/preview', { method: 'POST', body: fd })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+          preview.innerHTML = html;
+          textarea.style.display = 'none';
+          preview.style.display = 'block';
+          btn.textContent = '編集に戻る';
+        });
+    } else {
+      // 編集に戻る
+      preview.style.display = 'none';
+      textarea.style.display = '';
+      btn.textContent = 'プレビュー';
+    }
   }
 </script>
 
