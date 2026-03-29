@@ -1,7 +1,5 @@
 .env
-.env.development
-.env.production
-.env.test
+*.sql
 .vscode/
 .idea/
 .playwright-mcp/
