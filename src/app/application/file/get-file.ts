@@ -1,5 +1,5 @@
-import type { IStorageService } from "../../domain/storage/storage-service";
+import type { IStorageProvider } from "../port/storage-provider";
 
-export async function getFile(storageService: IStorageService, key: string) {
-  return storageService.get(key);
+export async function getFile(storageProvider: IStorageProvider, key: string) {
+  return storageProvider.get(key);
 }

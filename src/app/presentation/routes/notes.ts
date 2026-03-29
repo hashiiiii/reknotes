@@ -8,7 +8,7 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
-import { embeddingService, noteRepository, tagRepository } from "../../infrastructure/container";
+import { embeddingProvider, noteRepository, tagRepository } from "../../infrastructure/container";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -29,7 +29,7 @@ noteRoutes.post("/", async (c) => {
 
   if (!body.trim()) return c.text("本文を入力してください", 400);
 
-  const { note, tags } = await createNoteWithTags(noteRepository, tagRepository, embeddingService, title, body);
+  const { note, tags } = await createNoteWithTags(noteRepository, tagRepository, embeddingProvider, title, body);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
   });
@@ -71,7 +71,7 @@ noteRoutes.put("/:id", async (c) => {
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
 
-  const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingService, id, title, body);
+  const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingProvider, id, title, body);
   if (!note) return c.notFound();
 
   return c.redirect(`/notes/${id}`, 303);

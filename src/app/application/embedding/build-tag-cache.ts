@@ -1,7 +1,7 @@
-import type { IEmbeddingService } from "../../domain/embedding/embedding-service";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
+import type { IEmbeddingProvider } from "../port/embedding-provider";
 
-export async function buildTagCache(embeddingService: IEmbeddingService, tagRepo: ITagRepository): Promise<void> {
+export async function buildTagCache(embeddingProvider: IEmbeddingProvider, tagRepo: ITagRepository): Promise<void> {
   const tags = await tagRepo.findAllNames();
-  await embeddingService.buildTagCache(tags.map((t) => t.name));
+  await embeddingProvider.buildTagCache(tags.map((t) => t.name));
 }

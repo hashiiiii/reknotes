@@ -1,9 +1,9 @@
 import type { FeatureExtractionPipeline } from "@huggingface/transformers";
-import type { IEmbeddingService } from "../../domain/embedding/embedding-service";
+import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
 
 const MODEL_NAME = "Xenova/multilingual-e5-small";
 
-export class HuggingFaceEmbeddingService implements IEmbeddingService {
+export class HuggingFaceEmbeddingProvider implements IEmbeddingProvider {
   private extractor: FeatureExtractionPipeline | null = null;
   private loading: Promise<FeatureExtractionPipeline> | null = null;
   private tagCache = new Map<string, Float32Array>();

@@ -1,7 +1,7 @@
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import type { IStorageService } from "../../domain/storage/storage-service";
+import type { IStorageProvider } from "../../application/port/storage-provider";
 
-export class S3StorageService implements IStorageService {
+export class S3StorageProvider implements IStorageProvider {
   private s3: S3Client;
   private bucket: string;
 

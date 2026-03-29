@@ -1,4 +1,4 @@
-import type { IStorageService } from "../../domain/storage/storage-service";
+import type { IStorageProvider } from "../port/storage-provider";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -18,7 +18,7 @@ export interface UploadResult {
 }
 
 export async function uploadFile(
-  storageService: IStorageService,
+  storageProvider: IStorageProvider,
   file: File,
 ): Promise<{ ok: true; result: UploadResult } | { ok: false; error: string; status: 400 }> {
   if (!ALLOWED_TYPES.includes(file.type)) {
@@ -32,7 +32,7 @@ export async function uploadFile(
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const buffer = new Uint8Array(await file.arrayBuffer());
-  await storageService.upload(filename, buffer, file.type);
+  await storageProvider.upload(filename, buffer, file.type);
 
   const url = `/api/files/${filename}`;
   const isVideo = file.type.startsWith("video/");

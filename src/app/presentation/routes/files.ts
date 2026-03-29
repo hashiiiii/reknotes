@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../..";
 import { getFile } from "../../application/file/get-file";
-import { storageService } from "../../infrastructure/container";
+import { storageProvider } from "../../infrastructure/container";
 
 const fileRoutes = new Hono<AppEnv>();
 
 fileRoutes.get("/:key", async (c) => {
   const key = c.req.param("key");
-  const file = await getFile(storageService, key);
+  const file = await getFile(storageProvider, key);
 
   if (!file) return c.notFound();
 
