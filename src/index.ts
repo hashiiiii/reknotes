@@ -1,11 +1,13 @@
 import { app } from "./app";
 import { buildTagCache } from "./app/application/embedding/build-tag-cache";
 import { rebuildAllTags } from "./app/application/embedding/rebuild-all-tags";
-import { embeddingProvider, noteRepository, tagRepository } from "./app/infrastructure/container";
+import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "./app/infrastructure/container";
 
 const port = Number(process.env.PORT);
 
 console.log(`reknotes running at http://localhost:${port}`);
+
+storageProvider.ensureBucket().catch((err) => console.error("Storage init error:", err));
 
 // Embedding モデルをバックグラウンドでロード＆初期化
 embeddingProvider
