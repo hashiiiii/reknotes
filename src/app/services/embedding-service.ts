@@ -62,7 +62,7 @@ export async function suggestTags(title: string, body: string): Promise<string[]
   const noteEmbedding = await embedPassage(text);
 
   // 全既存タグを取得（note_tags の有無に関係なく）
-  const tags = tagRepo.findAllNames();
+  const tags = await tagRepo.findAllNames();
 
   if (tags.length === 0) return [];
 
@@ -109,7 +109,7 @@ function extractKeywordsFromTitle(title: string): string[] {
 
 // 起動時にタグ embedding キャッシュを構築
 export async function buildTagCache(): Promise<void> {
-  const tags = tagRepo.findAllNames();
+  const tags = await tagRepo.findAllNames();
   for (const tag of tags) {
     await embedTag(tag.name);
   }
@@ -126,13 +126,13 @@ export async function rebuildAllTags(): Promise<void> {
   const tagService = await import("./tag-service");
 
   // 全 note_tags をクリア
-  tagRepo.deleteAllNoteTagLinks();
+  await tagRepo.deleteAllNoteTagLinks();
 
-  const allNotes = noteRepo.findAll();
+  const allNotes = await noteRepo.findAll();
 
   for (const note of allNotes) {
     const tags = await suggestTags(note.title, note.body);
-    if (tags.length > 0) tagService.addTagsToNote(note.id, tags);
+    if (tags.length > 0) await tagService.addTagsToNote(note.id, tags);
   }
 
   // キャッシュを再構築

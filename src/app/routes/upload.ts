@@ -1,14 +1,17 @@
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Hono } from "hono";
 import type { AppEnv } from "..";
 
 const uploadRoutes = new Hono<AppEnv>();
 
-const UPLOAD_DIR = join(process.cwd(), "public", "uploads");
-
-// アップロードディレクトリを初期化
-await mkdir(UPLOAD_DIR, { recursive: true });
+const s3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
+  },
+});
 
 uploadRoutes.post("/", async (c) => {
   const body = await c.req.parseBody();
@@ -45,15 +48,19 @@ uploadRoutes.post("/", async (c) => {
   const random = Math.random().toString(36).slice(2, 8);
   const filename = `${timestamp}-${random}.${ext}`;
 
-  // ファイルを保存
-  const filepath = join(UPLOAD_DIR, filename);
+  // R2 にアップロード
   const buffer = await file.arrayBuffer();
-  await Bun.write(filepath, buffer);
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: filename,
+      Body: new Uint8Array(buffer),
+      ContentType: file.type,
+    }),
+  );
 
-  const url = `/static/uploads/${filename}`;
+  const url = `/api/files/${filename}`;
   const isVideo = file.type.startsWith("video/");
-
-  // Markdown 記法を返す
   const markdown = isVideo ? `<video src="${url}" controls></video>` : `![${file.name}](${url})`;
 
   return c.json({ url, markdown, filename });

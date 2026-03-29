@@ -10,12 +10,12 @@ export interface SearchResult {
   highlightedBody: string;
 }
 
-export function search(query: string): SearchResult[] {
+export async function search(query: string): Promise<SearchResult[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
   const pattern = `%${trimmed}%`;
-  const rows = noteRepo.search(pattern);
+  const rows = await noteRepo.search(pattern);
 
   return rows.map((r) => ({
     ...r,

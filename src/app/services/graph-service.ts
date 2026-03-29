@@ -1,10 +1,10 @@
 import * as graphRepo from "../repositories/graph-repository";
 import type { GraphData, GraphLink, GraphNode } from "../types";
 
-export function getFullGraphData(): GraphData {
-  const noteRows = graphRepo.findAllNoteNodes();
-  const tagRows = graphRepo.findAllTagNodes();
-  const linkRows = graphRepo.findAllLinks();
+export async function getFullGraphData(): Promise<GraphData> {
+  const noteRows = await graphRepo.findAllNoteNodes();
+  const tagRows = await graphRepo.findAllTagNodes();
+  const linkRows = await graphRepo.findAllLinks();
 
   const nodes: GraphNode[] = [
     ...noteRows.map((n) => ({
@@ -32,10 +32,10 @@ export function getFullGraphData(): GraphData {
   return { nodes, links };
 }
 
-export function getNoteSubgraph(noteId: number): GraphData {
-  const relatedNotes = graphRepo.findRelatedNotes(noteId);
-  const relatedTags = graphRepo.findRelatedTags(noteId);
-  const linkRows = graphRepo.findRelatedLinks(noteId);
+export async function getNoteSubgraph(noteId: number): Promise<GraphData> {
+  const relatedNotes = await graphRepo.findRelatedNotes(noteId);
+  const relatedTags = await graphRepo.findRelatedTags(noteId);
+  const linkRows = await graphRepo.findRelatedLinks(noteId);
 
   const relatedNoteIds = new Set(relatedNotes.map((n) => n.id));
 

@@ -12,7 +12,7 @@ searchRoutes.get("/", async (c) => {
   // クエリが空 → ノート一覧 API にリダイレクト
   if (!query.trim()) return c.redirect("/api/notes", 303);
 
-  const results = search(query);
+  const results = await search(query);
   const html = await engine.renderFile("partials/search-results", {
     results,
     query,

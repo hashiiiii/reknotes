@@ -6,15 +6,15 @@ import * as tagService from "../services/tag-service";
 const tagRoutes = new Hono<AppEnv>();
 
 // 全タグ取得（JSON）
-tagRoutes.get("/", (c) => {
-  const tags = tagService.getAllTags();
+tagRoutes.get("/", async (c) => {
+  const tags = await tagService.getAllTags();
   return c.json(tags);
 });
 
 // タグ削除（CASCADE で note_tags も自動削除）
-tagRoutes.delete("/:id", (c) => {
+tagRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  tagRepo.removeById(id);
+  await tagRepo.removeById(id);
   return c.text("OK");
 });
 

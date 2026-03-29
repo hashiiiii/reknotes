@@ -33,7 +33,7 @@ noteRoutes.post("/", async (c) => {
 // ノート一覧（無限スクロール用）
 noteRoutes.get("/", async (c) => {
   const cursor = c.req.query("cursor") ? Number(c.req.query("cursor")) : undefined;
-  const { notes, hasMore, nextCursor } = noteService.listNotesWithTags(cursor);
+  const { notes, hasMore, nextCursor } = await noteService.listNotesWithTags(cursor);
 
   let html = "";
   for (const note of notes) {
@@ -48,10 +48,10 @@ noteRoutes.get("/", async (c) => {
 // ノートカード単体の再描画（AI処理後のUI更新用）
 noteRoutes.get("/:id/card", async (c) => {
   const id = Number(c.req.param("id"));
-  const note = noteService.getNote(id);
+  const note = await noteService.getNote(id);
   if (!note) return c.notFound();
 
-  const tags = noteService.getNoteTags(id);
+  const tags = await noteService.getNoteTags(id);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
   });
@@ -72,9 +72,9 @@ noteRoutes.put("/:id", async (c) => {
 });
 
 // ノート削除
-noteRoutes.delete("/:id", (c) => {
+noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  noteService.deleteNote(id);
+  await noteService.deleteNote(id);
 
   // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {

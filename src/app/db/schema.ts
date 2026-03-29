@@ -1,27 +1,27 @@
-import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { bigint, index, integer, pgTable, primaryKey, serial, text } from "drizzle-orm/pg-core";
 
-export const notes = sqliteTable(
+export const notes = pgTable(
   "notes",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: serial("id").primaryKey(),
     title: text("title").notNull().default(""),
     body: text("body").notNull(),
-    createdAt: integer("created_at", { mode: "number" })
+    createdAt: bigint("created_at", { mode: "number" })
       .notNull()
       .$defaultFn(() => Date.now()),
-    updatedAt: integer("updated_at", { mode: "number" })
+    updatedAt: bigint("updated_at", { mode: "number" })
       .notNull()
       .$defaultFn(() => Date.now()),
   },
   (table) => [index("idx_notes_created_at").on(table.createdAt)],
 );
 
-export const tags = sqliteTable("tags", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
 });
 
-export const noteTags = sqliteTable(
+export const noteTags = pgTable(
   "note_tags",
   {
     noteId: integer("note_id")

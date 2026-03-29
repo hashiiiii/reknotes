@@ -2,6 +2,7 @@ import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { Liquid } from "liquidjs";
+import { fileRoutes } from "./routes/files";
 import { graphRoutes } from "./routes/graph";
 import { noteRoutes } from "./routes/notes";
 import { pageRoutes } from "./routes/pages";
@@ -59,5 +60,6 @@ app.route("/api/search", searchRoutes);
 app.route("/api/graph", graphRoutes);
 app.route("/api/tags", tagRoutes);
 app.route("/api/upload", uploadRoutes);
+app.route("/api/files", fileRoutes);
 
 export { app };

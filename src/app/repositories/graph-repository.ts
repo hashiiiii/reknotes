@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
-export function findAllNoteNodes() {
+export async function findAllNoteNodes() {
   return db
     .select({
       id: notes.id,
@@ -11,11 +11,10 @@ export function findAllNoteNodes() {
       snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
       linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
     })
-    .from(notes)
-    .all();
+    .from(notes);
 }
 
-export function findAllTagNodes() {
+export async function findAllTagNodes() {
   return db
     .select({
       id: tags.id,
@@ -24,15 +23,14 @@ export function findAllTagNodes() {
     })
     .from(tags)
     .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
-    .groupBy(tags.id)
-    .all();
+    .groupBy(tags.id);
 }
 
-export function findAllLinks() {
-  return db.select().from(noteTags).all();
+export async function findAllLinks() {
+  return db.select().from(noteTags);
 }
 
-export function findRelatedNotes(noteId: number) {
+export async function findRelatedNotes(noteId: number) {
   return db
     .select({
       id: notes.id,
@@ -44,11 +42,10 @@ export function findRelatedNotes(noteId: number) {
     .from(notes)
     .innerJoin(noteTags, eq(notes.id, noteTags.noteId))
     .where(sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`)
-    .groupBy(notes.id)
-    .all();
+    .groupBy(notes.id);
 }
 
-export function findRelatedTags(noteId: number) {
+export async function findRelatedTags(noteId: number) {
   return db
     .select({
       id: tags.id,
@@ -58,14 +55,12 @@ export function findRelatedTags(noteId: number) {
     .from(tags)
     .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
     .where(sql`${tags.id} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`)
-    .groupBy(tags.id)
-    .all();
+    .groupBy(tags.id);
 }
 
-export function findRelatedLinks(noteId: number) {
+export async function findRelatedLinks(noteId: number) {
   return db
     .select()
     .from(noteTags)
-    .where(sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`)
-    .all();
+    .where(sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`);
 }

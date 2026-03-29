@@ -1,12 +1,8 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
-const sqlite = new Database(process.env.DB_PATH);
+if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not set");
+const client = postgres(process.env.DATABASE_URL);
 
-sqlite.run("PRAGMA journal_mode = WAL");
-sqlite.run("PRAGMA synchronous = NORMAL");
-sqlite.run("PRAGMA cache_size = -64000"); // 64MB
-sqlite.run("PRAGMA foreign_keys = ON");
-
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(client, { schema });

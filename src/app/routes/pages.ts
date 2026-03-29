@@ -9,7 +9,7 @@ const pageRoutes = new Hono<AppEnv>();
 
 // ホーム
 pageRoutes.get("/", async (c) => {
-  const { notes, hasMore, nextCursor } = noteService.listNotesWithTags();
+  const { notes, hasMore, nextCursor } = await noteService.listNotesWithTags();
   const html = await c.var.render("home", {
     title: "Home",
     notes,
@@ -22,12 +22,12 @@ pageRoutes.get("/", async (c) => {
 // ノート詳細
 pageRoutes.get("/notes/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  const note = noteService.getNote(id);
+  const note = await noteService.getNote(id);
   if (!note) return c.notFound();
 
   const bodyHtml = markdownToHtml(note.body);
-  const tags = noteService.getNoteTags(id);
-  const subgraph = graphService.getNoteSubgraph(id);
+  const tags = await noteService.getNoteTags(id);
+  const subgraph = await graphService.getNoteSubgraph(id);
   const graphData = subgraph.nodes.length > 1 ? JSON.stringify(subgraph) : null;
 
   const html = await c.var.render("note", {
@@ -43,7 +43,7 @@ pageRoutes.get("/notes/:id", async (c) => {
 // 検索ページ
 pageRoutes.get("/search", async (c) => {
   const query = c.req.query("q") ?? "";
-  const results = query ? search(query) : [];
+  const results = query ? await search(query) : [];
   const html = await c.var.render("search", { title: "検索", query, results });
   return c.html(html);
 });

@@ -2,26 +2,27 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { noteTags, tags } from "../db/schema";
 
-export function findOrCreate(name: string) {
-  db.insert(tags).values({ name }).onConflictDoNothing().run();
-  const tag = db.select().from(tags).where(eq(tags.name, name)).get();
+export async function findOrCreate(name: string) {
+  await db.insert(tags).values({ name }).onConflictDoNothing();
+  const [tag] = await db.select().from(tags).where(eq(tags.name, name)).limit(1);
   if (!tag) throw new Error(`Failed to create tag: ${name}`);
   return tag;
 }
 
-export function findByName(name: string) {
-  return db.select().from(tags).where(eq(tags.name, name)).get() ?? null;
+export async function findByName(name: string) {
+  const [tag] = await db.select().from(tags).where(eq(tags.name, name)).limit(1);
+  return tag ?? null;
 }
 
-export function linkToNote(noteId: number, tagId: number) {
-  db.insert(noteTags).values({ noteId, tagId }).onConflictDoNothing().run();
+export async function linkToNote(noteId: number, tagId: number) {
+  await db.insert(noteTags).values({ noteId, tagId }).onConflictDoNothing();
 }
 
-export function clearByNoteId(noteId: number) {
-  db.delete(noteTags).where(eq(noteTags.noteId, noteId)).run();
+export async function clearByNoteId(noteId: number) {
+  await db.delete(noteTags).where(eq(noteTags.noteId, noteId));
 }
 
-export function findAllWithCount() {
+export async function findAllWithCount() {
   return db
     .select({
       id: tags.id,
@@ -31,26 +32,24 @@ export function findAllWithCount() {
     .from(tags)
     .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
     .groupBy(tags.id)
-    .orderBy(sql`COUNT(${noteTags.noteId}) DESC`)
-    .all();
+    .orderBy(sql`COUNT(${noteTags.noteId}) DESC`);
 }
 
-export function findAllNames() {
-  return db.select({ id: tags.id, name: tags.name }).from(tags).orderBy(tags.name).all();
+export async function findAllNames() {
+  return db.select({ id: tags.id, name: tags.name }).from(tags).orderBy(tags.name);
 }
 
-export function deleteAllNoteTagLinks() {
-  db.delete(noteTags).run();
+export async function deleteAllNoteTagLinks() {
+  await db.delete(noteTags);
 }
 
-export function removeById(id: number) {
-  db.delete(tags).where(eq(tags.id, id)).run();
+export async function removeById(id: number) {
+  await db.delete(tags).where(eq(tags.id, id));
 }
 
-export function removeOrphanTag(tagId: number) {
-  // このタグが他のノートで使われていなければ削除
-  const exists = db.select().from(noteTags).where(eq(noteTags.tagId, tagId)).get();
+export async function removeOrphanTag(tagId: number) {
+  const [exists] = await db.select().from(noteTags).where(eq(noteTags.tagId, tagId)).limit(1);
   if (!exists) {
-    db.delete(tags).where(eq(tags.id, tagId)).run();
+    await db.delete(tags).where(eq(tags.id, tagId));
   }
 }
