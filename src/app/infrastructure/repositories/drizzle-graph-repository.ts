@@ -1,12 +1,14 @@
 import { eq, sql } from "drizzle-orm";
 import type { NoteNode, NoteTagLink, TagNode } from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
-import { db } from "../db";
+import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
 export class DrizzleGraphRepository implements IGraphRepository {
+  constructor(private db: DrizzleDb) {}
+
   async findAllNoteNodes(): Promise<NoteNode[]> {
-    return db
+    return this.db
       .select({
         id: notes.id,
         title: notes.title,
@@ -18,7 +20,7 @@ export class DrizzleGraphRepository implements IGraphRepository {
   }
 
   async findAllTagNodes(): Promise<TagNode[]> {
-    return db
+    return this.db
       .select({
         id: tags.id,
         name: tags.name,
@@ -30,11 +32,11 @@ export class DrizzleGraphRepository implements IGraphRepository {
   }
 
   async findAllLinks(): Promise<NoteTagLink[]> {
-    return db.select().from(noteTags);
+    return this.db.select().from(noteTags);
   }
 
   async findRelatedNotes(noteId: number): Promise<NoteNode[]> {
-    return db
+    return this.db
       .select({
         id: notes.id,
         title: notes.title,
@@ -49,7 +51,7 @@ export class DrizzleGraphRepository implements IGraphRepository {
   }
 
   async findRelatedTags(noteId: number): Promise<TagNode[]> {
-    return db
+    return this.db
       .select({
         id: tags.id,
         name: tags.name,
@@ -62,7 +64,7 @@ export class DrizzleGraphRepository implements IGraphRepository {
   }
 
   async findRelatedLinks(noteId: number): Promise<NoteTagLink[]> {
-    return db
+    return this.db
       .select()
       .from(noteTags)
       .where(sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`);

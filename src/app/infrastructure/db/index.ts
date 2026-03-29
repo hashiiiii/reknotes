@@ -13,3 +13,4 @@ function getDatabaseUrl(): string {
 
 const client = postgres(getDatabaseUrl());
 export const db = drizzle(client, { schema });
+export type DrizzleDb = typeof db;

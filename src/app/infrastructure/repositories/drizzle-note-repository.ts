@@ -1,24 +1,26 @@
 import { desc, eq, ilike, lt, or, sql } from "drizzle-orm";
 import type { Note, NoteWithSnippet } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
-import { db } from "../db";
+import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
 const PAGE_SIZE = 20;
 
 export class DrizzleNoteRepository implements INoteRepository {
+  constructor(private db: DrizzleDb) {}
+
   async create(title: string, body: string): Promise<Note> {
-    const [note] = await db.insert(notes).values({ title, body }).returning();
+    const [note] = await this.db.insert(notes).values({ title, body }).returning();
     return note;
   }
 
   async findById(id: number): Promise<Note | null> {
-    const [note] = await db.select().from(notes).where(eq(notes.id, id)).limit(1);
+    const [note] = await this.db.select().from(notes).where(eq(notes.id, id)).limit(1);
     return note ?? null;
   }
 
   async update(id: number, title: string, body: string): Promise<Note | null> {
-    const [note] = await db
+    const [note] = await this.db
       .update(notes)
       .set({ title, body, updatedAt: Date.now() })
       .where(eq(notes.id, id))
@@ -27,19 +29,19 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async remove(id: number): Promise<boolean> {
-    const [result] = await db.delete(notes).where(eq(notes.id, id)).returning();
+    const [result] = await this.db.delete(notes).where(eq(notes.id, id)).returning();
     return result != null;
   }
 
   async list(cursor?: number): Promise<{ notes: Note[]; hasMore: boolean; nextCursor?: number }> {
     const query = cursor
-      ? db
+      ? this.db
           .select()
           .from(notes)
           .where(lt(notes.id, cursor))
           .orderBy(desc(notes.id))
           .limit(PAGE_SIZE + 1)
-      : db
+      : this.db
           .select()
           .from(notes)
           .orderBy(desc(notes.id))
@@ -57,7 +59,7 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async findTagsByNoteId(noteId: number): Promise<string[]> {
-    const rows = await db
+    const rows = await this.db
       .select({ name: tags.name })
       .from(tags)
       .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
@@ -66,7 +68,7 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async findAllWithSnippet(): Promise<NoteWithSnippet[]> {
-    return db
+    return this.db
       .select({
         id: notes.id,
         title: notes.title,
@@ -78,7 +80,7 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async search(pattern: string): Promise<Note[]> {
-    return db
+    return this.db
       .select()
       .from(notes)
       .where(or(ilike(notes.title, pattern), ilike(notes.body, pattern)))
@@ -87,6 +89,6 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async findAll(): Promise<Pick<Note, "id" | "title" | "body">[]> {
-    return db.select({ id: notes.id, title: notes.title, body: notes.body }).from(notes).orderBy(notes.id);
+    return this.db.select({ id: notes.id, title: notes.title, body: notes.body }).from(notes).orderBy(notes.id);
   }
 }
