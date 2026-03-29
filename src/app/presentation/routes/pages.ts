@@ -31,7 +31,7 @@ pageRoutes.get("/notes/:id", async (c) => {
   const bodyHtml = markdownToHtml(note.body);
   const tags = await getNoteTags(noteRepository, id);
   const subgraph = await getNoteSubgraph(graphRepository, id);
-  const graphData = subgraph.nodes.length > 1 ? JSON.stringify(subgraph) : null;
+  const graphData = subgraph.nodes.length > 0 ? JSON.stringify(subgraph) : null;
 
   const html = await c.var.render("note", {
     title: note.title || "無題",

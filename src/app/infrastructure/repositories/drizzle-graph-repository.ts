@@ -35,6 +35,21 @@ export class DrizzleGraphRepository implements IGraphRepository {
     return this.db.select().from(noteTags);
   }
 
+  async findNoteNodeById(noteId: number): Promise<NoteNode | null> {
+    const [row] = await this.db
+      .select({
+        id: notes.id,
+        title: notes.title,
+        createdAt: notes.createdAt,
+        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
+        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
+      })
+      .from(notes)
+      .where(eq(notes.id, noteId))
+      .limit(1);
+    return row ?? null;
+  }
+
   async findRelatedNotes(noteId: number): Promise<NoteNode[]> {
     return this.db
       .select({

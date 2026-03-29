@@ -2,14 +2,21 @@ import type { GraphData, GraphLink, GraphNode } from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 
 export async function getNoteSubgraph(graphRepo: IGraphRepository, noteId: number): Promise<GraphData> {
-  const relatedNotes = await graphRepo.findRelatedNotes(noteId);
-  const relatedTags = await graphRepo.findRelatedTags(noteId);
-  const linkRows = await graphRepo.findRelatedLinks(noteId);
+  const [selfNote, relatedNotes, relatedTags, linkRows] = await Promise.all([
+    graphRepo.findNoteNodeById(noteId),
+    graphRepo.findRelatedNotes(noteId),
+    graphRepo.findRelatedTags(noteId),
+    graphRepo.findRelatedLinks(noteId),
+  ]);
 
-  const relatedNoteIds = new Set(relatedNotes.map((n) => n.id));
+  const allNotes = selfNote
+    ? [selfNote, ...relatedNotes.filter((n) => n.id !== noteId)]
+    : relatedNotes;
+
+  const allNoteIds = new Set(allNotes.map((n) => n.id));
 
   const nodes: GraphNode[] = [
-    ...relatedNotes.map((n) => ({
+    ...allNotes.map((n) => ({
       id: `note-${n.id}`,
       label: n.title || "無題",
       type: "note" as const,
@@ -26,7 +33,7 @@ export async function getNoteSubgraph(graphRepo: IGraphRepository, noteId: numbe
   ];
 
   const links: GraphLink[] = linkRows
-    .filter((l) => relatedNoteIds.has(l.noteId))
+    .filter((l) => allNoteIds.has(l.noteId))
     .map((l) => ({
       source: `note-${l.noteId}`,
       target: `tag-${l.tagId}`,
