@@ -4,13 +4,16 @@ import type { AppEnv } from "..";
 
 const uploadRoutes = new Hono<AppEnv>();
 
+if (!process.env.R2_ENDPOINT) throw new Error("R2_ENDPOINT is not set");
+
 const s3 = new S3Client({
   region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: process.env.R2_ENDPOINT,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
   },
+  forcePathStyle: true,
 });
 
 uploadRoutes.post("/", async (c) => {
@@ -48,7 +51,6 @@ uploadRoutes.post("/", async (c) => {
   const random = Math.random().toString(36).slice(2, 8);
   const filename = `${timestamp}-${random}.${ext}`;
 
-  // R2 にアップロード
   const buffer = await file.arrayBuffer();
   await s3.send(
     new PutObjectCommand({

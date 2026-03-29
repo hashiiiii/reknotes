@@ -4,15 +4,12 @@
   "description": "Personal knowledge management with auto-organization and fast search",
   "type": "module",
   "scripts": {
-    "setup": "bun install && bun run lib/setup.ts && bun run migrate:development && bun run migrate:test",
-    "development": "bun --env-file .env.development run --watch src/index.ts",
-    "production": "bun --env-file .env.production run src/index.ts",
-    "migrate:development": "bun --env-file .env.development run lib/migrate.ts",
-    "migrate:production": "bun --env-file .env.production run lib/migrate.ts",
-    "migrate:test": "bun --env-file .env.test run lib/migrate.ts",
-    "seed": "bun --env-file .env.development run lib/seed.ts",
+    "setup": "bun install && bun run lib/setup.ts && NODE_ENV=development bun run migrate && NODE_ENV=test bun run migrate",
+    "dev": "bun run --watch src/index.ts",
+    "migrate": "bun run lib/migrate.ts",
+    "seed": "bun run lib/seed.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
-    "test": "bun test --env-file .env.test"
+    "test": "NODE_ENV=test bun test"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",

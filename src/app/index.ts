@@ -17,7 +17,7 @@ const engine = new Liquid({
   layouts: join(viewsDir, "layouts"),
   partials: join(viewsDir, "partials"),
   extname: ".liquid",
-  cache: process.env.NODE_ENV === "production",
+  cache: true,
 });
 
 // カスタムフィルター: unixtime → 人間が読める日時

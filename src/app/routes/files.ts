@@ -4,13 +4,16 @@ import type { AppEnv } from "..";
 
 const fileRoutes = new Hono<AppEnv>();
 
+if (!process.env.R2_ENDPOINT) throw new Error("R2_ENDPOINT is not set");
+
 const s3 = new S3Client({
   region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: process.env.R2_ENDPOINT,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY ?? "",
   },
+  forcePathStyle: true,
 });
 
 fileRoutes.get("/:key", async (c) => {

@@ -1,8 +1,15 @@
 import postgres from "postgres";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is not set");
+function getDatabaseUrl(): string {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  const env = process.env.NODE_ENV;
+  if (!env) throw new Error("NODE_ENV is not set");
+  const base = process.env.DATABASE_URL_BASE;
+  if (!base) throw new Error("DATABASE_URL_BASE is not set");
+  return `${base}/reknotes_${env}`;
+}
 
+const url = getDatabaseUrl();
 const dbName = new URL(url).pathname.slice(1);
 const adminUrl = url.replace(`/${dbName}`, "/postgres");
 
@@ -18,7 +25,7 @@ try {
 await admin.end();
 
 const proc = Bun.spawnSync(["bunx", "drizzle-kit", "push", "--force"], {
-  env: process.env,
+  env: { ...process.env, DATABASE_URL: url },
   stdio: ["inherit", "inherit", "inherit"],
 });
 
