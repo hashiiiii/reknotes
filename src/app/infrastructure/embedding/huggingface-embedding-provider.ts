@@ -56,4 +56,17 @@ export class HuggingFaceEmbeddingProvider implements IEmbeddingProvider {
   clearTagCache(): void {
     this.tagCache.clear();
   }
+
+  async tokenize(text: string): Promise<string[]> {
+    const ext = await this.getExtractor();
+    const tokenizer = ext.tokenizer;
+    const ids: number[] = tokenizer.encode(text);
+    const vocab: string[] = tokenizer.model.vocab;
+
+    return ids
+      .map((id) => vocab[id])
+      .filter((t) => t && !t.startsWith("<"))
+      .map((t) => t.replace(/^\u2581/, ""))
+      .filter((t) => t.length > 0);
+  }
 }
