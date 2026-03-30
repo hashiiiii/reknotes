@@ -10,6 +10,9 @@
   <link rel="stylesheet" href="/static/css/zenn.css">
   <link rel="stylesheet" href="/static/css/style.css">
   <script src="/static/js/htmx.min.js"></script>
+  <script>
+    (function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
+  </script>
 </head>
 <body>
   <nav class="nav">
@@ -31,6 +34,7 @@
       <div class="nav-links">
         <a href="/" {% if currentPath == "/" %}class="active"{% endif %}>Home</a>
         <a href="/graph" {% if currentPath == "/graph" %}class="active"{% endif %}>Graph</a>
+        <button class="theme-toggle" id="theme-toggle" aria-label="テーマ切替"></button>
       </div>
     </div>
   </nav>
@@ -113,6 +117,50 @@
         })(files[i]);
       }
     });
+  </script>
+  <script>
+    (function(){
+      var root = document.documentElement;
+      var btn = document.getElementById('theme-toggle');
+      var iconDelay = parseInt(getComputedStyle(root).getPropertyValue('--transition-icon-delay')) || 200;
+
+      var svgSun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+      var svgMoon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>';
+      var animating = false;
+
+      function isDark() { return root.getAttribute('data-theme') !== 'light'; }
+
+      function setIcon(svg, animate) {
+        if (!animate) { btn.innerHTML = svg; return; }
+        var old = btn.querySelector('svg');
+        if (old) old.classList.add('icon-exit');
+        setTimeout(function() {
+          btn.innerHTML = svg;
+          var next = btn.querySelector('svg');
+          if (next) next.classList.add('icon-enter');
+          animating = false;
+        }, iconDelay);
+      }
+
+      btn.addEventListener('click', function() {
+        if (animating) return;
+        animating = true;
+        if (isDark()) {
+          root.setAttribute('data-theme', 'light');
+          localStorage.setItem('theme', 'light');
+        } else {
+          root.removeAttribute('data-theme');
+          localStorage.removeItem('theme');
+        }
+        setIcon(isDark() ? svgSun : svgMoon, true);
+        if (window.reknotesCy && typeof GraphCommon !== 'undefined') {
+          window.reknotesCy.style(GraphCommon.getThemedStyles());
+          window.reknotesCy.style().update();
+        }
+      });
+
+      setIcon(isDark() ? svgSun : svgMoon, false);
+    })();
   </script>
 </body>
 </html>

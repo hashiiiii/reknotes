@@ -32,6 +32,7 @@ function initGraph(container, data) {
     maxZoom: 3,
   });
 
+  window.reknotesCy = cy;
   GraphCommon.bindHover(cy, container);
 
   function dismissPanel() {

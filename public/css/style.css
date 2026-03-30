@@ -6,10 +6,22 @@
   --fg: #e7e2d8; --muted: #7e7a71; --text-secondary: #a9a49a; --border: #383633;
   --accent: #6bb873; --accent-hover: #8dd498; --accent-light: rgba(107,184,115,0.1);
   --danger: #e05252; --code-bg: #1e1d1a;
+  --shadow-card: rgba(0,0,0,0.15); --shadow-panel: rgba(0,0,0,0.2); --shadow-hover: rgba(0,0,0,0.3);
   --radius: 14px; --radius-sm: 10px; --radius-pill: 999px; --gap: 1rem;
+  --transition-icon-delay: 200ms;
 }
 
-body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7; }
+[data-theme="light"] {
+  --bg: #f5f0e8; --bg-card: #fffdf8; --bg-secondary: #ede8df;
+  --fg: #2c2825; --muted: #8a8279; --text-secondary: #5e5750; --border: #ddd6ca;
+  --accent: #4e9a58; --accent-hover: #3d8248; --accent-light: rgba(78,154,88,0.08);
+  --danger: #c93c3c; --code-bg: #eae5dc;
+  --shadow-card: rgba(0,0,0,0.06); --shadow-panel: rgba(0,0,0,0.08); --shadow-hover: rgba(0,0,0,0.1);
+}
+
+body {
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7;
+}
 
 /* Nav */
 .nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0.5rem 1rem; position: sticky; top: 0; z-index: 10; }
@@ -23,7 +35,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .nav-search-input:focus { outline: none; border-color: var(--accent); }
 .nav-search-input::placeholder { color: var(--muted); }
 .nav-search-input:disabled { opacity: 0.4; cursor: not-allowed; }
-.nav-links { display: flex; gap: 1rem; flex-shrink: 0; }
+.nav-links { display: flex; gap: 1rem; flex-shrink: 0; align-items: center; }
 .nav-links a { text-decoration: none; color: var(--text-secondary); font-size: 0.9rem; }
 .nav-links a:hover { color: var(--fg); }
 .nav-links a.active { color: var(--accent); font-weight: 600; }
@@ -36,7 +48,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .compose-bar {
   max-width: 600px; margin: 0 auto var(--gap); background: var(--bg-card);
   border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 4px var(--shadow-card);
 }
 .compose-collapsed {
   padding: 0.75rem 1rem; color: var(--muted); cursor: text; font-size: 0.95rem;
@@ -64,8 +76,8 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .compose-actions { display: flex; gap: 0.5rem; justify-content: flex-end; padding-top: 0.25rem; }
 
 /* Buttons - Switch-inspired compact pill style */
-.btn { border: 1px solid var(--border); background: var(--bg-card); border-radius: var(--radius-pill); padding: 0.3rem 0.9rem; cursor: pointer; font-size: 0.82rem; font-family: inherit; color: var(--fg); transition: background 0.15s, border-color 0.15s; }
-.btn:hover { border-color: var(--text-secondary); background: var(--bg-secondary); }
+.btn { border: 1px solid var(--border); background: var(--bg-card); border-radius: var(--radius-pill); padding: 0.3rem 0.9rem; cursor: pointer; font-size: 0.82rem; font-family: inherit; color: var(--fg); }
+.btn:hover { border-color: var(--text-secondary); background: var(--bg-secondary); transition: background 0.15s, border-color 0.15s; }
 .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
@@ -76,11 +88,11 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .note-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.75rem 1rem;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: box-shadow 0.15s;
   /* masonry JS が配置するまで非表示（フラッシュ防止） */
   position: absolute; visibility: hidden;
 }
-.note-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.3); border-color: var(--text-secondary); }
+.note-card:hover { box-shadow: 0 2px 12px var(--shadow-hover); border-color: var(--text-secondary); transition: box-shadow 0.15s, border-color 0.15s; }
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }
 .note-card-kebab { position: relative; opacity: 0; transition: opacity 0.15s; }
@@ -132,7 +144,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .kebab-dropdown {
   display: none; position: absolute; right: 0; top: 100%; margin-top: 4px;
   background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-width: 120px; z-index: 20;
+  box-shadow: 0 4px 16px var(--shadow-hover); min-width: 120px; z-index: 20;
   overflow: hidden;
 }
 .kebab-menu.open .kebab-dropdown { display: block; }
@@ -157,7 +169,7 @@ body { font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: 
 .graph-panel {
   width: 340px; flex-shrink: 0; background: var(--bg-card); border-left: 1px solid var(--border);
   overflow-y: auto; padding: var(--gap); position: relative;
-  box-shadow: -4px 0 16px rgba(0,0,0,0.2);
+  box-shadow: -4px 0 16px var(--shadow-panel);
 }
 .panel-close {
   position: absolute; top: 10px; right: 12px; background: var(--bg-secondary); border: 1px solid var(--border);
@@ -199,3 +211,31 @@ textarea.uploading { opacity: 0.7; }
 
 /* FTS highlight */
 mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; border-radius: 2px; }
+
+/* Theme toggle */
+.theme-toggle {
+  background: none; border: none; cursor: pointer;
+  padding: 0.3rem; line-height: 0; border-radius: var(--radius-pill);
+  color: var(--text-secondary); transition: color 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; position: relative; overflow: hidden;
+}
+.theme-toggle:hover { color: var(--fg); }
+.theme-toggle svg {
+  width: 18px; height: 18px; flex-shrink: 0;
+  position: absolute;
+}
+.theme-toggle .icon-enter {
+  animation: theme-rise 0.5s ease forwards;
+}
+.theme-toggle .icon-exit {
+  animation: theme-set 0.5s ease forwards;
+}
+@keyframes theme-rise {
+  0%   { transform: translateX(-14px) translateY(6px); opacity: 0; }
+  100% { transform: translateX(0) translateY(0); opacity: 1; }
+}
+@keyframes theme-set {
+  0%   { transform: translateX(0) translateY(0); opacity: 1; }
+  100% { transform: translateX(14px) translateY(6px); opacity: 0; }
+}
