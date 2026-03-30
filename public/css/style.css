@@ -19,6 +19,7 @@
   --shadow-card: rgba(0,0,0,0.06); --shadow-panel: rgba(0,0,0,0.08); --shadow-hover: rgba(0,0,0,0.1);
 }
 
+html { scrollbar-gutter: stable; }
 body {
   font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7;
 }

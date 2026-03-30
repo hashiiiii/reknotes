@@ -14,8 +14,8 @@ var GraphCommon = (function () {
     var bg = cv('--bg') || '#191816';
     var muted = cv('--muted') || '#7e7a71';
     var textSec = cv('--text-secondary') || '#a9a49a';
-    var tagBg = cv('--text-secondary') || '#c8c2b4';
-    var tagBorder = cv('--text-secondary') || '#a9a49a';
+    var tagBg = cv('--muted') || '#c8c2b4';
+    var tagBorder = cv('--muted') || '#a9a49a';
 
     return [
       // ノート ノード（小さめ・ラベル常時表示）
