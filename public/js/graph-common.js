@@ -84,16 +84,16 @@ var GraphCommon = (function () {
     },
     {
       selector: "edge.faded",
-      style: { opacity: 0.03 },
+      style: { opacity: 0.08 },
     },
     // エッジ
     {
       selector: 'edge[type="tag"]',
       style: {
-        "line-color": "#5c5850",
-        width: 0.6,
+        "line-color": "#8a8478",
+        width: 1.0,
         "curve-style": "bezier",
-        opacity: 0.15,
+        opacity: 0.45,
       },
     },
     {
