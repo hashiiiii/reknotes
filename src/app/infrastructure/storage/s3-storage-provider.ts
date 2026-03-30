@@ -1,5 +1,6 @@
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
   PutObjectCommand,
@@ -40,6 +41,15 @@ export class S3StorageProvider implements IStorageProvider {
         Key: key,
         Body: buffer,
         ContentType: contentType,
+      }),
+    );
+  }
+
+  async delete(key: string): Promise<void> {
+    await this.s3.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
       }),
     );
   }

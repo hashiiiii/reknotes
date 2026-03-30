@@ -8,7 +8,7 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
-import { embeddingProvider, noteRepository, tagRepository } from "../../infrastructure/container";
+import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "../../infrastructure/container";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -80,7 +80,7 @@ noteRoutes.put("/:id", async (c) => {
 // ノート削除
 noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  await deleteNote(noteRepository, tagRepository, id);
+  await deleteNote(noteRepository, tagRepository, storageProvider, id);
 
   // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { noteRepository, tagRepository } from "../../infrastructure/container";
+import { noteRepository, storageProvider, tagRepository } from "../../infrastructure/container";
 import { addTagsToNote } from "../tag/add-tags-to-note";
 import { createNote } from "./create-note";
 import { deleteNote } from "./delete-note";
@@ -46,12 +46,12 @@ describe("note use cases", () => {
 
   test("deleteNote でノートを削除できる", async () => {
     const note = await createNote(noteRepository, "削除対象", "本文");
-    expect(await deleteNote(noteRepository, tagRepository, note.id)).toBe(true);
+    expect(await deleteNote(noteRepository, tagRepository, storageProvider, note.id)).toBe(true);
     expect(await getNote(noteRepository, note.id)).toBeNull();
   });
 
   test("deleteNote で存在しないIDはfalseを返す", async () => {
-    expect(await deleteNote(noteRepository, tagRepository, 99999)).toBe(false);
+    expect(await deleteNote(noteRepository, tagRepository, storageProvider, 99999)).toBe(false);
   });
 
   test("listNotes でページネーションが動作する", async () => {
