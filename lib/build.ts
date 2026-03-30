@@ -36,7 +36,7 @@ await Bun.build({
 rmSync(join(DIST, "js", "_cytoscape_entry.js"));
 
 // ── 2. 自作 JS コピー ──
-const appScripts = ["app.js", "home.js", "note.js", "graph.js", "graph-common.js"];
+const appScripts = ["app.js", "home.js", "graph.js", "graph-common.js"];
 for (const file of appScripts) {
   cpSync(join("public", "js", file), join(DIST, "js", file));
 }

@@ -115,9 +115,6 @@ body {
 .note-body code { background: var(--code-bg); padding: 0.15rem 0.3rem; border-radius: 3px; font-size: 0.9em; font-family: 'JetBrains Mono', ui-monospace, monospace; }
 .note-body pre code { background: none; padding: 0; }
 
-/* Note tags & relations (detail page) */
-
-
 /* Note edit form (detail page) */
 .note-detail form { display: flex; flex-direction: column; gap: 0.75rem; }
 .note-detail .input-title {
@@ -202,9 +199,6 @@ body {
 .mini-graph { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
 .mini-graph h3 { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem; }
 #mini-graph-container { border: 1px solid var(--border); border-radius: var(--radius); height: 300px; background: var(--code-bg); }
-
-/* Note card tags */
-.note-card-ai-status { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
 
 /* Upload (drag & drop) */
 textarea.uploading { opacity: 0.7; }
