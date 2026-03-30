@@ -20,23 +20,25 @@ await Bun.build({
   minify: true,
 });
 
-// cytoscape: default export を window.cytoscape に公開
-const cytoscapeShim = `
-import cytoscape from "cytoscape";
-globalThis.cytoscape = cytoscape;
+// 3d-force-graph: default export を window.ForceGraph3D に公開
+// three.js も公開（カスタムノード描画・星空背景で使用）
+const forceGraphShim = `
+import ForceGraph3D from "3d-force-graph";
+import * as THREE from "three";
+globalThis.ForceGraph3D = ForceGraph3D;
+globalThis.THREE = THREE;
 `;
-await Bun.write(join(DIST, "js", "_cytoscape_entry.js"), cytoscapeShim);
+await Bun.write(join(DIST, "js", "_forcegraph_entry.js"), forceGraphShim);
 await Bun.build({
-  entrypoints: [join(DIST, "js", "_cytoscape_entry.js")],
+  entrypoints: [join(DIST, "js", "_forcegraph_entry.js")],
   outdir: join(DIST, "js"),
-  naming: "cytoscape.js",
+  naming: "force-graph-3d.js",
   minify: true,
 });
-// エントリ用の一時ファイルを削除
-rmSync(join(DIST, "js", "_cytoscape_entry.js"));
+rmSync(join(DIST, "js", "_forcegraph_entry.js"));
 
 // ── 2. 自作 JS コピー ──
-const appScripts = ["app.js", "home.js", "graph.js", "graph-common.js"];
+const appScripts = ["app.js", "home.js", "graph.js"];
 for (const file of appScripts) {
   cpSync(join("public", "js", file), join(DIST, "js", file));
 }

@@ -13,9 +13,9 @@
     "test": "NODE_ENV=test bun test"
   },
   "dependencies": {
+    "3d-force-graph": "^1.79.1",
     "@aws-sdk/client-s3": "^3.1019.0",
     "@huggingface/transformers": "^3.8.1",
-    "cytoscape": "^3.33.1",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.7.0",
     "htmx.org": "^2.0.8",

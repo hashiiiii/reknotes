@@ -161,8 +161,9 @@ body {
 .input-search:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
 /* Graph */
-.graph-layout { display: flex; width: 100%; height: calc(100vh - 60px); position: relative; }
-.graph-main { flex: 1; min-width: 0; }
+.graph-layout { display: flex; width: 100%; height: calc(100vh - 60px); position: relative; background: #08080f; }
+.graph-main { flex: 1; min-width: 0; overflow: hidden; }
+.graph-tooltip { font-size: 13px; color: #e0dcd4; background: rgba(16,16,24,0.85); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(100,140,200,0.2); backdrop-filter: blur(4px); }
 .graph-panel {
   width: 340px; flex-shrink: 0; background: var(--bg-card); border-left: 1px solid var(--border);
   overflow-y: auto; padding: var(--gap); position: relative;
@@ -198,7 +199,7 @@ body {
 /* Mini graph (note detail page) */
 .mini-graph { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
 .mini-graph h3 { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.75rem; }
-#mini-graph-container { border: 1px solid var(--border); border-radius: var(--radius); height: 300px; background: var(--code-bg); }
+#mini-graph-container { border: 1px solid var(--border); border-radius: var(--radius); height: 480px; background: #08080f; overflow: hidden; }
 
 /* Upload (drag & drop) */
 textarea.uploading { opacity: 0.7; }

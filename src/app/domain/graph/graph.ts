@@ -1,4 +1,4 @@
-// Cytoscape.js 向けグラフ表示型
+// 3D Force Graph 向けグラフ表示型
 export interface GraphNode {
   id: string;
   label: string;

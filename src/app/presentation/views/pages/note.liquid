@@ -36,25 +36,13 @@
   <section class="mini-graph" id="note-graph">
     <h3>Graph</h3>
     <div id="mini-graph-container"></div>
-    <script src="/static/js/cytoscape.js"></script>
-    <script src="/static/js/graph-common.js"></script>
+    <script src="/static/js/force-graph-3d.js"></script>
+    <script src="/static/js/graph.js"></script>
     <script>
       (function() {
         var container = document.getElementById('mini-graph-container');
         if (!container) return;
-        var currentId = 'note-{{ note.id }}';
-        var cy = cytoscape({
-          container: container,
-          elements: GraphCommon.toElements({{ graphData }}),
-          style: GraphCommon.stylesWithFocus(currentId),
-          layout: { name: 'cose', animate: false, nodeDimensionsIncludeLabels: true, nodeRepulsion: function() { return 4000; }, padding: 20 },
-          minZoom: 0.5, maxZoom: 2
-        });
-        GraphCommon.bindHover(cy, container);
-        cy.on('tap', 'node[type="note"]', function(evt) {
-          var id = evt.target.data('id').replace('note-', '');
-          window.location.href = '/notes/' + id;
-        });
+        window.initMiniGraph(container, {{ graphData }}, 'note-{{ note.id }}');
       })();
     </script>
   </section>
