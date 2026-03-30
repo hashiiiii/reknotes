@@ -4,8 +4,9 @@
   "description": "Personal knowledge management with auto-organization and fast search",
   "type": "module",
   "scripts": {
-    "setup": "bun install && bun run lib/setup.ts && NODE_ENV=development bun run migrate && NODE_ENV=test bun run migrate",
-    "dev": "bun run --watch src/index.ts",
+    "setup": "bun install && bun run build && bun run lib/setup.ts && NODE_ENV=development bun run migrate && NODE_ENV=test bun run migrate",
+    "build": "bun run lib/build.ts",
+    "dev": "bun run build && bun run --watch src/index.ts",
     "migrate": "bun run lib/migrate.ts",
     "seed": "bun run lib/seed.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
@@ -14,8 +15,10 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1019.0",
     "@huggingface/transformers": "^3.8.1",
+    "cytoscape": "^3.33.1",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.7.0",
+    "htmx.org": "^2.0.8",
     "liquidjs": "^10.21.0",
     "postgres": "^3.4.8",
     "zenn-content-css": "^0.4.6",
