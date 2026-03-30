@@ -32,6 +32,7 @@ noteRoutes.post("/", async (c) => {
   const { note, tags } = await createNoteWithTags(noteRepository, tagRepository, embeddingProvider, title, body);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
+    showMenu: true,
   });
   return c.html(html);
 });
@@ -43,7 +44,7 @@ noteRoutes.get("/", async (c) => {
 
   let html = "";
   for (const note of notes) {
-    html += await engine.renderFile("partials/note-card", { note });
+    html += await engine.renderFile("partials/note-card", { note, showMenu: true });
   }
   if (hasMore) {
     html += `<div class="note-grid-sentinel" hx-get="/api/notes?cursor=${nextCursor}" hx-trigger="revealed" hx-swap="outerHTML"></div>`;
@@ -60,6 +61,7 @@ noteRoutes.get("/:id/card", async (c) => {
   const tags = await getNoteTags(noteRepository, id);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
+    showMenu: true,
   });
   return c.html(html);
 });

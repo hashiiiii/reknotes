@@ -5,7 +5,7 @@
     <div class="note-header-row">
       <h1>{{ note.title | default: "無題" }}</h1>
       <div class="kebab-menu">
-        <button class="kebab-btn" aria-label="メニュー" onclick="this.parentElement.classList.toggle('open')">&#x22EE;</button>
+        <button class="kebab-btn" aria-label="メニュー" onclick="toggleKebab(this)">&#x22EE;</button>
         <div class="kebab-dropdown">
           <button onclick="this.closest('.kebab-menu').classList.remove('open'); enterEditMode()">編集</button>
           <button class="danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body">削除</button>
@@ -16,8 +16,6 @@
   </header>
 
   <div class="note-body znc">{{ bodyHtml }}</div>
-
-
 </article>
 
 <article class="note-detail" id="note-edit" hidden>
@@ -34,21 +32,6 @@
   </form>
 </article>
 
-<script>
-  function enterEditMode() {
-    document.getElementById('note-view').hidden = true;
-    document.getElementById('note-edit').hidden = false;
-    var graph = document.getElementById('note-graph');
-    if (graph) graph.hidden = true;
-  }
-  function exitEditMode() {
-    document.getElementById('note-view').hidden = false;
-    document.getElementById('note-edit').hidden = true;
-    var graph = document.getElementById('note-graph');
-    if (graph) graph.hidden = false;
-  }
-</script>
-
 {% if graphData %}
   <section class="mini-graph" id="note-graph">
     <h3>Graph</h3>
@@ -56,24 +39,10 @@
     <script src="/static/js/cytoscape.min.js"></script>
     <script src="/static/js/graph-common.js"></script>
     <script>
-      (function() {
-        var raw = {{ graphData }};
-        var currentId = 'note-{{ note.id }}';
-        var container = document.getElementById('mini-graph-container');
-        var cy = cytoscape({
-          container: container,
-          elements: GraphCommon.toElements(raw),
-          style: GraphCommon.stylesWithFocus(currentId),
-          layout: { name: 'cose', animate: false, nodeDimensionsIncludeLabels: true, nodeRepulsion: function() { return 4000; }, padding: 20 },
-          minZoom: 0.5, maxZoom: 2
-        });
-        GraphCommon.bindHover(cy, container);
-        cy.on('tap', 'node[type="note"]', function(evt) {
-          var id = evt.target.data('id').replace('note-', '');
-          window.location.href = '/notes/' + id;
-        });
-      })();
+      window.__reknotesMiniGraphData = {{ graphData }};
+      window.__reknotesCurrentNoteId = 'note-{{ note.id }}';
     </script>
   </section>
 {% endif %}
+<script src="/static/js/note.js"></script>
 {% endblock %}

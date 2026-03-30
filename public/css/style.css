@@ -90,17 +90,15 @@ body {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0.75rem 1rem;
   transition: box-shadow 0.15s;
-  /* masonry JS が配置するまで非表示（フラッシュ防止） */
-  position: absolute; visibility: hidden;
 }
+/* masonry JS が配置するまで非表示（フラッシュ防止） */
+.note-grid .note-card { position: absolute; visibility: hidden; }
 .note-card:hover { box-shadow: 0 2px 12px var(--shadow-hover); border-color: var(--text-secondary); transition: box-shadow 0.15s, border-color 0.15s; }
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }
-.note-card-kebab { position: relative; opacity: 0; transition: opacity 0.15s; }
-.note-card:hover .note-card-kebab, .note-card-kebab.open { opacity: 1; }
-.note-card-kebab .kebab-btn { background: none; border-radius: var(--radius-sm); }
-.note-card-kebab .kebab-dropdown { right: 0; top: auto; bottom: 100%; margin-top: 0; margin-bottom: 4px; z-index: 10; }
-.note-card-kebab.open .kebab-dropdown { display: block; }
+.note-card .kebab-menu { opacity: 0; transition: opacity 0.15s; }
+.note-card:hover .kebab-menu, .note-card .kebab-menu.open { opacity: 1; }
+.note-card .kebab-dropdown { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 4px; }
 .note-card-link { text-decoration: none; color: inherit; display: block; }
 .note-card h3 { font-size: 0.95rem; margin-bottom: 0.35rem; line-height: 1.4; color: var(--fg); }
 .note-snippet { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; }

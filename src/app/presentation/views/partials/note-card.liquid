@@ -1,13 +1,16 @@
-<article class="note-card" id="note-{{ note.id }}">
+<article class="note-card" {% if note.id %}id="note-{{ note.id }}"{% endif %}>
   <a href="/notes/{{ note.id }}" class="note-card-link">
-    <h3>{{ note.title | default: "無題" }}</h3>
-    <p class="note-snippet">{{ note.body | truncate: 500 }}</p>
+    <h3>{% if note.highlightedTitle %}{{ note.highlightedTitle }}{% else %}{{ note.title | default: "無題" }}{% endif %}</h3>
+    <p class="note-snippet">{% if note.highlightedBody %}{{ note.highlightedBody }}{% else %}{{ note.body | truncate: 500 }}{% endif %}</p>
   </a>
 
   <div class="note-card-footer">
-    <time class="note-card-time" datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
-    <div class="note-card-kebab">
-      <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleCardMenu(this)">&#x22EE;</button>
+    <time class="note-card-time" {% if note.createdAt %}datetime="{{ note.createdAt }}"{% endif %}>
+      {% if note.createdAt %}{{ note.createdAt | formatDate }}{% else %}{{ note.created_at }}{% endif %}
+    </time>
+    {% if showMenu %}
+    <div class="kebab-menu">
+      <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
       <div class="kebab-dropdown">
         <button class="danger"
           hx-delete="/api/notes/{{ note.id }}"
@@ -16,5 +19,6 @@
           onclick="event.stopPropagation()">削除</button>
       </div>
     </div>
+    {% endif %}
   </div>
 </article>

@@ -9,9 +9,7 @@ export async function getNoteSubgraph(graphRepo: IGraphRepository, noteId: numbe
     graphRepo.findRelatedLinks(noteId),
   ]);
 
-  const allNotes = selfNote
-    ? [selfNote, ...relatedNotes.filter((n) => n.id !== noteId)]
-    : relatedNotes;
+  const allNotes = selfNote ? [selfNote, ...relatedNotes.filter((n) => n.id !== noteId)] : relatedNotes;
 
   const allNoteIds = new Set(allNotes.map((n) => n.id));
 
