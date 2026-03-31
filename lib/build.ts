@@ -12,13 +12,8 @@ mkdirSync(join(DIST, "js"), { recursive: true });
 mkdirSync(join(DIST, "css"), { recursive: true });
 
 // ── 1. Vendor JS バンドル ──
-// htmx: グローバルに自己登録するので import するだけでOK
-await Bun.build({
-  entrypoints: ["node_modules/htmx.org/dist/htmx.esm.js"],
-  outdir: join(DIST, "js"),
-  naming: "htmx.js",
-  minify: true,
-});
+// htmx: ブラウザ用ビルド（グローバルに自己登録）をそのままコピー
+cpSync("node_modules/htmx.org/dist/htmx.min.js", join(DIST, "js", "htmx.js"));
 
 // 3d-force-graph: default export を window.ForceGraph3D に公開
 // three.js も公開（カスタムノード描画・星空背景で使用）
