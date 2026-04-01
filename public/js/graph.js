@@ -10,6 +10,20 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(function (data) { initCosmicGraph(container, data); });
 });
 
+// ── カメラ演出パラメータ ──
+var CAMERA = {
+  CLICK_DISTANCE:      140,   // ノードクリック時のカメラ距離
+  CLICK_DURATION:      1200,  // ノードクリック時のアニメーション (ms)
+  INIT_FAR_Z_FACTOR:   400,   // 初期俯瞰カメラ Z 距離の係数 (cbrt(nodes) * factor)
+  DRIFT_DISTANCE:      180,   // 初回ドリフトのカメラ距離
+  DRIFT_DURATION:      4000,  // 初回ドリフトのアニメーション (ms)
+  DRIFT_DELAY:         2000,  // ドリフト開始までの待機 (ms)
+  INIT_NODE_DISTANCE:  140,   // URL query 指定ノードへのカメラ距離
+  INIT_NODE_DURATION:  2000,  // URL query 指定ノードへのアニメーション (ms)
+  INIT_NODE_DELAY:     1500,  // URL query 指定ノードの待機 (ms)
+  MINI_ZOOM_DURATION:  800,   // ミニグラフの zoomToFit (ms)
+};
+
 // ── 恒星分類: val（ノート数）に応じたタグの見た目 ──
 // 各クラスでスパイクの太さ・長さ・本数、グロウ層数、脈動が大きく異なる
 var STAR_CLASSES = [
@@ -123,13 +137,12 @@ function initCosmicGraph(container, data) {
     .onNodeClick(function (node) {
       highlightNeighbors(node, data, adjacency, Graph);
       showPanel(node, data, Graph);
-      var distance = 140;
       var hyp = Math.hypot(node.x, node.y, node.z) || 1;
-      var distRatio = 1 + distance / hyp;
+      var distRatio = 1 + CAMERA.CLICK_DISTANCE / hyp;
       Graph.cameraPosition(
         { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
         { x: node.x, y: node.y, z: node.z },
-        1200
+        CAMERA.CLICK_DURATION
       );
       var url = new URL(window.location);
       url.searchParams.set("node", node.id);
@@ -157,7 +170,7 @@ function initCosmicGraph(container, data) {
   var initNodeId = new URL(window.location).searchParams.get("node");
   if (!initNodeId) {
     // graphData() 完了後に呼ぶことで lastSetCameraZ を上書き → 自動配置が再発しない
-    var farZ = Math.cbrt(data.nodes.length) * 400;
+    var farZ = Math.cbrt(data.nodes.length) * CAMERA.INIT_FAR_Z_FACTOR;
     Graph.cameraPosition({ x: 0, y: 0, z: farZ });
 
     // 2秒眺めてからランダムタグへゆっくり接近
@@ -166,15 +179,14 @@ function initCosmicGraph(container, data) {
       if (tags.length === 0) return;
       var target = tags[Math.floor(Math.random() * tags.length)];
       if (!target.x && !target.y && !target.z) return;
-      var dist = 180;
       var hyp = Math.hypot(target.x, target.y, target.z) || 1;
-      var ratio = 1 + dist / hyp;
+      var ratio = 1 + CAMERA.DRIFT_DISTANCE / hyp;
       Graph.cameraPosition(
         { x: target.x * ratio, y: target.y * ratio, z: target.z * ratio },
         { x: target.x, y: target.y, z: target.z },
-        4000
+        CAMERA.DRIFT_DURATION
       );
-    }, 2000);
+    }, CAMERA.DRIFT_DELAY);
   }
 
   var closeBtn = document.getElementById("panel-close");
@@ -203,15 +215,14 @@ function initCosmicGraph(container, data) {
       if (node) {
         highlightNeighbors(node, data, adjacency, Graph);
         showPanel(node, data, Graph);
-        var dist = 140;
-        var ratio = 1 + dist / (Math.hypot(node.x || 1, node.y || 1, node.z || 1));
+        var ratio = 1 + CAMERA.INIT_NODE_DISTANCE / (Math.hypot(node.x || 1, node.y || 1, node.z || 1));
         Graph.cameraPosition(
           { x: (node.x || 0) * ratio, y: (node.y || 0) * ratio, z: (node.z || 0) * ratio },
           { x: node.x || 0, y: node.y || 0, z: node.z || 0 },
-          800
+          CAMERA.INIT_NODE_DURATION
         );
       }
-    }, 1500);
+    }, CAMERA.INIT_NODE_DELAY);
   }
 
   window.addEventListener("resize", function () {
@@ -738,7 +749,7 @@ function initMiniGraph(container, data, focusNodeId) {
   addStarfield(Graph);
 
   // warmupTicks でレイアウト確定済み → zoomToFit で全体を表示（余白多めでラベル重なり回避）
-  setTimeout(function () { Graph.zoomToFit(800, 40); }, 100);
+  setTimeout(function () { Graph.zoomToFit(CAMERA.MINI_ZOOM_DURATION, 40); }, 100);
 
   // 脈動アニメーション（ミニでも共有）
   startPulseAnimation();
