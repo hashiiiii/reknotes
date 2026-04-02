@@ -5,23 +5,29 @@ document.addEventListener("DOMContentLoaded", function () {
   var container = document.getElementById("graph-container");
   if (!container) return;
 
-  fetch("/api/graph")
-    .then(function (r) { return r.json(); })
-    .then(function (data) { initCosmicGraph(container, data); });
+  // 先行フェッチ済みの Promise があればそれを使う（JS ダウンロードと並列化）
+  var dataPromise = window.__graphDataPromise
+    || fetch("/api/graph").then(function (r) { return r.json(); });
+  dataPromise.then(function (data) { initCosmicGraph(container, data); });
 });
 
 // ── カメラ演出パラメータ ──
 var CAMERA = {
-  CLICK_DISTANCE:      140,   // ノードクリック時のカメラ距離
-  CLICK_DURATION:      1200,  // ノードクリック時のアニメーション (ms)
-  INIT_FAR_Z_FACTOR:   400,   // 初期俯瞰カメラ Z 距離の係数 (cbrt(nodes) * factor)
-  DRIFT_DISTANCE:      180,   // 初回ドリフトのカメラ距離
-  DRIFT_DURATION:      4000,  // 初回ドリフトのアニメーション (ms)
-  DRIFT_DELAY:         2000,  // ドリフト開始までの待機 (ms)
-  INIT_NODE_DISTANCE:  140,   // URL query 指定ノードへのカメラ距離
-  INIT_NODE_DURATION:  2000,  // URL query 指定ノードへのアニメーション (ms)
-  INIT_NODE_DELAY:     1500,  // URL query 指定ノードの待機 (ms)
-  MINI_ZOOM_DURATION:  800,   // ミニグラフの zoomToFit (ms)
+  DISTANCE:          300,   // ノードへのカメラ距離（共通）
+  MINI_PADDING:      10,    // ミニグラフの zoomToFit パディング (px)
+  DURATION:          4000,  // カメラアニメーション時間（共通, ms）
+  DELAY:             100,   // カメラ移動開始までの待機（共通, ms）
+  INIT_FAR_Z_FACTOR: 400,   // 初期俯瞰カメラ Z 距離の係数 (cbrt(nodes) * factor)
+};
+
+// ── 物理シミュレーションパラメータ ──
+var FORCE = {
+  ALPHA_DECAY:     0.02,   // シミュレーション冷却速度
+  VELOCITY_DECAY:  0.3,    // 速度減衰（摩擦）
+  WARMUP_TICKS:    100,    // 初回描画前の物理演算回数
+  COOLDOWN_TICKS:  200,    // レンダリング開始後のシミュレーション上限（0 は避ける）
+  CHARGE_STRENGTH: -60,    // ノード間の反発力
+  LINK_DISTANCE:   50,     // リンクの自然長
 };
 
 // ── 恒星分類: val（ノート数）に応じたタグの見た目 ──
@@ -114,11 +120,11 @@ function initCosmicGraph(container, data) {
     })
     .linkOpacity(0.6)
     .linkDirectionalParticles(function (link) {
-      if (!_highlightState.active) return 1;
+      if (!_highlightState.active) return 0;
       var s = typeof link.source === "object" ? link.source.id : link.source;
       var t = typeof link.target === "object" ? link.target.id : link.target;
       var sel = _highlightState.nodeId;
-      if (s === sel || t === sel) return 4;
+      if (s === sel || t === sel) return 3;
       return 0;
     })
     .linkDirectionalParticleWidth(0.8)
@@ -127,10 +133,10 @@ function initCosmicGraph(container, data) {
       if (!_highlightState.active) return "rgba(150,200,255,0.4)";
       return "rgba(255,200,100,0.8)";
     })
-    .d3AlphaDecay(0.02)
-    .d3VelocityDecay(0.3)
-    .warmupTicks(300)
-    .cooldownTicks(0)
+    .d3AlphaDecay(FORCE.ALPHA_DECAY)
+    .d3VelocityDecay(FORCE.VELOCITY_DECAY)
+    .warmupTicks(FORCE.WARMUP_TICKS)
+    .cooldownTicks(FORCE.COOLDOWN_TICKS)
     .onNodeHover(function (node) {
       container.style.cursor = node ? "pointer" : "default";
     })
@@ -138,11 +144,11 @@ function initCosmicGraph(container, data) {
       highlightNeighbors(node, data, adjacency, Graph);
       showPanel(node, data, Graph);
       var hyp = Math.hypot(node.x, node.y, node.z) || 1;
-      var distRatio = 1 + CAMERA.CLICK_DISTANCE / hyp;
+      var distRatio = 1 + CAMERA.DISTANCE / hyp;
       Graph.cameraPosition(
         { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
         { x: node.x, y: node.y, z: node.z },
-        CAMERA.CLICK_DURATION
+        CAMERA.DURATION
       );
       var url = new URL(window.location);
       url.searchParams.set("node", node.id);
@@ -153,8 +159,8 @@ function initCosmicGraph(container, data) {
       dismissPanel();
     });
 
-  Graph.d3Force("charge").strength(-60);
-  Graph.d3Force("link").distance(50);
+  Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
+  Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
 
   addStarfield(Graph);
   addBloom(Graph);
@@ -165,7 +171,7 @@ function initCosmicGraph(container, data) {
   window._reknGraph = Graph;
 
   // ── 初期カメラ演出 ──
-  // warmupTicks(300)+cooldownTicks(0) でレイアウト確定済み
+  // warmupTicks でレイアウト確定済み → cooldownTicks で残りを消化後に停止
   // 銀河団を見渡す距離 → ランダムタグへドリフト
   var initNodeId = new URL(window.location).searchParams.get("node");
   if (!initNodeId) {
@@ -180,13 +186,13 @@ function initCosmicGraph(container, data) {
       var target = tags[Math.floor(Math.random() * tags.length)];
       if (!target.x && !target.y && !target.z) return;
       var hyp = Math.hypot(target.x, target.y, target.z) || 1;
-      var ratio = 1 + CAMERA.DRIFT_DISTANCE / hyp;
+      var ratio = 1 + CAMERA.DISTANCE / hyp;
       Graph.cameraPosition(
         { x: target.x * ratio, y: target.y * ratio, z: target.z * ratio },
         { x: target.x, y: target.y, z: target.z },
-        CAMERA.DRIFT_DURATION
+        CAMERA.DURATION
       );
-    }, CAMERA.DRIFT_DELAY);
+    }, CAMERA.DELAY);
   }
 
   var closeBtn = document.getElementById("panel-close");
@@ -210,19 +216,23 @@ function initCosmicGraph(container, data) {
   });
 
   if (initNodeId) {
-    setTimeout(function () {
-      var node = data.nodes.find(function (n) { return n.id === initNodeId; });
-      if (node) {
-        highlightNeighbors(node, data, adjacency, Graph);
-        showPanel(node, data, Graph);
-        var ratio = 1 + CAMERA.INIT_NODE_DISTANCE / (Math.hypot(node.x || 1, node.y || 1, node.z || 1));
+    // ハイライトは即座に適用（最初に選択外ノードが光るのを防ぐ）
+    var initNode = data.nodes.find(function (n) { return n.id === initNodeId; });
+    if (initNode) {
+      highlightNeighbors(initNode, data, adjacency, Graph);
+      setTimeout(function () {
+        var ratio = 1 + CAMERA.DISTANCE / (Math.hypot(initNode.x || 1, initNode.y || 1, initNode.z || 1));
         Graph.cameraPosition(
-          { x: (node.x || 0) * ratio, y: (node.y || 0) * ratio, z: (node.z || 0) * ratio },
-          { x: node.x || 0, y: node.y || 0, z: node.z || 0 },
-          CAMERA.INIT_NODE_DURATION
+          { x: (initNode.x || 0) * ratio, y: (initNode.y || 0) * ratio, z: (initNode.z || 0) * ratio },
+          { x: initNode.x || 0, y: initNode.y || 0, z: initNode.z || 0 },
+          CAMERA.DURATION
         );
-      }
-    }, CAMERA.INIT_NODE_DELAY);
+        // パネルはカメラが止まってから表示
+        setTimeout(function () {
+          showPanel(initNode, data, Graph);
+        }, CAMERA.DURATION);
+      }, CAMERA.DELAY);
+    }
   }
 
   window.addEventListener("resize", function () {
@@ -237,18 +247,23 @@ function startPulseAnimation() {
   if (_pulseRunning) return;
   _pulseRunning = true;
   var startTime = performance.now();
+  var lastUpdate = 0;
+  var PULSE_INTERVAL = 33; // ~30fps で十分滑らか
   (function tick() {
-    var t = (performance.now() - startTime) / 1000;
-    for (var i = 0; i < _pulsingTags.length; i++) {
-      var entry = _pulsingTags[i];
-      var pulse = 1 + Math.sin(t * entry.speed) * entry.amp;
-      var base = entry.baseScale;
-      entry.sprite.scale.set(base * pulse, base * pulse, 1);
-      // 外側グロウ層も脈動（逆位相で呼吸感を出す）
-      for (var g = 0; g < entry.glows.length; g++) {
-        var gp = 1 + Math.sin(t * entry.speed * 0.7 + g * 0.8) * entry.amp * 1.5;
-        var gb = entry.glowBaseScales[g];
-        entry.glows[g].scale.set(gb * gp, gb * gp, 1);
+    var now = performance.now();
+    if (now - lastUpdate >= PULSE_INTERVAL) {
+      lastUpdate = now;
+      var t = (now - startTime) / 1000;
+      for (var i = 0; i < _pulsingTags.length; i++) {
+        var entry = _pulsingTags[i];
+        var pulse = 1 + Math.sin(t * entry.speed) * entry.amp;
+        var base = entry.baseScale;
+        entry.sprite.scale.set(base * pulse, base * pulse, 1);
+        for (var g = 0; g < entry.glows.length; g++) {
+          var gp = 1 + Math.sin(t * entry.speed * 0.7 + g * 0.8) * entry.amp * 1.5;
+          var gb = entry.glowBaseScales[g];
+          entry.glows[g].scale.set(gb * gp, gb * gp, 1);
+        }
       }
     }
     requestAnimationFrame(tick);
@@ -724,14 +739,11 @@ function initMiniGraph(container, data, focusNodeId) {
     .linkColor(function () { return "rgba(100,140,200,0.15)"; })
     .linkWidth(0.3)
     .linkOpacity(0.5)
-    .linkDirectionalParticles(1)
-    .linkDirectionalParticleWidth(0.5)
-    .linkDirectionalParticleSpeed(0.004)
-    .linkDirectionalParticleColor(function () { return "rgba(150,200,255,0.4)"; })
-    .d3AlphaDecay(0.04)
-    .d3VelocityDecay(0.4)
-    .warmupTicks(300)
-    .cooldownTicks(0)
+    .linkDirectionalParticles(0)
+    .d3AlphaDecay(FORCE.ALPHA_DECAY)
+    .d3VelocityDecay(FORCE.VELOCITY_DECAY)
+    .warmupTicks(FORCE.WARMUP_TICKS)
+    .cooldownTicks(FORCE.COOLDOWN_TICKS)
     .onNodeHover(function (node) {
       container.style.cursor = node ? "pointer" : "default";
     })
@@ -743,13 +755,13 @@ function initMiniGraph(container, data, focusNodeId) {
       }
     });
 
-  Graph.d3Force("charge").strength(-80);
-  Graph.d3Force("link").distance(60);
+  Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
+  Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
 
   addStarfield(Graph);
 
   // warmupTicks でレイアウト確定済み → zoomToFit で全体を表示（余白多めでラベル重なり回避）
-  setTimeout(function () { Graph.zoomToFit(CAMERA.MINI_ZOOM_DURATION, 40); }, 100);
+  setTimeout(function () { Graph.zoomToFit(CAMERA.DURATION, CAMERA.MINI_PADDING); }, CAMERA.DELAY);
 
   // 脈動アニメーション（ミニでも共有）
   startPulseAnimation();

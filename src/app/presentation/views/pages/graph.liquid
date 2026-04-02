@@ -7,6 +7,10 @@
     <div id="panel-content"></div>
   </aside>
 </div>
+<script>
+  // JS ダウンロードと並列にデータを先行フェッチ
+  window.__graphDataPromise = fetch("/api/graph").then(function (r) { return r.json(); });
+</script>
 <script src="/static/js/force-graph-3d.js"></script>
 <script src="/static/js/graph.js"></script>
 {% endblock %}

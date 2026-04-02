@@ -30,6 +30,7 @@ noteRoutes.post("/", async (c) => {
   if (!body.trim()) return c.text("本文を入力してください", 400);
 
   const { note, tags } = await createNoteWithTags(noteRepository, tagRepository, embeddingProvider, title, body);
+
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
     showMenu: true,
@@ -76,6 +77,7 @@ noteRoutes.put("/:id", async (c) => {
   const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingProvider, id, title, body);
   if (!note) return c.notFound();
 
+
   return c.redirect(`/notes/${id}`, 303);
 });
 
@@ -83,6 +85,7 @@ noteRoutes.put("/:id", async (c) => {
 noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   await deleteNote(noteRepository, tagRepository, storageProvider, id);
+
 
   // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {
