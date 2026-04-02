@@ -103,15 +103,15 @@ function initCosmicGraph(container, data) {
     })
     .nodeLabel("")
     .linkColor(function (link) {
-      if (!_highlightState.active) return "rgba(100,140,200,0.15)";
+      if (!_highlightState.active) return "rgba(130,170,220,0.4)";
       var s = typeof link.source === "object" ? link.source.id : link.source;
       var t = typeof link.target === "object" ? link.target.id : link.target;
       var sel = _highlightState.nodeId;
-      if (s === sel || t === sel) return "rgba(240,180,80,0.5)";
-      return "rgba(100,140,200,0.04)";
+      if (s === sel || t === sel) return "rgba(240,180,80,0.6)";
+      return "rgba(100,140,200,0.08)";
     })
     .linkWidth(function (link) {
-      if (!_highlightState.active) return 0.3;
+      if (!_highlightState.active) return 0.6;
       var s = typeof link.source === "object" ? link.source.id : link.source;
       var t = typeof link.target === "object" ? link.target.id : link.target;
       var sel = _highlightState.nodeId;
@@ -736,9 +736,9 @@ function initMiniGraph(container, data, focusNodeId) {
       return createStarNode(node, DPR);
     })
     .nodeLabel("")
-    .linkColor(function () { return "rgba(100,140,200,0.15)"; })
-    .linkWidth(0.3)
-    .linkOpacity(0.5)
+    .linkColor(function () { return "rgba(130,170,220,0.4)"; })
+    .linkWidth(0.6)
+    .linkOpacity(0.6)
     .linkDirectionalParticles(0)
     .d3AlphaDecay(FORCE.ALPHA_DECAY)
     .d3VelocityDecay(FORCE.VELOCITY_DECAY)
