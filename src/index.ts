@@ -3,8 +3,6 @@ import { buildTagCache } from "./app/application/embedding/build-tag-cache";
 import { rebuildAllTags } from "./app/application/embedding/rebuild-all-tags";
 import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "./app/infrastructure/container";
 
-const port = Number(process.env.PORT);
-
 storageProvider.ensureBucket().catch((err) => console.error("Storage init error:", err));
 
 // Embedding モデルをバックグラウンドでロード＆初期化
@@ -23,6 +21,5 @@ embeddingProvider
   .catch((err) => console.error("Embedding init error:", err));
 
 export default {
-  port,
   fetch: app.fetch,
 };
