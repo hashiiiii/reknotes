@@ -5,8 +5,6 @@ import { embeddingProvider, noteRepository, storageProvider, tagRepository } fro
 
 const port = Number(process.env.PORT);
 
-console.log(`reknotes running at http://localhost:${port}`);
-
 storageProvider.ensureBucket().catch((err) => console.error("Storage init error:", err));
 
 // Embedding モデルをバックグラウンドでロード＆初期化

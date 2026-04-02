@@ -1,12 +1,34 @@
+import type { IEmbeddingProvider } from "../application/port/embedding-provider";
+import type { IStorageProvider } from "../application/port/storage-provider";
+import type { IGraphRepository } from "../domain/graph/graph-repository";
+import type { INoteRepository } from "../domain/note/note-repository";
+import type { ITagRepository } from "../domain/tag/tag-repository";
 import { db } from "./db";
-import { HuggingFaceEmbeddingProvider } from "./embedding/huggingface-embedding-provider";
+import { CloudflareEmbeddingProvider } from "./embedding/cloudflare-embedding-provider";
+import { LocalEmbeddingProvider } from "./embedding/local-embedding-provider";
 import { DrizzleGraphRepository } from "./repositories/drizzle-graph-repository";
 import { DrizzleNoteRepository } from "./repositories/drizzle-note-repository";
 import { DrizzleTagRepository } from "./repositories/drizzle-tag-repository";
 import { S3StorageProvider } from "./storage/s3-storage-provider";
 
-export const noteRepository = new DrizzleNoteRepository(db);
-export const tagRepository = new DrizzleTagRepository(db);
-export const graphRepository = new DrizzleGraphRepository(db);
-export const embeddingProvider = new HuggingFaceEmbeddingProvider();
-export const storageProvider = new S3StorageProvider();
+let noteRepository: INoteRepository;
+let tagRepository: ITagRepository;
+let graphRepository: IGraphRepository;
+let storageProvider: IStorageProvider;
+let embeddingProvider: IEmbeddingProvider;
+
+if (process.env.DEPLOYMENT === "remote") {
+  noteRepository = new DrizzleNoteRepository(db);
+  tagRepository = new DrizzleTagRepository(db);
+  graphRepository = new DrizzleGraphRepository(db);
+  storageProvider = new S3StorageProvider();
+  embeddingProvider = new CloudflareEmbeddingProvider();
+} else {
+  noteRepository = new DrizzleNoteRepository(db);
+  tagRepository = new DrizzleTagRepository(db);
+  graphRepository = new DrizzleGraphRepository(db);
+  storageProvider = new S3StorageProvider();
+  embeddingProvider = new LocalEmbeddingProvider();
+}
+
+export { embeddingProvider, graphRepository, noteRepository, storageProvider, tagRepository };

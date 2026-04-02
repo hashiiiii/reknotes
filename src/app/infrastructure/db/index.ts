@@ -3,12 +3,15 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 function getDatabaseUrl(): string {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  const env = process.env.NODE_ENV;
-  if (!env) throw new Error("NODE_ENV is not set");
-  const base = process.env.DATABASE_URL_BASE;
-  if (!base) throw new Error("DATABASE_URL_BASE is not set");
-  return `${base}/reknotes_${env}`;
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is not set");
+  if (process.env.DEPLOYMENT === "remote") {
+    return databaseUrl;
+  } else {
+    const environment = process.env.ENVIRONMENT;
+    if (!environment) throw new Error("ENVIRONMENT is not set");
+    return `${databaseUrl}/reknotes_${environment}`;
+  }
 }
 
 const client = postgres(getDatabaseUrl());

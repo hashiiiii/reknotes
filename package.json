@@ -4,13 +4,13 @@
   "description": "Personal knowledge management with auto-organization and fast search",
   "type": "module",
   "scripts": {
-    "setup": "bun install && bun run build && bun run lib/setup.ts && NODE_ENV=development bun run migrate && NODE_ENV=test bun run migrate",
+    "setup": "bun install && bun run build && bun run lib/setup.ts && ENVIRONMENT=development bun run migrate && ENVIRONMENT=test bun run migrate",
     "build": "bun run lib/build.ts",
     "dev": "bun run build && bun run --watch src/index.ts",
     "migrate": "bun run lib/migrate.ts",
     "seed": "bun run lib/seed.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
-    "test": "NODE_ENV=test bun test"
+    "test": "ENVIRONMENT=test bun test"
   },
   "dependencies": {
     "3d-force-graph": "^1.79.1",
