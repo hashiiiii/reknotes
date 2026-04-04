@@ -230,6 +230,8 @@ function initCosmicGraph(container, data) {
     var initNode = data.nodes.find(function (n) { return n.id === initNodeId; });
     if (initNode) {
       highlightNeighbors(initNode, data, adjacency, Graph);
+      // パネルを先に表示してグラフを縮小 → カメラが可視領域の中央にノードを配置
+      showPanel(initNode, data, Graph);
       setTimeout(function () {
         var ratio = 1 + CAMERA.DISTANCE / (Math.hypot(initNode.x || 1, initNode.y || 1, initNode.z || 1));
         Graph.cameraPosition(
@@ -237,10 +239,6 @@ function initCosmicGraph(container, data) {
           { x: initNode.x || 0, y: initNode.y || 0, z: initNode.z || 0 },
           CAMERA.DURATION
         );
-        // パネルはカメラが止まってから表示
-        setTimeout(function () {
-          showPanel(initNode, data, Graph);
-        }, CAMERA.DURATION);
       }, CAMERA.DELAY);
     }
   }
@@ -625,6 +623,14 @@ function addBloom(Graph) {
 //  パネル
 // ══════════════════════════════════════════════
 
+function updateGraphHeight() {
+  var Graph = window._reknGraph;
+  var container = document.getElementById("graph-container");
+  if (Graph && container) {
+    Graph.height(container.clientHeight);
+  }
+}
+
 function showPanel(node, data) {
   var panel = document.getElementById("graph-panel");
   var content = document.getElementById("panel-content");
@@ -684,6 +690,7 @@ function showPanel(node, data) {
   }
 
   panel.hidden = false;
+  updateGraphHeight();
 }
 
 function dismissPanel() {
@@ -696,6 +703,7 @@ function dismissPanel() {
 function closePanel() {
   var panel = document.getElementById("graph-panel");
   if (panel) panel.hidden = true;
+  updateGraphHeight();
 }
 
 function formatDate(dateStr) {
