@@ -99,7 +99,17 @@ function initCosmicGraph(container, data) {
     .backgroundColor("#08080f")
     .showNavInfo(false)
     .nodeThreeObject(function (node) {
-      return createStarNode(node, DPR);
+      var obj = createStarNode(node, DPR);
+      if (_highlightState.active) {
+        if (node.id === _highlightState.nodeId) {
+          setNodeBrightness(obj, 1.4);
+        } else if (_highlightState.neighborIds && _highlightState.neighborIds.has(node.id)) {
+          setNodeBrightness(obj, 1.0);
+        } else {
+          setNodeBrightness(obj, 0.1);
+        }
+      }
+      return obj;
     })
     .nodeLabel("")
     .linkColor(function (link) {
@@ -111,7 +121,7 @@ function initCosmicGraph(container, data) {
       return "rgba(100,140,200,0.08)";
     })
     .linkWidth(function (link) {
-      if (!_highlightState.active) return 0.6;
+      if (!_highlightState.active) return 0.45;
       var s = typeof link.source === "object" ? link.source.id : link.source;
       var t = typeof link.target === "object" ? link.target.id : link.target;
       var sel = _highlightState.nodeId;
@@ -737,7 +747,7 @@ function initMiniGraph(container, data, focusNodeId) {
     })
     .nodeLabel("")
     .linkColor(function () { return "rgba(130,170,220,0.4)"; })
-    .linkWidth(0.6)
+    .linkWidth(0.45)
     .linkOpacity(0.6)
     .linkDirectionalParticles(0)
     .d3AlphaDecay(FORCE.ALPHA_DECAY)
