@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-@README.md
+@./README.md
 
 ## Architecture
 
