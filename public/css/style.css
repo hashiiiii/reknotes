@@ -80,6 +80,8 @@ body {
 /* Buttons - Switch-inspired compact pill style */
 .btn { border: 1px solid var(--border); background: var(--bg-card); border-radius: var(--radius-pill); padding: 0.3rem 0.9rem; cursor: pointer; font-size: 0.82rem; font-family: inherit; color: var(--fg); }
 .btn:hover { border-color: var(--text-secondary); background: var(--bg-secondary); transition: background 0.15s, border-color 0.15s; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:disabled:hover { background: var(--bg-card); border-color: var(--border); }
 .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 

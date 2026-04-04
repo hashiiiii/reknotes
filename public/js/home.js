@@ -4,6 +4,10 @@ function expandCompose() {
   document.getElementById('compose-trigger').hidden = true;
   document.getElementById('compose-body').hidden = false;
   document.querySelector('.compose-title').focus();
+  var textarea = document.getElementById('compose-textarea');
+  textarea.addEventListener('input', function() {
+    document.getElementById('preview-btn').disabled = !this.value.trim();
+  });
 }
 
 function collapseCompose(form) {
@@ -22,7 +26,6 @@ function togglePreview() {
   var showing = preview.style.display === 'block';
   if (!showing) {
     var body = textarea.value;
-    if (!body.trim()) return;
     var fd = new FormData();
     fd.append('body', body);
     fetch('/api/notes/preview', { method: 'POST', body: fd })
