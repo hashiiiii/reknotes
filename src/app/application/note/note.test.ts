@@ -5,7 +5,6 @@ import { createNote } from "./create-note";
 import { deleteNote } from "./delete-note";
 import { getNote } from "./get-note";
 import { getNoteTags } from "./get-note-tags";
-import { listNotes } from "./list-notes";
 import { updateNote } from "./update-note";
 
 describe("note use cases", () => {
@@ -55,7 +54,7 @@ describe("note use cases", () => {
   });
 
   test("listNotes でページネーションが動作する", async () => {
-    const result = await listNotes(noteRepository);
+    const result = await noteRepository.list();
     expect(result.notes.length).toBeGreaterThan(0);
     expect(typeof result.hasMore).toBe("boolean");
   });
