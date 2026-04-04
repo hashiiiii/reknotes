@@ -22,6 +22,21 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
+    env:
+      ALLOWED_TOOLS: >-
+        Read,Glob,Grep,Task,
+        mcp__github__get_pull_request_diff,
+        mcp__github__get_pull_request,
+        mcp__github__get_pull_request_files,
+        mcp__github__get_pull_request_comments,
+        mcp__github__get_pull_request_reviews,
+        mcp__github__get_pull_request_review_comments,
+        mcp__github__get_file_contents,
+        mcp__github_inline_comment__create_inline_comment
+      DISALLOWED_TOOLS: >-
+        mcp__github__create_pending_pull_request_review,
+        mcp__github__add_comment_to_pending_review,
+        mcp__github__submit_pending_pull_request_review
 
     steps:
       - name: React to trigger comment
@@ -33,13 +48,64 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: context.payload.comment.id,
-              content: 'rocket',
+              content: 'eyes',
             });
+
+      - name: Get PR info
+        id: pr-info
+        uses: actions/github-script@v8
+        with:
+          script: |
+            let pr;
+            if (context.eventName === 'pull_request') {
+              pr = context.payload.pull_request;
+            } else {
+              const { data } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.issue.number,
+              });
+              pr = data;
+            }
+            return { number: pr.number, head_ref: pr.head.ref };
 
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ fromJSON(steps.pr-info.outputs.result).head_ref }}
           fetch-depth: 1
+
+      - name: Delete previous bot comments
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = ${{ fromJSON(steps.pr-info.outputs.result).number }};
+
+            const reviewComments = await github.paginate(
+              github.rest.pulls.listReviewComments,
+              { owner, repo, pull_number },
+            );
+            for (const c of reviewComments) {
+              if (c.user.login === 'claude[bot]') {
+                await github.rest.pulls.deleteReviewComment({
+                  owner, repo, comment_id: c.id,
+                });
+              }
+            }
+
+            const issueComments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: pull_number },
+            );
+            for (const c of issueComments) {
+              if (c.user.login === 'claude[bot]') {
+                await github.rest.issues.deleteComment({
+                  owner, repo, comment_id: c.id,
+                });
+              }
+            }
 
       - name: Run Claude Code Review
         id: claude-review
@@ -48,4 +114,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number || github.event.issue.number }}'
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ fromJSON(steps.pr-info.outputs.result).number }}'
+          claude_args: |
+            --allowedTools "${{ env.ALLOWED_TOOLS }}"
+            --disallowedTools "${{ env.DISALLOWED_TOOLS }}"
