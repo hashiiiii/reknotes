@@ -59,6 +59,10 @@ export async function suggestTags(
 
   // Step 3: 既存タグとの正規化
   const existingTags = await tagRepo.findAllNames();
+
+  // 既存タグの embedding を一括取得してキャッシュに載せる
+  await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));
+
   const result: string[] = [];
 
   for (const kw of keywords) {
@@ -76,8 +80,6 @@ export async function suggestTags(
     if (bestMatch && bestMatch.score >= TAG_MERGE_THRESHOLD) {
       result.push(bestMatch.name);
     } else {
-      // 新規タグとして採用し、embedding をキャッシュ
-      await embeddingProvider.embedTag(kw.name);
       result.push(kw.name);
     }
   }
