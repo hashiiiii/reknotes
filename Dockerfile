@@ -18,10 +18,10 @@ WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
-COPY src/ src/
 COPY --from=build /app/dist dist/
+COPY public/ public/
 
 # ENVIRONMENT と DEPLOYMENT は実行時に外部から設定する
 EXPOSE 3000
 
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "dist/index.js"]
