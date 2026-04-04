@@ -48,7 +48,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               comment_id: context.payload.comment.id,
-              content: 'eyes',
+              content: 'rocket',
             });
 
       - name: Get PR info
