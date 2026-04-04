@@ -42,7 +42,7 @@ describe("tag use cases", () => {
     const allTags = await getAllTags(tagRepository);
     const found = allTags.find((t) => t.name === uniqueTag);
     expect(found).toBeDefined();
-    expect(found!.count).toBe(2);
+    expect(Number(found!.count)).toBe(2);
   });
 
   test("deleteTag で存在するタグを削除できる", async () => {
