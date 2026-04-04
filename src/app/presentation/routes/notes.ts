@@ -12,10 +12,20 @@ import { embeddingProvider, noteRepository, storageProvider, tagRepository } fro
 
 const noteRoutes = new Hono<AppEnv>();
 
+const MAX_TITLE_LENGTH = 200;
+const MAX_BODY_LENGTH = 100_000;
+
+function validateNoteInput(title: string, body: string): string | null {
+  if (title.length > MAX_TITLE_LENGTH) return `タイトルは${MAX_TITLE_LENGTH}文字以内にしてください`;
+  if (body.length > MAX_BODY_LENGTH) return `本文は${MAX_BODY_LENGTH}文字以内にしてください`;
+  return null;
+}
+
 // マークダウンプレビュー
 noteRoutes.post("/preview", async (c) => {
   const form = await c.req.parseBody();
   const body = String(form.body ?? "");
+  if (body.length > MAX_BODY_LENGTH) return c.text("本文が長すぎます", 400);
   if (!body.trim()) return c.html('<p style="color:var(--muted)">本文を入力してください</p>');
   const html = markdownToHtml(body);
   return c.html(`<div class="znc">${html}</div>`);
@@ -26,6 +36,9 @@ noteRoutes.post("/", async (c) => {
   const form = await c.req.parseBody();
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
+
+  const error = validateNoteInput(title, body);
+  if (error) return c.text(error, 400);
 
   if (!body.trim()) return c.text("本文を入力してください", 400);
 
@@ -73,6 +86,9 @@ noteRoutes.put("/:id", async (c) => {
   const form = await c.req.parseBody();
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
+
+  const error = validateNoteInput(title, body);
+  if (error) return c.text(error, 400);
 
   const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingProvider, id, title, body);
   if (!note) return c.notFound();
