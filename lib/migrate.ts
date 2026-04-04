@@ -32,7 +32,9 @@ if (!isRemote) {
   await admin.end();
 }
 
-const proc = Bun.spawnSync(["bunx", "drizzle-kit", "push", "--force"], {
+// CI では --strict で破壊的変更をエラーにし、ローカルでは対話的に確認する
+const args = ["bunx", "drizzle-kit", "push", ...(process.env.CI ? ["--strict"] : [])];
+const proc = Bun.spawnSync(args, {
   env: { ...process.env, DATABASE_URL: url },
   stdio: ["inherit", "inherit", "inherit"],
 });
