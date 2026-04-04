@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-@import README.md
+@README.md
 
 ## Architecture
 
