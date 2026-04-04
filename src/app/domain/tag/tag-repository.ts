@@ -8,6 +8,6 @@ export interface ITagRepository {
   findAllWithCount(): Promise<TagWithCount[]>;
   findAllNames(): Promise<Tag[]>;
   deleteAllNoteTagLinks(): Promise<void>;
-  removeById(id: number): Promise<void>;
+  removeById(id: number): Promise<boolean>;
   removeOrphanTag(tagId: number): Promise<void>;
 }
