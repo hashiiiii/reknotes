@@ -3,7 +3,7 @@ import { buildTagCache } from "./app/application/embedding/build-tag-cache";
 import { rebuildAllTags } from "./app/application/embedding/rebuild-all-tags";
 import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "./app/infrastructure/container";
 
-storageProvider.ensureBucket().catch((err) => console.error("Storage init error:", err));
+await storageProvider.ensureBucket();
 
 // Embedding モデルをバックグラウンドでロード＆初期化
 embeddingProvider
@@ -18,7 +18,10 @@ embeddingProvider
       console.log("Tag rebuild complete");
     }
   })
-  .catch((err) => console.error("Embedding init error:", err));
+  .catch((err) => {
+    console.error("Embedding init failed:", err);
+    process.exit(1);
+  });
 
 export default {
   fetch: app.fetch,

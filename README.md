@@ -6,15 +6,15 @@
 
 - [Bun](https://bun.sh/) (>= 1.3)
 - [Hono](https://hono.dev/) — Web framework
-- HTML + [Liquid](https://liquidjs.com/) templates
 - TypeScript (strict)
-- [Biome](https://biomejs.dev/) (lint / format)
-- [PostgreSQL](https://www.postgresql.org/) + [Drizzle ORM](https://orm.drizzle.team/)
+- HTML + [LiquidJS](https://liquidjs.com/) templates
 - [htmx](https://htmx.org/) — Dynamic UI without SPA
+- [PostgreSQL](https://www.postgresql.org/) 17 + [Drizzle ORM](https://orm.drizzle.team/)
+- [Biome](https://biomejs.dev/) v2 — Lint / format
+- [HuggingFace Transformers](https://huggingface.co/docs/transformers.js) / [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) — Embedding-based auto-tagging
 - [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/) — Knowledge graph visualization
 - [zenn-markdown-html](https://github.com/zenn-dev/zenn-editor) — Markdown rendering
-- [HuggingFace Transformers](https://huggingface.co/docs/transformers.js) — Embedding-based auto-tagging
-- S3-compatible storage ([MinIO](https://min.io/)) — File uploads
+- S3-compatible storage ([Cloudflare R2](https://developers.cloudflare.com/r2/) / [MinIO](https://min.io/)) — File uploads
 
 ## Setup
 
@@ -30,7 +30,7 @@ bun run setup          # Install deps, build assets, run migrations
 | `bun run setup` | Full setup (install, build, migrate) |
 | `bun run dev` | Start dev server (watch mode) |
 | `bun run build` | Bundle frontend assets to `dist/` |
-| `bun run migrate` | Run database migrations |
+| `bun run migrate` | Run database migrations (`ENVIRONMENT=development bun run migrate`). Prompts for destructive changes in TTY; auto-applies in non-TTY (CI) |
 | `bun run seed` | Insert sample data |
 | `bun run check` | Lint + format (Biome) and type-check |
 | `bun test` | Run tests |
@@ -48,12 +48,19 @@ bun run setup          # Install deps, build assets, run migrations
 
 | Endpoint | Description |
 |---|---|
-| `/api/notes` | Notes CRUD |
-| `/api/search` | Search |
-| `/api/graph` | Graph data |
-| `/api/tags` | Tag management |
-| `/api/upload` | File upload |
-| `/api/files` | File serving |
+| `POST /api/notes` | Create note (with auto-tagging) |
+| `GET /api/notes` | List notes (cursor-based pagination) |
+| `GET /api/notes/:id/card` | Get note card partial |
+| `PUT /api/notes/:id` | Update note |
+| `DELETE /api/notes/:id` | Delete note |
+| `POST /api/notes/preview` | Markdown preview |
+| `GET /api/search?q=` | Full-text search |
+| `GET /api/graph` | Full knowledge graph |
+| `GET /api/graph/note/:id` | Note subgraph |
+| `GET /api/tags` | List tags |
+| `DELETE /api/tags/:id` | Delete tag |
+| `POST /api/upload` | File upload |
+| `GET /api/files/:key` | File serving |
 
 ## Docker
 
@@ -73,9 +80,11 @@ bun run setup          # Install deps, build assets, run migrations
     ├── index.ts            # Entry point
     └── app/
         ├── domain/         # Entities & repository interfaces
-        ├── application/    # Application logic (use cases)
-        ├── infrastructure/ # DB, storage, embedding adapters
-        └── presentation/   # Routes & Liquid templates
+        ├── application/    # Use cases & port interfaces
+        ├── infrastructure/ # DB, storage, embedding implementations
+        └── presentation/
+            ├── routes/     # Hono route handlers
+            └── views/
                 ├── layouts/
                 ├── pages/
                 └── partials/

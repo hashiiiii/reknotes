@@ -32,7 +32,10 @@ if (!isRemote) {
   await admin.end();
 }
 
-const proc = Bun.spawnSync(["bunx", "drizzle-kit", "push", "--force"], {
+// TTY ありなら対話的に確認（破壊的変更をプロンプトで防止）、なければ --force で自動適用
+// CI の DB は一時的なので --force で問題ない。本番は TTY 経由で実行すること
+const args = ["bunx", "drizzle-kit", "push", ...(process.stdin.isTTY ? [] : ["--force"])];
+const proc = Bun.spawnSync(args, {
   env: { ...process.env, DATABASE_URL: url },
   stdio: ["inherit", "inherit", "inherit"],
 });
