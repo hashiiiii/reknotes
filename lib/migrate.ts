@@ -1,3 +1,5 @@
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 function getDatabaseUrl(): string {
@@ -15,8 +17,8 @@ function getDatabaseUrl(): string {
 const url = getDatabaseUrl();
 const isRemote = process.env.DEPLOYMENT === "remote";
 
-// local: Docker PostgreSQL に CREATE DATABASE してからスキーマ同期
-// remote: Neon 等のマネージド DB はダッシュボードで作成済みなのでスキーマ同期のみ
+// local: Docker PostgreSQL に CREATE DATABASE してからマイグレーション実行
+// remote: Neon 等のマネージド DB はダッシュボードで作成済みなのでマイグレーションのみ
 if (!isRemote) {
   const dbName = new URL(url).pathname.slice(1);
   const adminUrl = url.replace(`/${dbName}`, "/postgres");
@@ -32,8 +34,8 @@ if (!isRemote) {
   await admin.end();
 }
 
-const proc = Bun.spawnSync(["bunx", "drizzle-kit", "push", "--force"], {
-  env: { ...process.env, DATABASE_URL: url },
-  stdio: ["inherit", "inherit", "inherit"],
-});
-process.exit(proc.exitCode ?? 0);
+const client = postgres(url, { max: 1 });
+const db = drizzle(client);
+await migrate(db, { migrationsFolder: "./drizzle" });
+await client.end();
+console.log("Migrations applied successfully");

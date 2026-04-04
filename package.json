@@ -8,6 +8,7 @@
     "build": "bun run lib/build.ts",
     "dev": "bun run build && bun run --watch src/index.ts",
     "migrate": "bun run lib/migrate.ts",
+    "migrate:generate": "bunx drizzle-kit generate",
     "seed": "bun run lib/seed.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
     "test": "ENVIRONMENT=test bun test"
