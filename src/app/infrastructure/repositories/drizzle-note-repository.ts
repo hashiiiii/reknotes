@@ -1,4 +1,4 @@
-import { desc, eq, ilike, lt, or, sql } from "drizzle-orm";
+import { desc, eq, ilike, inArray, lt, or, sql } from "drizzle-orm";
 import type { Note, NoteWithSnippet } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
@@ -65,6 +65,22 @@ export class DrizzleNoteRepository implements INoteRepository {
       .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
       .where(eq(noteTags.noteId, noteId));
     return rows.map((r) => r.name);
+  }
+
+  async findTagsByNoteIds(noteIds: number[]): Promise<Map<number, string[]>> {
+    if (noteIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({ noteId: noteTags.noteId, name: tags.name })
+      .from(tags)
+      .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
+      .where(inArray(noteTags.noteId, noteIds));
+    const map = new Map<number, string[]>();
+    for (const row of rows) {
+      const list = map.get(row.noteId) ?? [];
+      list.push(row.name);
+      map.set(row.noteId, list);
+    }
+    return map;
   }
 
   async findAllWithSnippet(): Promise<NoteWithSnippet[]> {

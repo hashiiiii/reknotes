@@ -6,11 +6,11 @@ export async function listNotes(noteRepo: INoteRepository, cursor?: number) {
 
 export async function listNotesWithTags(noteRepo: INoteRepository, cursor?: number) {
   const result = await noteRepo.list(cursor);
-  const notesWithTags = await Promise.all(
-    result.notes.map(async (n) => ({
-      ...n,
-      tags: await noteRepo.findTagsByNoteId(n.id),
-    })),
-  );
+  const noteIds = result.notes.map((n) => n.id);
+  const tagsMap = await noteRepo.findTagsByNoteIds(noteIds);
+  const notesWithTags = result.notes.map((n) => ({
+    ...n,
+    tags: tagsMap.get(n.id) ?? [],
+  }));
   return { ...result, notes: notesWithTags };
 }
