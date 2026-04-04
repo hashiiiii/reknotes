@@ -77,7 +77,6 @@ noteRoutes.put("/:id", async (c) => {
   const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingProvider, id, title, body);
   if (!note) return c.notFound();
 
-
   return c.redirect(`/notes/${id}`, 303);
 });
 
@@ -85,7 +84,6 @@ noteRoutes.put("/:id", async (c) => {
 noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   await deleteNote(noteRepository, tagRepository, storageProvider, id);
-
 
   // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {
