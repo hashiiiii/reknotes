@@ -1,17 +1,7 @@
 # CLAUDE.md
 
-reknotes — ナレッジ管理アプリ。自動タグ付け・全文検索・3Dグラフ可視化。
-
-## Tech Stack
-
-- **Runtime**: Bun (>=1.3) / TypeScript (strict, ESNext)
-- **Web**: Hono v4 + LiquidJS テンプレート + htmx (SPA ではない)
-- **DB**: PostgreSQL 17 + Drizzle ORM
-- **Embedding**: HuggingFace Transformers (ONNX: embeddinggemma-300m q8) / Cloudflare Workers AI
-- **Storage**: S3互換 (Cloudflare R2 / MinIO)
-- **Frontend**: zenn-markdown-html + 3d-force-graph + Three.js
-- **Lint/Format**: Biome v2 (space indent, line width 120)
-- **Test**: bun:test
+プロジェクト概要・スタック・コマンドは README.md を参照。
+ここには Claude が開発作業する上で知るべきルールと内部構造を記載する。
 
 ## Architecture
 
@@ -21,34 +11,22 @@ reknotes — ナレッジ管理アプリ。自動タグ付け・全文検索・3
 Presentation → Application → Domain ← Infrastructure
 ```
 
-- **Presentation** (`src/app/presentation/`) — Hono ルート、HTTP I/O のみ
-- **Application** (`src/app/application/`) — ユースケース、1ファイル1ユースケース
-- **Domain** (`src/app/domain/`) — エンティティ・純粋関数・リポジトリインターフェース。外部依存ゼロ
-- **Infrastructure** (`src/app/infrastructure/`) — DB・embedding・storage の実装
+- 1ファイル1ユースケース (application 層)
+- Domain は外部依存ゼロ。純粋関数で表現
+- DI は関数引数渡し + `infrastructure/container.ts` シングルトン。フレームワーク不使用
+- インターフェースは所有者レイヤーに配置 (リポジトリ → `domain/`, ポート → `application/port/`)
 
-DI は関数引数渡し + `infrastructure/container.ts` シングルトン。フレームワーク不使用。
-
-## Key Environment Variables
+## Environment Variables
 
 - `DEPLOYMENT`: embedding 実装切り替え (`remote` → Cloudflare Workers AI / それ以外 → ローカル ONNX)
-- `ENVIRONMENT`: DB 分離 (`test` → reknotes_test DB / `development` → reknotes_development DB)
-
-## Commands
-
-```bash
-bun install          # 依存インストール
-bun test             # テスト実行 (実DB接続、モック不使用)
-bun run check        # Biome lint/format + tsc --noEmit
-bun run build        # フロントエンドアセットビルド
-bun run migrate      # Drizzle マイグレーション実行
-```
+- `ENVIRONMENT`: DB 分離 (`test` → reknotes_test / `development` → reknotes_development)
 
 ## Code Conventions
 
-- インターフェースは所有者レイヤーに配置 (リポジトリ → domain/, ポート → application/port/)
-- Domain 層は外部依存ゼロ。純粋関数で表現
 - タグ名は常に小文字・トリム済み (`normalizeTagName()`)
+- テストは実 DB 接続 (モック不使用)。`ENVIRONMENT=test` で test DB を使用
 - 日本語コメント OK
+- Biome: space indent, line width 120
 
 ## Database
 
