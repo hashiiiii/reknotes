@@ -234,3 +234,49 @@ mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; bord
   0%   { transform: translateX(0) translateY(0); opacity: 1; }
   100% { transform: translateX(14px) translateY(6px); opacity: 0; }
 }
+
+/* ── Responsive: mobile ≤768px ── */
+@media (max-width: 768px) {
+  /* Nav: stack search and links below brand */
+  .nav { padding: 0.5rem 0.75rem; }
+  .nav-inner { flex-wrap: wrap; gap: 0.5rem; }
+  .nav-search { order: 3; flex-basis: 100%; max-width: 100%; }
+  .nav-links { margin-left: auto; }
+  .nav-links a { font-size: 0.82rem; min-height: 44px; justify-content: center; }
+
+  /* Container padding */
+  .container { padding: 0.75rem; }
+
+  /* Compose bar: full width */
+  .compose-bar { max-width: 100%; }
+
+  /* Note grid: single column via masonry override */
+  .note-grid { display: flex !important; flex-direction: column; gap: var(--gap); }
+  .note-grid .note-card { position: relative !important; visibility: visible !important; width: 100% !important; left: auto !important; top: auto !important; }
+
+  /* Note detail */
+  .note-header-row h1 { font-size: 1.25rem; }
+  .note-body pre { padding: 0.75rem; font-size: 0.85rem; }
+  .note-detail .input-title { font-size: 1rem; }
+
+  /* Graph: panel overlay */
+  .graph-layout { flex-direction: column; }
+  .graph-main { min-height: 50vh; }
+  .graph-panel {
+    width: 100%; position: fixed; bottom: 0; left: 0; right: 0;
+    max-height: 50vh; border-left: none; border-top: 1px solid var(--border);
+    z-index: 20;
+  }
+
+  /* Mini graph */
+  #mini-graph-container { height: 300px; }
+
+  /* Tap targets: ensure minimum 44px */
+  .btn { min-height: 44px; padding: 0.5rem 1rem; }
+  .kebab-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  .theme-toggle { width: 44px; height: 44px; }
+
+  /* Search input */
+  .nav-search-input { padding: 0.55rem 0.9rem; font-size: 0.9rem; min-height: 44px; }
+  .input-search { min-height: 44px; }
+}

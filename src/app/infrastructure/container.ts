@@ -11,24 +11,11 @@ import { DrizzleNoteRepository } from "./repositories/drizzle-note-repository";
 import { DrizzleTagRepository } from "./repositories/drizzle-tag-repository";
 import { S3StorageProvider } from "./storage/s3-storage-provider";
 
-let noteRepository: INoteRepository;
-let tagRepository: ITagRepository;
-let graphRepository: IGraphRepository;
-let storageProvider: IStorageProvider;
-let embeddingProvider: IEmbeddingProvider;
-
-if (process.env.DEPLOYMENT === "remote") {
-  noteRepository = new DrizzleNoteRepository(db);
-  tagRepository = new DrizzleTagRepository(db);
-  graphRepository = new DrizzleGraphRepository(db);
-  storageProvider = new S3StorageProvider();
-  embeddingProvider = new CloudflareEmbeddingProvider();
-} else {
-  noteRepository = new DrizzleNoteRepository(db);
-  tagRepository = new DrizzleTagRepository(db);
-  graphRepository = new DrizzleGraphRepository(db);
-  storageProvider = new S3StorageProvider();
-  embeddingProvider = new LocalEmbeddingProvider();
-}
+const noteRepository: INoteRepository = new DrizzleNoteRepository(db);
+const tagRepository: ITagRepository = new DrizzleTagRepository(db);
+const graphRepository: IGraphRepository = new DrizzleGraphRepository(db);
+const storageProvider: IStorageProvider = new S3StorageProvider();
+const embeddingProvider: IEmbeddingProvider =
+  process.env.DEPLOYMENT === "remote" ? new CloudflareEmbeddingProvider() : new LocalEmbeddingProvider();
 
 export { embeddingProvider, graphRepository, noteRepository, storageProvider, tagRepository };
