@@ -83,7 +83,9 @@ noteRoutes.put("/:id", async (c) => {
 // ノート削除
 noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  await deleteNote(noteRepository, tagRepository, storageProvider, id);
+  const deleted = await deleteNote(noteRepository, tagRepository, storageProvider, id);
+
+  if (!deleted) return c.notFound();
 
   // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {

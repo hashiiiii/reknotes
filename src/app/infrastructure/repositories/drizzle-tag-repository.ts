@@ -48,8 +48,9 @@ export class DrizzleTagRepository implements ITagRepository {
     await this.db.delete(noteTags);
   }
 
-  async removeById(id: number): Promise<void> {
-    await this.db.delete(tags).where(eq(tags.id, id));
+  async removeById(id: number): Promise<boolean> {
+    const deleted = await this.db.delete(tags).where(eq(tags.id, id)).returning();
+    return deleted.length > 0;
   }
 
   async removeOrphanTag(tagId: number): Promise<void> {

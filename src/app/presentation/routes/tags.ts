@@ -15,7 +15,8 @@ tagRoutes.get("/", async (c) => {
 // タグ削除（CASCADE で note_tags も自動削除）
 tagRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  await deleteTag(tagRepository, id);
+  const deleted = await deleteTag(tagRepository, id);
+  if (!deleted) return c.notFound();
   return c.text("OK");
 });
 
