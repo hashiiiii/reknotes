@@ -118,3 +118,27 @@ jobs:
           claude_args: |
             --allowedTools "${{ env.ALLOWED_TOOLS }}"
             --disallowedTools "${{ env.DISALLOWED_TOOLS }}"
+
+      - name: Post approval if no inline comments
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = ${{ fromJSON(steps.pr-info.outputs.result).number }};
+
+            const reviewComments = await github.paginate(
+              github.rest.pulls.listReviewComments,
+              { owner, repo, pull_number },
+            );
+            const hasBotComments = reviewComments.some(c => c.user.login === 'claude[bot]');
+
+            if (!hasBotComments) {
+              await github.rest.pulls.createReview({
+                owner,
+                repo,
+                pull_number,
+                event: 'APPROVE',
+                body: 'Code review completed — no issues found.',
+              });
+            }
