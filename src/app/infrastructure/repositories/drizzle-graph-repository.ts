@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { NoteNode, NoteTagLink, TagNode } from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 import type { DrizzleDb } from "../db";
-import { notes, noteTags, tags } from "../db/schema";
+import { noteLinkCount, noteSnippet, notes, noteTags, tags } from "../db/schema";
 
 export class DrizzleGraphRepository implements IGraphRepository {
   constructor(private db: DrizzleDb) {}
@@ -13,8 +13,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
-        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
+        snippet: noteSnippet,
+        linkCount: noteLinkCount,
       })
       .from(notes);
   }
@@ -41,8 +41,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
-        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
+        snippet: noteSnippet,
+        linkCount: noteLinkCount,
       })
       .from(notes)
       .where(eq(notes.id, noteId))
@@ -56,8 +56,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
-        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
+        snippet: noteSnippet,
+        linkCount: noteLinkCount,
       })
       .from(notes)
       .innerJoin(noteTags, eq(notes.id, noteTags.noteId))

@@ -1,8 +1,8 @@
-import { desc, eq, ilike, inArray, lt, or, sql } from "drizzle-orm";
+import { desc, eq, ilike, inArray, lt, or } from "drizzle-orm";
 import type { Note, NoteWithSnippet } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
-import { notes, noteTags, tags } from "../db/schema";
+import { noteLinkCount, noteSnippet, notes, noteTags, tags } from "../db/schema";
 
 const PAGE_SIZE = 20;
 
@@ -89,8 +89,8 @@ export class DrizzleNoteRepository implements INoteRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
-        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
+        snippet: noteSnippet,
+        linkCount: noteLinkCount,
       })
       .from(notes);
   }

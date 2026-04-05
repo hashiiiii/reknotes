@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { bigint, index, integer, pgTable, primaryKey, serial, text } from "drizzle-orm/pg-core";
 
 export const notes = pgTable(
@@ -33,3 +34,7 @@ export const noteTags = pgTable(
   },
   (table) => [primaryKey({ columns: [table.noteId, table.tagId] }), index("idx_note_tags_tag_id").on(table.tagId)],
 );
+
+// ── 共通 SQL フラグメント ──
+export const noteSnippet = sql<string>`SUBSTR(${notes.body}, 1, 120)`;
+export const noteLinkCount = sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`;
