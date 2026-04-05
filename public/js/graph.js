@@ -74,6 +74,33 @@ var NODE_COLORS = [
   "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
 ];
 
+// ── 共通グラフ初期化: ForceGraph3D の基本設定を適用 ──
+function applyBaseGraphConfig(Graph, container, DPR) {
+  Graph
+    .backgroundColor("#08080f")
+    .showNavInfo(false)
+    .nodeThreeObject(function (node) { return createStarNode(node, DPR); })
+    .nodeLabel("")
+    .linkColor(function () { return "rgba(130,170,220,0.4)"; })
+    .linkWidth(0.45)
+    .linkOpacity(0.6)
+    .d3AlphaDecay(FORCE.ALPHA_DECAY)
+    .d3VelocityDecay(FORCE.VELOCITY_DECAY)
+    .warmupTicks(FORCE.WARMUP_TICKS)
+    .cooldownTicks(FORCE.COOLDOWN_TICKS)
+    .onNodeHover(function (node) {
+      container.style.cursor = node ? "pointer" : "default";
+    });
+
+  Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
+  Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
+
+  addStarfield(Graph);
+  startPulseAnimation();
+
+  return Graph;
+}
+
 function assignNodeStyles(nodes) {
   for (var i = 0; i < nodes.length; i++) {
     var n = nodes[i];
@@ -96,10 +123,14 @@ function initCosmicGraph(container, data) {
 
   var adjacency = buildAdjacency(data);
 
-  var Graph = ForceGraph3D()(container)
-    .graphData(data)
-    .backgroundColor("#08080f")
-    .showNavInfo(false)
+  var Graph = applyBaseGraphConfig(
+    ForceGraph3D()(container).graphData(data),
+    container,
+    DPR
+  );
+
+  // ── メイングラフ固有: ハイライト対応のノード描画 ──
+  Graph
     .nodeThreeObject(function (node) {
       var obj = createStarNode(node, DPR);
       if (_highlightState.active) {
@@ -113,7 +144,6 @@ function initCosmicGraph(container, data) {
       }
       return obj;
     })
-    .nodeLabel("")
     .linkColor(function (link) {
       if (!_highlightState.active) return "rgba(130,170,220,0.4)";
       var s = typeof link.source === "object" ? link.source.id : link.source;
@@ -130,7 +160,6 @@ function initCosmicGraph(container, data) {
       if (s === sel || t === sel) return 1.2;
       return 0.15;
     })
-    .linkOpacity(0.6)
     .linkDirectionalParticles(function (link) {
       if (!_highlightState.active) return 0;
       var s = typeof link.source === "object" ? link.source.id : link.source;
@@ -144,13 +173,6 @@ function initCosmicGraph(container, data) {
     .linkDirectionalParticleColor(function () {
       if (!_highlightState.active) return "rgba(150,200,255,0.4)";
       return "rgba(255,200,100,0.8)";
-    })
-    .d3AlphaDecay(FORCE.ALPHA_DECAY)
-    .d3VelocityDecay(FORCE.VELOCITY_DECAY)
-    .warmupTicks(FORCE.WARMUP_TICKS)
-    .cooldownTicks(FORCE.COOLDOWN_TICKS)
-    .onNodeHover(function (node) {
-      container.style.cursor = node ? "pointer" : "default";
     })
     .onNodeClick(function (node) {
       highlightNeighbors(node, data, adjacency, Graph);
@@ -171,14 +193,7 @@ function initCosmicGraph(container, data) {
       dismissPanel();
     });
 
-  Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
-  Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
-
-  addStarfield(Graph);
   addBloom(Graph);
-
-  // ── タグ脈動アニメーション開始 ──
-  startPulseAnimation();
 
   window._reknGraph = Graph;
 
@@ -730,45 +745,26 @@ function initMiniGraph(container, data, focusNodeId) {
 
   assignNodeStyles(data.nodes);
 
-  var Graph = ForceGraph3D()(container)
-    .width(container.clientWidth)
-    .height(container.clientHeight)
-    .graphData(data)
-    .backgroundColor("#08080f")
-    .showNavInfo(false)
-    .nodeThreeObject(function (node) {
-      return createStarNode(node, DPR);
-    })
-    .nodeLabel("")
-    .linkColor(function () { return "rgba(130,170,220,0.4)"; })
-    .linkWidth(0.45)
-    .linkOpacity(0.6)
-    .linkDirectionalParticles(0)
-    .d3AlphaDecay(FORCE.ALPHA_DECAY)
-    .d3VelocityDecay(FORCE.VELOCITY_DECAY)
-    .warmupTicks(FORCE.WARMUP_TICKS)
-    .cooldownTicks(FORCE.COOLDOWN_TICKS)
-    .onNodeHover(function (node) {
-      container.style.cursor = node ? "pointer" : "default";
-    })
-    .onNodeClick(function (node) {
-      if (node.type === "note") {
-        window.location.href = "/notes/" + node.id.replace("note-", "");
-      } else if (node.type === "tag") {
-        window.location.href = "/graph?node=" + encodeURIComponent(node.id);
-      }
-    });
+  var Graph = applyBaseGraphConfig(
+    ForceGraph3D()(container)
+      .width(container.clientWidth)
+      .height(container.clientHeight)
+      .graphData(data),
+    container,
+    DPR
+  );
 
-  Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
-  Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
-
-  addStarfield(Graph);
+  // ── ミニグラフ固有: クリックでページ遷移 ──
+  Graph.onNodeClick(function (node) {
+    if (node.type === "note") {
+      window.location.href = "/notes/" + node.id.replace("note-", "");
+    } else if (node.type === "tag") {
+      window.location.href = "/graph?node=" + encodeURIComponent(node.id);
+    }
+  });
 
   // warmupTicks でレイアウト確定済み → zoomToFit で全体を表示（余白多めでラベル重なり回避）
   setTimeout(function () { Graph.zoomToFit(CAMERA.DURATION, CAMERA.MINI_PADDING); }, CAMERA.DELAY);
-
-  // 脈動アニメーション（ミニでも共有）
-  startPulseAnimation();
 }
 
 // グローバルに公開（note.liquid のインラインスクリプトから呼べるように）
