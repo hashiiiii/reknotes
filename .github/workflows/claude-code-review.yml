@@ -122,6 +122,7 @@ jobs:
             --allowedTools "${{ env.ALLOWED_TOOLS }}"
             --disallowedTools "${{ env.DISALLOWED_TOOLS }}"
 
+      # Requires: Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"
       - name: Post approval if no inline comments
         uses: actions/github-script@v8
         with:
