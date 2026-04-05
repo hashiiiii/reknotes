@@ -68,29 +68,31 @@ var _highlightState = { active: false, nodeId: null, neighborIds: null };
 // 脈動アニメーション用: タグノードの参照リスト
 var _pulsingTags = [];
 
-function initCosmicGraph(container, data) {
-  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+// ── ノードごとの色・サイズを事前計算 ──
+var NOTE_COLORS = [
+  "rgba(107,184,115,0.85)", "rgba(141,212,152,0.85)",
+  "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
+];
 
-  // ── ノードごとの色・サイズを事前計算 ──
-  var noteColors = [
-    "rgba(107,184,115,0.85)", "rgba(141,212,152,0.85)",
-    "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
-  ];
-
-  for (var i = 0; i < data.nodes.length; i++) {
-    var n = data.nodes[i];
+function assignNodeStyles(nodes) {
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
     if (n.type === "tag") {
       var cls = getStarClass(n.val);
       n._starClass = cls;
       n._color = cls.color;
-      // サイズ幅を大きく: 少ないタグ=8、多いタグ=30
       n._size = Math.max(8, Math.min(30, 8 + n.val * 2.2));
     } else {
-      n._color = noteColors[i % noteColors.length];
-      // ノートも大きめに
+      n._color = NOTE_COLORS[i % NOTE_COLORS.length];
       n._size = Math.max(3.5, Math.min(8, 3.5 + n.val * 0.9));
     }
   }
+}
+
+function initCosmicGraph(container, data) {
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  assignNodeStyles(data.nodes);
 
   var adjacency = buildAdjacency(data);
 
@@ -726,23 +728,7 @@ function escapeHtml(str) {
 function initMiniGraph(container, data, focusNodeId) {
   var DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-  // ノードの色・サイズを事前計算（メインと同じロジック）
-  var noteColors = [
-    "rgba(107,184,115,0.85)", "rgba(141,212,152,0.85)",
-    "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
-  ];
-  for (var i = 0; i < data.nodes.length; i++) {
-    var n = data.nodes[i];
-    if (n.type === "tag") {
-      var cls = getStarClass(n.val);
-      n._starClass = cls;
-      n._color = cls.color;
-      n._size = Math.max(8, Math.min(30, 8 + n.val * 2.2));
-    } else {
-      n._color = noteColors[i % noteColors.length];
-      n._size = Math.max(3.5, Math.min(8, 3.5 + n.val * 0.9));
-    }
-  }
+  assignNodeStyles(data.nodes);
 
   var Graph = ForceGraph3D()(container)
     .width(container.clientWidth)
