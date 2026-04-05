@@ -137,11 +137,22 @@ jobs:
             const hasBotComments = reviewComments.some(c => c.user.login === 'claude[bot]');
 
             if (!hasBotComments) {
-              await github.rest.pulls.createReview({
-                owner,
-                repo,
-                pull_number,
-                event: 'APPROVE',
-                body: 'Code review completed — no issues found.',
-              });
+              try {
+                await github.rest.pulls.createReview({
+                  owner,
+                  repo,
+                  pull_number,
+                  event: 'APPROVE',
+                  body: 'Code review completed — no issues found.',
+                });
+              } catch (e) {
+                // Falls back to COMMENT if APPROVE is not permitted
+                await github.rest.pulls.createReview({
+                  owner,
+                  repo,
+                  pull_number,
+                  event: 'COMMENT',
+                  body: 'Code review completed — no issues found.',
+                });
+              }
             }
