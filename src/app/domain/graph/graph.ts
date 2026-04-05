@@ -19,9 +19,6 @@ export interface GraphData {
   links: GraphLink[];
 }
 
-// リポジトリが返す生データ型（NoteWithSnippet と同一構造のため再利用）
-export type { NoteWithSnippet as NoteNode } from "../note/note";
-
 export interface TagNode {
   id: number;
   name: string;

@@ -1,13 +1,14 @@
 import { eq, sql } from "drizzle-orm";
-import type { NoteNode, NoteTagLink, TagNode } from "../../domain/graph/graph";
+import type { NoteTagLink, TagNode } from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
+import type { NoteWithSnippet } from "../../domain/note/note";
 import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
 export class DrizzleGraphRepository implements IGraphRepository {
   constructor(private db: DrizzleDb) {}
 
-  async findAllNoteNodes(): Promise<NoteNode[]> {
+  async findAllNoteNodes(): Promise<NoteWithSnippet[]> {
     return this.db
       .select({
         id: notes.id,
@@ -35,7 +36,7 @@ export class DrizzleGraphRepository implements IGraphRepository {
     return this.db.select().from(noteTags);
   }
 
-  async findNoteNodeById(noteId: number): Promise<NoteNode | null> {
+  async findNoteNodeById(noteId: number): Promise<NoteWithSnippet | null> {
     const [row] = await this.db
       .select({
         id: notes.id,
@@ -50,7 +51,7 @@ export class DrizzleGraphRepository implements IGraphRepository {
     return row ?? null;
   }
 
-  async findRelatedNotes(noteId: number): Promise<NoteNode[]> {
+  async findRelatedNotes(noteId: number): Promise<NoteWithSnippet[]> {
     return this.db
       .select({
         id: notes.id,
