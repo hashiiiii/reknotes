@@ -19,6 +19,15 @@ export interface GraphData {
   links: GraphLink[];
 }
 
+// リポジトリが返す生データ型
+export interface NoteNode {
+  id: number;
+  title: string;
+  createdAt: number;
+  snippet: string;
+  linkCount: number;
+}
+
 export interface TagNode {
   id: number;
   name: string;

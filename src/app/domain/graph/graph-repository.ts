@@ -1,12 +1,11 @@
-import type { NoteWithSnippet } from "../note/note";
-import type { NoteTagLink, TagNode } from "./graph";
+import type { NoteNode, NoteTagLink, TagNode } from "./graph";
 
 export interface IGraphRepository {
-  findAllNoteNodes(): Promise<NoteWithSnippet[]>;
+  findAllNoteNodes(): Promise<NoteNode[]>;
   findAllTagNodes(): Promise<TagNode[]>;
   findAllLinks(): Promise<NoteTagLink[]>;
-  findNoteNodeById(noteId: number): Promise<NoteWithSnippet | null>;
-  findRelatedNotes(noteId: number): Promise<NoteWithSnippet[]>;
+  findNoteNodeById(noteId: number): Promise<NoteNode | null>;
+  findRelatedNotes(noteId: number): Promise<NoteNode[]>;
   findRelatedTags(noteId: number): Promise<TagNode[]>;
   findRelatedLinks(noteId: number): Promise<NoteTagLink[]>;
 }
