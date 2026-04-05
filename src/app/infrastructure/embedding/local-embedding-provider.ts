@@ -1,5 +1,5 @@
 import type { PreTrainedModel, PreTrainedTokenizer } from "@huggingface/transformers";
-import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
+import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../application/port/embedding-provider";
 
 const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
 
@@ -40,14 +40,14 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
   }
 
   async embedPassage(text: string): Promise<Float32Array> {
-    return this.embed(`title: none | text: ${text}`);
+    return this.embed(`${PASSAGE_PREFIX}${text}`);
   }
 
   async embedTag(tagName: string): Promise<Float32Array> {
     const cached = this.tagCache.get(tagName);
     if (cached) return cached;
 
-    const emb = await this.embed(`task: search result | query: ${tagName}`);
+    const emb = await this.embed(`${QUERY_PREFIX}${tagName}`);
     this.tagCache.set(tagName, emb);
     return emb;
   }

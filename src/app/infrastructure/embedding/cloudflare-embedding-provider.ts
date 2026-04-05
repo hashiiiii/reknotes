@@ -1,4 +1,4 @@
-import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
+import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../application/port/embedding-provider";
 
 const MODEL = "@cf/google/embeddinggemma-300m";
 
@@ -23,7 +23,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   }
 
   async embedPassage(text: string): Promise<Float32Array> {
-    const [embedding] = await this.embed([`title: none | text: ${text}`]);
+    const [embedding] = await this.embed([`${PASSAGE_PREFIX}${text}`]);
     return embedding;
   }
 
@@ -31,7 +31,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     const cached = this.tagCache.get(tagName);
     if (cached) return cached;
 
-    const [embedding] = await this.embed([`task: search result | query: ${tagName}`]);
+    const [embedding] = await this.embed([`${QUERY_PREFIX}${tagName}`]);
     this.tagCache.set(tagName, embedding);
     return embedding;
   }
@@ -40,7 +40,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     if (tagNames.length === 0) return;
 
     // バッチで一括取得（API は最大100件）
-    const prefixed = tagNames.map((name) => `task: search result | query: ${name}`);
+    const prefixed = tagNames.map((name) => `${QUERY_PREFIX}${name}`);
     for (let i = 0; i < prefixed.length; i += 100) {
       const batch = prefixed.slice(i, i + 100);
       const embeddings = await this.embed(batch);
