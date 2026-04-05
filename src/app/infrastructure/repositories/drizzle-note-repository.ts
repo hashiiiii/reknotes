@@ -2,7 +2,7 @@ import { desc, eq, ilike, inArray, lt, or } from "drizzle-orm";
 import type { Note, NoteWithSnippet } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
-import { noteLinkCount, noteSnippet, notes, noteTags, tags } from "../db/schema";
+import { noteSnippet, notes, noteTagCount, noteTags, tags } from "../db/schema";
 
 const PAGE_SIZE = 20;
 
@@ -89,8 +89,8 @@ export class DrizzleNoteRepository implements INoteRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: noteSnippet,
-        linkCount: noteLinkCount,
+        snippet: noteSnippet(),
+        linkCount: noteTagCount(),
       })
       .from(notes);
   }

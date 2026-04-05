@@ -36,5 +36,5 @@ export const noteTags = pgTable(
 );
 
 // ── 共通 SQL フラグメント ──
-export const noteSnippet = sql<string>`SUBSTR(${notes.body}, 1, 120)`;
-export const noteLinkCount = sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`;
+export const noteSnippet = () => sql<string>`SUBSTR(${notes.body}, 1, 120)`;
+export const noteTagCount = () => sql<number>`(SELECT COUNT(*) FROM ${noteTags} WHERE note_id = ${notes.id})`;

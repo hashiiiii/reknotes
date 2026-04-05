@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import type { NoteNode, NoteTagLink, TagNode } from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 import type { DrizzleDb } from "../db";
-import { noteLinkCount, noteSnippet, notes, noteTags, tags } from "../db/schema";
+import { noteSnippet, notes, noteTagCount, noteTags, tags } from "../db/schema";
 
 export class DrizzleGraphRepository implements IGraphRepository {
   constructor(private db: DrizzleDb) {}
@@ -13,8 +13,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: noteSnippet,
-        linkCount: noteLinkCount,
+        snippet: noteSnippet(),
+        linkCount: noteTagCount(),
       })
       .from(notes);
   }
@@ -41,8 +41,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: noteSnippet,
-        linkCount: noteLinkCount,
+        snippet: noteSnippet(),
+        linkCount: noteTagCount(),
       })
       .from(notes)
       .where(eq(notes.id, noteId))
@@ -56,8 +56,8 @@ export class DrizzleGraphRepository implements IGraphRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: noteSnippet,
-        linkCount: noteLinkCount,
+        snippet: noteSnippet(),
+        linkCount: noteTagCount(),
       })
       .from(notes)
       .innerJoin(noteTags, eq(notes.id, noteTags.noteId))
