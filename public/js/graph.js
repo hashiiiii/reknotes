@@ -79,7 +79,6 @@ function applyBaseGraphConfig(Graph, container, DPR) {
   Graph
     .backgroundColor("#08080f")
     .showNavInfo(false)
-    .nodeThreeObject(function (node) { return createStarNode(node, DPR); })
     .nodeLabel("")
     .linkColor(function () { return "rgba(130,170,220,0.4)"; })
     .linkWidth(0.45)
@@ -94,9 +93,6 @@ function applyBaseGraphConfig(Graph, container, DPR) {
 
   Graph.d3Force("charge").strength(FORCE.CHARGE_STRENGTH);
   Graph.d3Force("link").distance(FORCE.LINK_DISTANCE);
-
-  addStarfield(Graph);
-  startPulseAnimation();
 
   return Graph;
 }
@@ -193,7 +189,9 @@ function initCosmicGraph(container, data) {
       dismissPanel();
     });
 
+  addStarfield(Graph);
   addBloom(Graph);
+  startPulseAnimation();
 
   window._reknGraph = Graph;
 
@@ -753,6 +751,11 @@ function initMiniGraph(container, data, focusNodeId) {
     container,
     DPR
   );
+
+  Graph.nodeThreeObject(function (node) { return createStarNode(node, DPR); });
+
+  addStarfield(Graph);
+  startPulseAnimation();
 
   // ── ミニグラフ固有: クリックでページ遷移 ──
   Graph.onNodeClick(function (node) {
