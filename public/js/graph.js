@@ -69,7 +69,7 @@ var _highlightState = { active: false, nodeId: null, neighborIds: null };
 var _pulsingTags = [];
 
 // ── ノードごとの色・サイズを事前計算 ──
-var NOTE_COLORS = [
+var NODE_COLORS = [
   "rgba(107,184,115,0.85)", "rgba(141,212,152,0.85)",
   "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
 ];
@@ -83,7 +83,7 @@ function assignNodeStyles(nodes) {
       n._color = cls.color;
       n._size = Math.max(8, Math.min(30, 8 + n.val * 2.2));
     } else {
-      n._color = NOTE_COLORS[i % NOTE_COLORS.length];
+      n._color = NODE_COLORS[i % NODE_COLORS.length];
       n._size = Math.max(3.5, Math.min(8, 3.5 + n.val * 0.9));
     }
   }
