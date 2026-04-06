@@ -1,0 +1,34 @@
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "public/**"
+          - "src/app/presentation/views/**"
+          - "lib/build.ts"
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/app/domain/**"
+          - "src/app/application/**"
+          - "src/app/infrastructure/**"
+          - "src/app/presentation/routes/**"
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/app/infrastructure/db/**"
+          - "drizzle/**"
+          - "lib/migrate.ts"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**"
+          - ".github/dependabot.yml"
+          - ".github/labeler.yml"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*.md"
+          - "docs/**"
