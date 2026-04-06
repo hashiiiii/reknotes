@@ -1,5 +1,10 @@
 import type { IStorageProvider } from "../port/storage-provider";
 
+/** Markdown の画像 alt テキストで特殊文字をエスケープする */
+function escapeMarkdownAlt(text: string): string {
+  return text.replace(/[\\[\]()]/g, (ch) => `\\${ch}`);
+}
+
 const ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -36,7 +41,7 @@ export async function uploadFile(
 
   const url = `/api/files/${filename}`;
   const isVideo = file.type.startsWith("video/");
-  const markdown = isVideo ? `<video src="${url}" controls></video>` : `![${file.name}](${url})`;
+  const markdown = isVideo ? `<video src="${url}" controls></video>` : `![${escapeMarkdownAlt(file.name)}](${url})`;
 
   return { ok: true, result: { url, markdown, filename } };
 }
