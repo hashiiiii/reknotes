@@ -1,13 +1,54 @@
-name: Refactor Builder
+name: Refactor
 
 on:
   schedule:
-    # 02:00 JST = 17:00 UTC (previous day)
-    - cron: "0 17 * * *"
+    # 01:00 JST = 16:00 UTC (previous day)
+    - cron: "0 16 * * *"
   workflow_dispatch:
 
 jobs:
+  analyze-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--max-turns 30"
+          direct_prompt: "/refactor-analyst-frontend"
+
+  analyze-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--max-turns 30"
+          direct_prompt: "/refactor-analyst-backend"
+
   build:
+    needs: [analyze-frontend, analyze-backend]
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
