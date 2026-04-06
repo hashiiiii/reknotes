@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Write",
+      "Edit",
+      "mcp__claude_ai_Github_MCP__list_issues",
+      "mcp__claude_ai_Github_MCP__search_issues",
+      "mcp__claude_ai_Github_MCP__issue_read",
+      "mcp__claude_ai_Github_MCP__issue_write",
+      "mcp__claude_ai_Github_MCP__add_issue_comment",
+      "mcp__claude_ai_Github_MCP__list_pull_requests",
+      "mcp__claude_ai_Github_MCP__search_pull_requests",
+      "mcp__claude_ai_Github_MCP__pull_request_read",
+      "mcp__claude_ai_Github_MCP__create_pull_request",
+      "mcp__claude_ai_Github_MCP__create_branch",
+      "mcp__claude_ai_Github_MCP__list_branches",
+      "mcp__claude_ai_Github_MCP__list_commits",
+      "mcp__claude_ai_Github_MCP__get_file_contents",
+      "mcp__claude_ai_Github_MCP__push_files",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git status*)",
+      "Bash(bun run check*)",
+      "Bash(bun run build*)"
+    ]
+  }
+}
