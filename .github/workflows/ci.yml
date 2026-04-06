@@ -46,8 +46,8 @@ jobs:
       - name: Run tests
         run: bun test
 
-      - name: Lint & typecheck
+      - name: Run lint & typecheck
         run: bun run check
 
-      - name: Build
+      - name: Run build
         run: bun run build
