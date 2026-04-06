@@ -23,7 +23,7 @@ Read `CLAUDE.md` to understand the project's conventions and architecture.
 
 ### 2. Analyze Backend Code
 
-Analyze the entire `src/app/` directory for refactoring opportunities:
+Analyze `src/app/domain/`, `src/app/application/`, and `src/app/infrastructure/` for refactoring opportunities:
 
 - Type safety improvements
 - Layer violations (dependencies not flowing inward)
@@ -33,9 +33,11 @@ Analyze the entire `src/app/` directory for refactoring opportunities:
 - Unused code or imports
 - Code simplification and readability improvements
 
+Do NOT analyze `src/app/presentation/` or `public/` — these are covered by the frontend analyst.
+
 ### 3. Create or Update GitHub Issue
 
-Create or append to a GitHub Issue using `gh` CLI:
+Create or append to a GitHub Issue:
 
 - **Title**: `Refactoring Plan YYYY-MM-DD` (today's date)
 - If an Issue with the same date already exists, append as a comment

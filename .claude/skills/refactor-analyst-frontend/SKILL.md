@@ -27,12 +27,13 @@ Analyze the following areas for refactoring opportunities:
 
 - `public/css/` — CSS cleanup, deduplication, naming improvements
 - `public/js/` — JavaScript improvements, module structure
-- `src/app/presentation/routes/` — Route handler simplification
-- `src/app/presentation/views/` — Template structure improvements
+- `src/app/presentation/` — Route handlers, views, templates
+
+Do NOT analyze `src/app/domain/`, `src/app/application/`, or `src/app/infrastructure/` — these are covered by the backend analyst.
 
 ### 3. Create or Update GitHub Issue
 
-Create or append to a GitHub Issue using `gh` CLI:
+Create or append to a GitHub Issue:
 
 - **Title**: `Refactoring Plan YYYY-MM-DD` (today's date)
 - If an Issue with the same date already exists, append as a comment
