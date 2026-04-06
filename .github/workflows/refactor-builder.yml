@@ -64,38 +64,4 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: "--max-turns 50"
-          direct_prompt: |
-            あなたは reknotes リポジトリのリファクタリング実行エージェントです。
-
-            ## 制約
-
-            - 破壊的変更は行わない
-            - 機能追加はしない。リファクタリングのみ
-            - CLAUDE.md のアーキテクチャ規約に必ず従う
-            - 1つの PR に複数の無関係な変更を混ぜない
-
-            ## 環境
-
-            - Bun と依存関係はインストール済み
-            - PostgreSQL が localhost:5432 で稼働中
-            - `bun install && bun run check && bun run build` で検証可能
-
-            ## やること
-
-            1. CLAUDE.md を読み、プロジェクトの規約とアーキテクチャを理解する
-            2. GitHub Issue "Refactoring Plan" の最新のものを読む
-            3. 既に open な PR を確認し、重複する作業を避ける
-            4. Issue 内の候補から優先度の高いものを選ぶ
-               - 両方の Analyst が指摘した箇所を優先する
-               - インパクト「高」かつ容易さ「小」のものを優先する
-               - 判断に迷ったら、より安全で小さい変更を選ぶ
-            5. 上位から最大5つの PR を作成する
-               - 各 PR は独立したブランチで作成する（ブランチ名: refactor/簡潔な説明）
-               - 修正後に `bun run check && bun run build` で検証する
-               - 検証が通らなければその PR は作成せずスキップする
-               - PR 本文に対応する Issue の候補を記載する
-            6. CI が通るよう修正する
-               - PR 作成後は CI が走るので CI の実行結果を見て、必要に応じて修正をする
-            7. 完了したら Issue にコメントで実行結果を報告する
-               - 作成した PR の一覧
-               - スキップした候補があればその理由
+          direct_prompt: "/refactor-builder"
