@@ -24,8 +24,11 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--max-turns 30"
-          direct_prompt: "/refactor-analyst-frontend"
+          prompt: "/refactor-analyst-frontend"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 30
+            --allowedTools Read,Grep,Glob,Bash(gh *)
 
   analyze-backend:
     runs-on: ubuntu-latest
@@ -44,8 +47,11 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--max-turns 30"
-          direct_prompt: "/refactor-analyst-backend"
+          prompt: "/refactor-analyst-backend"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 30
+            --allowedTools Read,Grep,Glob,Bash(gh *)
 
   build:
     needs: [analyze-frontend, analyze-backend]
@@ -104,5 +110,8 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: "--max-turns 50"
-          direct_prompt: "/refactor-builder"
+          prompt: "/refactor-builder"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 50
+            --allowedTools Read,Edit,Write,Grep,Glob,Bash

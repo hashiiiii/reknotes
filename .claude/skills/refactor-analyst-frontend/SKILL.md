@@ -1,7 +1,8 @@
 ---
 name: refactor-analyst-frontend
-description: Analyze frontend code and report refactoring candidates to a GitHub Issue.
+description: Analyze frontend code (CSS, JS, routes, views) and report refactoring candidates to a Refactoring Plan Issue.
 disable-model-invocation: true
+allowed-tools: Read Grep Glob Bash(gh *)
 ---
 
 # Refactor Analyst (Frontend)
@@ -32,7 +33,7 @@ Analyze the following areas for refactoring opportunities:
 
 ### 3. Create or Update GitHub Issue
 
-Create or append to a GitHub Issue:
+Create or append to a GitHub Issue using `gh` CLI:
 
 - **Title**: `Refactoring Plan YYYY-MM-DD` (today's date)
 - If an Issue with the same date already exists, append as a comment

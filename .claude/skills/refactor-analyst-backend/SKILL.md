@@ -1,7 +1,8 @@
 ---
 name: refactor-analyst-backend
-description: Analyze backend code and report refactoring candidates to a GitHub Issue.
+description: Analyze backend code (domain, application, infrastructure layers) and report refactoring candidates to a Refactoring Plan Issue.
 disable-model-invocation: true
+allowed-tools: Read Grep Glob Bash(gh *)
 ---
 
 # Refactor Analyst (Backend)
@@ -35,7 +36,7 @@ Analyze the entire `src/app/` directory for refactoring opportunities:
 
 ### 3. Create or Update GitHub Issue
 
-Create or append to a GitHub Issue:
+Create or append to a GitHub Issue using `gh` CLI:
 
 - **Title**: `Refactoring Plan YYYY-MM-DD` (today's date)
 - If an Issue with the same date already exists, append as a comment

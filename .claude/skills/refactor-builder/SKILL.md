@@ -1,7 +1,8 @@
 ---
 name: refactor-builder
-description: Pick top refactoring candidates from a Refactoring Plan Issue and create PRs.
+description: Pick top refactoring candidates from the latest Refactoring Plan Issue and create PRs with verification.
 disable-model-invocation: true
+allowed-tools: Read Edit Write Grep Glob Bash
 ---
 
 # Refactor Builder
@@ -15,6 +16,12 @@ Reads the latest Refactoring Plan Issue and creates PRs for the highest-priority
 - No feature additions. Refactoring only.
 - Follow CLAUDE.md architecture conventions strictly.
 - One PR per independent change — do not mix unrelated changes.
+
+## Environment
+
+- Bun and dependencies are pre-installed.
+- PostgreSQL is running at localhost:5432 with migrations applied.
+- Verify changes with `bun run check && bun run build`.
 
 ## Steps
 
