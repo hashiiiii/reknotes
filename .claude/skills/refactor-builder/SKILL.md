@@ -19,8 +19,8 @@ Reads the latest Refactoring Plan Issue and creates PRs for the highest-priority
 ## Environment
 
 - Bun and dependencies are pre-installed.
-- PostgreSQL is running at localhost:5432 with migrations applied.
 - Verify changes with `bun run check && bun run build`.
+- Do NOT run tests — CI will run them after PR creation.
 
 ## Steps
 
