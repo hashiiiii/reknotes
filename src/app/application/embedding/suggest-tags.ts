@@ -48,6 +48,10 @@ export async function suggestTags(
 
   if (topCandidates.length === 0) return [];
 
+  // 既存タグの embedding を一括取得してキャッシュに載せる（候補スコアリング前に実行し、キャッシュヒットを狙う）
+  const existingTags = await tagRepo.findAllNames();
+  await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));
+
   // Step 2: 各候補を embedding し、ノート全体との類似度でランク付け
   const scored: { name: string; score: number }[] = [];
   for (const name of topCandidates) {
@@ -58,10 +62,6 @@ export async function suggestTags(
   const keywords = scored.slice(0, MAX_TAGS);
 
   // Step 3: 既存タグとの正規化
-  const existingTags = await tagRepo.findAllNames();
-
-  // 既存タグの embedding を一括取得してキャッシュに載せる
-  await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));
 
   const result: string[] = [];
 
