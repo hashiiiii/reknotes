@@ -1,0 +1,97 @@
+name: Refactor Builder
+
+on:
+  schedule:
+    # 02:00 JST = 17:00 UTC (previous day)
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: reknotes
+          POSTGRES_PASSWORD: reknotes
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U reknotes"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      ENVIRONMENT: test
+      DEPLOYMENT: local
+      DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
+      R2_ENDPOINT: http://localhost:9000
+      R2_ACCESS_KEY_ID: dummy
+      R2_SECRET_ACCESS_KEY: dummy
+      R2_BUCKET_NAME: reknotes-test
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--max-turns 50"
+          direct_prompt: |
+            あなたは reknotes リポジトリのリファクタリング実行エージェントです。
+
+            ## 制約
+
+            - 破壊的変更は行わない
+            - 機能追加はしない。リファクタリングのみ
+            - CLAUDE.md のアーキテクチャ規約に必ず従う
+            - 1つの PR に複数の無関係な変更を混ぜない
+
+            ## 環境
+
+            - Bun と依存関係はインストール済み
+            - PostgreSQL が localhost:5432 で稼働中
+            - `bun install && bun run check && bun run build` で検証可能
+
+            ## やること
+
+            1. CLAUDE.md を読み、プロジェクトの規約とアーキテクチャを理解する
+            2. GitHub Issue "Refactoring Plan" の最新のものを読む
+            3. 既に open な PR を確認し、重複する作業を避ける
+            4. Issue 内の候補から優先度の高いものを選ぶ
+               - 両方の Analyst が指摘した箇所を優先する
+               - インパクト「高」かつ容易さ「小」のものを優先する
+               - 判断に迷ったら、より安全で小さい変更を選ぶ
+            5. 上位から最大5つの PR を作成する
+               - 各 PR は独立したブランチで作成する（ブランチ名: refactor/簡潔な説明）
+               - 修正後に `bun run check && bun run build` で検証する
+               - 検証が通らなければその PR は作成せずスキップする
+               - PR 本文に対応する Issue の候補を記載する
+            6. CI が通るよう修正する
+               - PR 作成後は CI が走るので CI の実行結果を見て、必要に応じて修正をする
+            7. 完了したら Issue にコメントで実行結果を報告する
+               - 作成した PR の一覧
+               - スキップした候補があればその理由

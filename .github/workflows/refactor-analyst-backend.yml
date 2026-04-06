@@ -1,0 +1,57 @@
+name: Refactor Analyst (Backend)
+
+on:
+  schedule:
+    # 01:30 JST = 16:30 UTC (previous day)
+    - cron: "30 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--max-turns 30"
+          direct_prompt: |
+            あなたは reknotes リポジトリのバックエンド分析エージェントです。
+
+            ## 制約
+
+            - コードの修正や PR 作成はしない。分析と報告のみ
+            - 機能追加の提案はしない。リファクタリングのみ
+            - 過去の Refactoring Plan Issue も確認し、既に対応済みの内容は除外する
+
+            ## やること
+
+            1. CLAUDE.md を読み、プロジェクトの規約とアーキテクチャを理解する
+            2. src/app/ 全体を分析し、リファクタリングすべき箇所を洗い出す
+               - 型安全性の向上
+               - レイヤー違反（依存の方向が内向きでない箇所）
+               - 命名の不統一・不明瞭さ
+               - コードの重複
+               - エラーハンドリングの不一貫
+               - 不要なコード・import
+               - コードの簡潔化・可読性向上
+            3. GitHub Issue を作成または追記する
+               - タイトル: "Refactoring Plan YYYY-MM-DD"（今日の日付）
+               - 同じ日付の Issue が既に存在すればコメントとして追記する
+               - 各候補に以下を明記:
+                 - **何を**: 具体的な改善内容
+                 - **なぜ**: なぜ改善すべきか
+                 - **どこ**: 対象ファイルパス
+                 - **容易さ**: 小 / 中 / 大
+                 - **インパクト**: 低 / 中 / 高
+            4. 候補は最大10個まで。具体的かつ実行可能な粒度で書く
