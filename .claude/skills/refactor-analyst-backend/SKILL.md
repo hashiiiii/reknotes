@@ -2,7 +2,6 @@
 name: refactor-analyst-backend
 description: Analyze backend code (domain, application, infrastructure layers) and report refactoring candidates to a Refactoring Plan Issue.
 disable-model-invocation: true
-allowed-tools: Read Grep Glob Bash(gh *)
 ---
 
 # Refactor Analyst (Backend)

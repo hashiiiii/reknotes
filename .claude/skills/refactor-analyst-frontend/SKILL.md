@@ -2,7 +2,6 @@
 name: refactor-analyst-frontend
 description: Analyze frontend code (CSS, JS, routes, views) and report refactoring candidates to a Refactoring Plan Issue.
 disable-model-invocation: true
-allowed-tools: Read Grep Glob Bash(gh *)
 ---
 
 # Refactor Analyst (Frontend)

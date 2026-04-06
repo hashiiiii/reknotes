@@ -2,7 +2,6 @@
 name: refactor-builder
 description: Pick top refactoring candidates from the latest Refactoring Plan Issue and create PRs with verification.
 disable-model-invocation: true
-allowed-tools: Read Edit Write Grep Glob Bash
 ---
 
 # Refactor Builder
