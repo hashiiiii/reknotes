@@ -3,6 +3,7 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  NotFound,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -36,7 +37,7 @@ export class S3StorageProvider implements IStorageProvider {
     try {
       await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
     } catch (err) {
-      if (err instanceof Error && "name" in err && err.name === "NotFound") {
+      if (err instanceof NotFound) {
         await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
         return;
       }
