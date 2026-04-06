@@ -15,6 +15,7 @@ Reads the latest Refactoring Plan Issue and creates PRs for the highest-priority
 - No feature additions. Refactoring only.
 - Follow CLAUDE.md architecture conventions strictly.
 - One PR per independent change — do not mix unrelated changes.
+- All PR titles, bodies, and Issue comments must be written in Japanese.
 
 ## Environment
 
