@@ -5,6 +5,7 @@ import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
 const PAGE_SIZE = 20;
+const SEARCH_LIMIT = 50;
 
 export class DrizzleNoteRepository implements INoteRepository {
   constructor(private db: DrizzleDb) {}
@@ -101,7 +102,7 @@ export class DrizzleNoteRepository implements INoteRepository {
       .from(notes)
       .where(or(ilike(notes.title, pattern), ilike(notes.body, pattern)))
       .orderBy(desc(notes.createdAt))
-      .limit(50);
+      .limit(SEARCH_LIMIT);
   }
 
   async findAll(): Promise<Pick<Note, "id" | "title" | "body">[]> {
