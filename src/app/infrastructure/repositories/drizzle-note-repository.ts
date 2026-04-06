@@ -34,20 +34,9 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async list(cursor?: number): Promise<{ notes: Note[]; hasMore: boolean; nextCursor?: number }> {
-    const query = cursor
-      ? this.db
-          .select()
-          .from(notes)
-          .where(lt(notes.id, cursor))
-          .orderBy(desc(notes.id))
-          .limit(PAGE_SIZE + 1)
-      : this.db
-          .select()
-          .from(notes)
-          .orderBy(desc(notes.id))
-          .limit(PAGE_SIZE + 1);
-
-    const rows = await query;
+    const base = this.db.select().from(notes);
+    const filtered = cursor ? base.where(lt(notes.id, cursor)) : base;
+    const rows = await filtered.orderBy(desc(notes.id)).limit(PAGE_SIZE + 1);
     const hasMore = rows.length > PAGE_SIZE;
     if (hasMore) rows.pop();
 
