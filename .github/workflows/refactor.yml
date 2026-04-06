@@ -1,0 +1,89 @@
+name: Refactor
+
+on:
+  schedule:
+    # 01:00 JST = 16:00 UTC (previous day)
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  analyze-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "/refactor-analyst-frontend"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 30
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
+
+  analyze-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "/refactor-analyst-backend"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 30
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
+
+  build:
+    needs: [analyze-frontend, analyze-backend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
+
+      # Builder uses `bun run check && bun run build` to verify changes.
+      # Pre-install so Claude doesn't waste turns on dependency setup.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: "/refactor-builder"
+          claude_args: |
+            --model opus[1m]
+            --max-turns 50
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
