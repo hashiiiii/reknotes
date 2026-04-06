@@ -28,6 +28,7 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 30
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
 
   analyze-backend:
     runs-on: ubuntu-latest
@@ -50,6 +51,7 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 30
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
 
   build:
     needs: [analyze-frontend, analyze-backend]
@@ -84,3 +86,4 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 50
+            --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"

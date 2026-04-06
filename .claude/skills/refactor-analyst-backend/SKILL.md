@@ -14,7 +14,6 @@ Analyzes backend code and creates/updates a Refactoring Plan Issue.
 - Do NOT modify code or create PRs. Analysis and reporting only.
 - Do NOT suggest feature additions. Refactoring only.
 - Check past Refactoring Plan Issues and exclude items already addressed.
-- All Issue titles and bodies must be written in Japanese.
 
 ## Steps
 
