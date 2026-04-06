@@ -28,6 +28,7 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 30
+            --allowedTools 'Read' 'Glob' 'Grep' 'mcp__github__list_issues' 'mcp__github__search_issues' 'mcp__github__get_issue' 'mcp__github__create_issue' 'mcp__github__add_issue_comment'
             --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
 
   analyze-backend:
@@ -51,6 +52,7 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 30
+            --allowedTools 'Read' 'Glob' 'Grep' 'mcp__github__list_issues' 'mcp__github__search_issues' 'mcp__github__get_issue' 'mcp__github__create_issue' 'mcp__github__add_issue_comment'
             --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
 
   build:
@@ -86,4 +88,5 @@ jobs:
           claude_args: |
             --model opus[1m]
             --max-turns 50
+            --allowedTools 'Read' 'Glob' 'Grep' 'Write' 'Edit' 'Bash(git *)' 'Bash(bun run check*)' 'Bash(bun run build*)' 'mcp__github__list_issues' 'mcp__github__search_issues' 'mcp__github__get_issue' 'mcp__github__create_issue' 'mcp__github__add_issue_comment' 'mcp__github__list_pull_requests' 'mcp__github__create_pull_request' 'mcp__github__create_branch' 'mcp__github__list_branches' 'mcp__github__list_commits' 'mcp__github__get_file_contents' 'mcp__github__push_files' 'mcp__github_ci__get_ci_status' 'mcp__github_ci__get_workflow_run_details' 'mcp__github_ci__download_job_log'
             --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
