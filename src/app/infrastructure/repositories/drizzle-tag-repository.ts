@@ -8,9 +8,11 @@ export class DrizzleTagRepository implements ITagRepository {
   constructor(private db: DrizzleDb) {}
 
   async findOrCreate(name: string): Promise<Tag> {
-    await this.db.insert(tags).values({ name }).onConflictDoNothing();
-    const [tag] = await this.db.select().from(tags).where(eq(tags.name, name)).limit(1);
-    if (!tag) throw new Error(`Failed to create tag: ${name}`);
+    const [tag] = await this.db
+      .insert(tags)
+      .values({ name })
+      .onConflictDoUpdate({ target: tags.name, set: { name: sql`EXCLUDED.name` } })
+      .returning();
     return tag;
   }
 
