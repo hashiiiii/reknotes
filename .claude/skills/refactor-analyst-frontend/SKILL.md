@@ -33,6 +33,12 @@ Do NOT analyze `src/app/domain/`, `src/app/application/`, or `src/app/infrastruc
 
 ### 3. Create or Update GitHub Issue
 
+Use the `gh` CLI for all GitHub operations (MCP tools are not available in CI).
+
+- Search for an existing issue: `gh search issues "Refactoring Plan YYYY-MM-DD" --repo OWNER/REPO --state open`
+- Create a new issue: `gh issue create ...`
+- Append as a comment: `gh issue comment NUMBER ...`
+
 Create or append to a GitHub Issue:
 
 - **Title**: `Refactoring Plan YYYY-MM-DD` (today's date)

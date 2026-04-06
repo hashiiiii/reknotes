@@ -22,6 +22,15 @@ Reads the latest Refactoring Plan Issue and creates PRs for the highest-priority
 - Verify changes with `bun run check && bun run build`.
 - Do NOT run tests — CI will run them after PR creation.
 
+## GitHub Operations
+
+Use the `gh` CLI for all GitHub operations (MCP tools are not available in CI).
+
+- Read an issue: `gh issue view NUMBER --repo OWNER/REPO`
+- List open PRs: `gh pr list --repo OWNER/REPO`
+- Create a PR: `gh pr create ...`
+- Comment on an issue: `gh issue comment NUMBER ...`
+
 ## Steps
 
 ### 1. Understand Project Conventions
