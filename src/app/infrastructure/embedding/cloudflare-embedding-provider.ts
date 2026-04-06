@@ -71,7 +71,11 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
       throw new Error(`Cloudflare Workers AI error: ${res.status} ${await res.text()}`);
     }
 
-    const json = (await res.json()) as { result: { data: number[][] } };
-    return json.result.data.map((arr) => new Float32Array(arr));
+    const json: unknown = await res.json();
+    const data = (json as { result?: { data?: unknown } })?.result?.data;
+    if (!Array.isArray(data)) {
+      throw new Error(`Cloudflare Workers AI: unexpected response structure: ${JSON.stringify(json).slice(0, 200)}`);
+    }
+    return data.map((arr: number[]) => new Float32Array(arr));
   }
 }
