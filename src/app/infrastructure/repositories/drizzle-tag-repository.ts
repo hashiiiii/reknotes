@@ -54,8 +54,11 @@ export class DrizzleTagRepository implements ITagRepository {
   }
 
   async removeOrphanTag(tagId: number): Promise<void> {
-    await this.db.execute(
-      sql`DELETE FROM ${tags} WHERE ${tags.id} = ${tagId} AND NOT EXISTS (SELECT 1 FROM ${noteTags} WHERE ${noteTags.tagId} = ${tagId})`,
-    );
+    await this.db.transaction(async (tx) => {
+      const [exists] = await tx.select().from(noteTags).where(eq(noteTags.tagId, tagId)).limit(1);
+      if (!exists) {
+        await tx.delete(tags).where(eq(tags.id, tagId));
+      }
+    });
   }
 }
