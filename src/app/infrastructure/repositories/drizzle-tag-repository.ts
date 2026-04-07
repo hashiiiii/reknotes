@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import type { Tag, TagWithCount } from "../../domain/tag/tag";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import type { DrizzleDb } from "../db";
@@ -8,6 +8,9 @@ export class DrizzleTagRepository implements ITagRepository {
   constructor(private db: DrizzleDb) {}
 
   async findOrCreate(name: string): Promise<Tag> {
+    // ON CONFLICT DO NOTHING + SELECT の2クエリ構成。
+    // DO NOTHING は RETURNING で衝突行を返さないため、1クエリ化するには
+    // DO UPDATE SET name = EXCLUDED.name（no-op update）が必要になるが、可読性を優先して2クエリを許容する。
     await this.db.insert(tags).values({ name }).onConflictDoNothing();
     const [tag] = await this.db.select().from(tags).where(eq(tags.name, name)).limit(1);
     if (!tag) throw new Error(`Failed to create tag: ${name}`);
@@ -32,12 +35,12 @@ export class DrizzleTagRepository implements ITagRepository {
       .select({
         id: tags.id,
         name: tags.name,
-        count: sql<number>`COUNT(${noteTags.noteId})`,
+        count: count(noteTags.noteId),
       })
       .from(tags)
       .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
       .groupBy(tags.id)
-      .orderBy(sql`COUNT(${noteTags.noteId}) DESC`);
+      .orderBy(desc(count(noteTags.noteId)));
   }
 
   async findAllNames(): Promise<Tag[]> {
@@ -54,9 +57,11 @@ export class DrizzleTagRepository implements ITagRepository {
   }
 
   async removeOrphanTag(tagId: number): Promise<void> {
-    const [exists] = await this.db.select().from(noteTags).where(eq(noteTags.tagId, tagId)).limit(1);
-    if (!exists) {
-      await this.db.delete(tags).where(eq(tags.id, tagId));
-    }
+    await this.db.transaction(async (tx) => {
+      const [exists] = await tx.select().from(noteTags).where(eq(noteTags.tagId, tagId)).limit(1);
+      if (!exists) {
+        await tx.delete(tags).where(eq(tags.id, tagId));
+      }
+    });
   }
 }

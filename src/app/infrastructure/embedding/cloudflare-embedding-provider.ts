@@ -71,7 +71,15 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
       throw new Error(`Cloudflare Workers AI error: ${res.status} ${await res.text()}`);
     }
 
-    const json = (await res.json()) as { result: { data: number[][] } };
-    return json.result.data.map((arr) => new Float32Array(arr));
+    const json = (await res.json()) as { result?: { data?: unknown } };
+    const data = json.result?.data;
+    if (!Array.isArray(data) || data.length !== texts.length) {
+      throw new Error(
+        `Cloudflare Workers AI: expected ${texts.length} embeddings, got ${
+          Array.isArray(data) ? data.length : typeof data
+        }`,
+      );
+    }
+    return data.map((arr: number[]) => new Float32Array(arr));
   }
 }
