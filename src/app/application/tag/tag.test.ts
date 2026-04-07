@@ -69,7 +69,7 @@ describe("tag use cases", () => {
       const allTags = await getAllTags(tagRepository);
       const found = allTags.find((t) => t.name === tagName);
       expect(found).not.toBeUndefined();
-      expect(Number(found!.count)).toBe(2);
+      expect(Number(found?.count)).toBe(2);
     });
   });
 

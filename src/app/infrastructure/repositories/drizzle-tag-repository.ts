@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import type { Tag, TagWithCount } from "../../domain/tag/tag";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import type { DrizzleDb } from "../db";
@@ -35,12 +35,12 @@ export class DrizzleTagRepository implements ITagRepository {
       .select({
         id: tags.id,
         name: tags.name,
-        count: sql<number>`COUNT(${noteTags.noteId})`,
+        count: count(noteTags.noteId),
       })
       .from(tags)
       .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
       .groupBy(tags.id)
-      .orderBy(sql`COUNT(${noteTags.noteId}) DESC`);
+      .orderBy(desc(count(noteTags.noteId)));
   }
 
   async findAllNames(): Promise<Tag[]> {

@@ -17,11 +17,11 @@ describe("graph use cases", () => {
 
     const noteNode = graph.nodes.find((n) => n.id === `note-${note.id}`);
     expect(noteNode).toBeDefined();
-    expect(noteNode!.type).toBe("note");
+    expect(noteNode?.type).toBe("note");
 
     const tagNode = graph.nodes.find((n) => n.label === tagName);
     expect(tagNode).toBeDefined();
-    expect(tagNode!.type).toBe("tag");
+    expect(tagNode?.type).toBe("tag");
   });
 
   test("getNoteSubgraph で特定ノートのサブグラフを取得できる", async () => {
