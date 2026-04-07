@@ -8,11 +8,12 @@ export class DrizzleTagRepository implements ITagRepository {
   constructor(private db: DrizzleDb) {}
 
   async findOrCreate(name: string): Promise<Tag> {
-    const [tag] = await this.db
-      .insert(tags)
-      .values({ name })
-      .onConflictDoUpdate({ target: tags.name, set: { name: sql`EXCLUDED.name` } })
-      .returning();
+    // ON CONFLICT DO NOTHING + SELECT の2クエリ構成。
+    // DO NOTHING は RETURNING で衝突行を返さないため、1クエリ化するには
+    // DO UPDATE SET name = EXCLUDED.name（no-op update）が必要になるが、可読性を優先して2クエリを許容する。
+    await this.db.insert(tags).values({ name }).onConflictDoNothing();
+    const [tag] = await this.db.select().from(tags).where(eq(tags.name, name)).limit(1);
+    if (!tag) throw new Error(`Failed to create tag: ${name}`);
     return tag;
   }
 
