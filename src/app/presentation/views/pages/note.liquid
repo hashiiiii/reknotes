@@ -36,13 +36,15 @@
   <section class="mini-graph" id="note-graph">
     <h3>Graph</h3>
     <div id="mini-graph-container"></div>
+    <script type="application/json" id="graph-data">{{ graphData }}</script>
     <script src="/static/js/force-graph-3d.js"></script>
     <script src="/static/js/graph.js"></script>
     <script>
       (function() {
         var container = document.getElementById('mini-graph-container');
         if (!container) return;
-        window.initMiniGraph(container, {{ graphData }}, 'note-{{ note.id }}');
+        var data = JSON.parse(document.getElementById('graph-data').textContent);
+        window.initMiniGraph(container, data, 'note-{{ note.id }}');
       })();
     </script>
   </section>
