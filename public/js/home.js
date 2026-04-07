@@ -71,7 +71,11 @@ function togglePreview() {
     newCards.forEach(function(card) { card.style.width = colW + 'px'; });
     grid.offsetHeight;
 
-    newCards.forEach(function(card) {
+    // Pass 1: read all heights (before any writes dirty the layout)
+    var heights = newCards.map(function(card) { return card.offsetHeight; });
+
+    // Pass 2: write positions using cached heights
+    newCards.forEach(function(card, idx) {
       var min = 0;
       for (var i = 1; i < cols; i++) {
         if (colHeights[i] < colHeights[min]) min = i;
@@ -79,7 +83,7 @@ function togglePreview() {
       card.style.left = min * (colW + GAP) + 'px';
       card.style.top = colHeights[min] + 'px';
       card.style.visibility = 'visible';
-      colHeights[min] += card.offsetHeight + GAP;
+      colHeights[min] += heights[idx] + GAP;
       placed.add(card);
     });
 
