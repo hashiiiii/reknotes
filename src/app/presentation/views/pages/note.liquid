@@ -23,8 +23,8 @@
     <h1>編集</h1>
   </header>
   <form hx-put="/api/notes/{{ note.id }}" hx-target="body">
-    <input type="text" name="title" value="{{ note.title }}" placeholder="タイトル" class="input-title">
-    <textarea name="body" rows="15" class="input-body">{{ note.body }}</textarea>
+    <input type="text" name="title" value="{{ note.title | escape }}" placeholder="タイトル" class="input-title">
+    <textarea name="body" rows="15" class="input-body">{{ note.body | escape }}</textarea>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">保存</button>
       <button type="button" class="btn" onclick="document.getElementById('note-view').hidden=false; document.getElementById('note-edit').hidden=true; var g=document.getElementById('note-graph'); if(g) g.hidden=false;">キャンセル</button>
