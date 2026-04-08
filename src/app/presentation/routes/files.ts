@@ -11,12 +11,9 @@ fileRoutes.get("/:key", async (c) => {
 
   if (!file) return c.notFound();
 
-  return new Response(file.body, {
-    headers: {
-      "Content-Type": file.contentType,
-      "Cache-Control": "public, max-age=31536000, immutable",
-    },
-  });
+  c.header("Content-Type", file.contentType);
+  c.header("Cache-Control", "public, max-age=31536000, immutable");
+  return c.body(file.body);
 });
 
 export { fileRoutes };

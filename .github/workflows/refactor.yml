@@ -29,8 +29,7 @@ env:
     Bash(bun run build*),
     Bash(gh issue *),
     Bash(gh search issues *),
-    Bash(gh pr *),
-    Bash(gh run view *)
+    Bash(gh pr *)
 
 jobs:
   analyze-frontend:

@@ -63,11 +63,7 @@ For each selected candidate:
 4. If verification fails, skip this candidate
 5. Create a PR referencing the corresponding Issue candidate
 
-### 6. Monitor CI
-
-After PR creation, check CI results and push fixes if needed.
-
-### 7. Report Results
+### 6. Report Results
 
 Add a comment to the Refactoring Plan Issue with:
 
