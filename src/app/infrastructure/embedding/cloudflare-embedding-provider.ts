@@ -3,18 +3,13 @@ import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../app
 const MODEL_ID = "@cf/google/embeddinggemma-300m";
 
 export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
-  private accountId: string;
-  private apiToken: string;
   private tagCache = new Map<string, Float32Array>();
   private segmenter = new Intl.Segmenter("ja", { granularity: "word" });
 
-  constructor() {
-    this.accountId = process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
-    this.apiToken = process.env.CLOUDFLARE_API_TOKEN ?? "";
-    if (!this.accountId || !this.apiToken) {
-      throw new Error("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required");
-    }
-  }
+  constructor(
+    private accountId: string,
+    private apiToken: string,
+  ) {}
 
   async preload(): Promise<void> {
     // この provider は API ベースのため事前ロードは不要

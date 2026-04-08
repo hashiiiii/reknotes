@@ -5,33 +5,15 @@ import {
   HeadBucketCommand,
   NotFound,
   PutObjectCommand,
-  S3Client,
+  type S3Client,
 } from "@aws-sdk/client-s3";
 import type { IStorageProvider } from "../../application/port/storage-provider";
 
 export class S3StorageProvider implements IStorageProvider {
-  private s3: S3Client;
-  private bucket: string;
-
-  constructor() {
-    const endpoint = process.env.R2_ENDPOINT;
-    const bucketName = process.env.R2_BUCKET_NAME;
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-
-    if (!endpoint) throw new Error("R2_ENDPOINT is required");
-    if (!bucketName) throw new Error("R2_BUCKET_NAME is required");
-    if (!accessKeyId) throw new Error("R2_ACCESS_KEY_ID is required");
-    if (!secretAccessKey) throw new Error("R2_SECRET_ACCESS_KEY is required");
-
-    this.bucket = bucketName;
-    this.s3 = new S3Client({
-      region: "auto",
-      endpoint,
-      credentials: { accessKeyId, secretAccessKey },
-      forcePathStyle: true,
-    });
-  }
+  constructor(
+    private s3: S3Client,
+    private bucket: string,
+  ) {}
 
   async ensureBucket(): Promise<void> {
     try {
