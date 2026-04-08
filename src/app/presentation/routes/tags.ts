@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../..";
+import { rebuildAllTags } from "../../application/embedding/rebuild-all-tags";
 import { deleteTag } from "../../application/tag/delete-tag";
 import { getAllTags } from "../../application/tag/get-all-tags";
-import { tagRepository } from "../../infrastructure/container";
+import { embeddingProvider, noteRepository, tagRepository } from "../../infrastructure/container";
 
 const tagRoutes = new Hono<AppEnv>();
 
@@ -10,6 +11,12 @@ const tagRoutes = new Hono<AppEnv>();
 tagRoutes.get("/", async (c) => {
   const tags = await getAllTags(tagRepository);
   return c.json(tags);
+});
+
+// 全ノートのタグを再生成
+tagRoutes.post("/rebuild", async (c) => {
+  await rebuildAllTags(embeddingProvider, noteRepository, tagRepository);
+  return c.json({ message: "Tag rebuild complete" });
 });
 
 // タグ削除（CASCADE で note_tags も自動削除）
