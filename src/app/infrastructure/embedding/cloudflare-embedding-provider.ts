@@ -17,9 +17,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   }
 
   async preload(): Promise<void> {
-    // API ベースのため事前ロード不要。接続確認として空リクエストを送る
-    await this.embed(["ping"]);
-    console.log(`Embedding model ready: Cloudflare Workers AI ${MODEL}`);
+    // この provider は API ベースのため事前ロードは不要
   }
 
   async embedPassage(text: string): Promise<Float32Array> {
