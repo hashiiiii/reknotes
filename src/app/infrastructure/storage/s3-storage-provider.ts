@@ -1,12 +1,4 @@
-import {
-  CreateBucketCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
-  HeadBucketCommand,
-  NotFound,
-  PutObjectCommand,
-  type S3Client,
-} from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
 import type { IStorageProvider } from "../../application/port/storage-provider";
 
 export class S3StorageProvider implements IStorageProvider {
@@ -14,18 +6,6 @@ export class S3StorageProvider implements IStorageProvider {
     private s3: S3Client,
     private bucket: string,
   ) {}
-
-  async ensureBucket(): Promise<void> {
-    try {
-      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
-    } catch (err) {
-      if (err instanceof NotFound) {
-        await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
-        return;
-      }
-      throw err;
-    }
-  }
 
   async upload(key: string, buffer: Uint8Array, contentType: string): Promise<void> {
     await this.s3.send(

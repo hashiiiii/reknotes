@@ -1,11 +1,8 @@
 import { app } from "./app";
 import { buildTagCache } from "./app/application/embedding/build-tag-cache";
 import { rebuildAllTags } from "./app/application/embedding/rebuild-all-tags";
-import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "./app/infrastructure/container";
+import { embeddingProvider, noteRepository, tagRepository } from "./app/infrastructure/container";
 
-await storageProvider.ensureBucket();
-
-// Embedding モデルをバックグラウンドでロード＆初期化
 embeddingProvider
   .preload()
   .then(async () => {
