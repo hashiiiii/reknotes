@@ -35,14 +35,15 @@
 {% if graphData %}
   <section class="mini-graph" id="note-graph">
     <h3>Graph</h3>
-    <div id="mini-graph-container"></div>
+    <div id="mini-graph-container" data-graph="{{ graphData | escape }}" data-note-id="{{ note.id }}"></div>
     <script src="/static/js/force-graph-3d.js"></script>
     <script src="/static/js/graph.js"></script>
     <script>
       (function() {
         var container = document.getElementById('mini-graph-container');
         if (!container) return;
-        window.initMiniGraph(container, {{ graphData }}, 'note-{{ note.id }}');
+        var data = JSON.parse(container.dataset.graph);
+        window.initMiniGraph(container, data, 'note-' + container.dataset.noteId);
       })();
     </script>
   </section>
