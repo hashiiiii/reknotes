@@ -1,6 +1,6 @@
 import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../application/port/embedding-provider";
 
-const MODEL = "@cf/google/embeddinggemma-300m";
+const MODEL_ID = "@cf/google/embeddinggemma-300m";
 
 export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   private accountId: string;
@@ -55,7 +55,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   }
 
   private async embed(texts: string[]): Promise<Float32Array[]> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${MODEL}`;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${MODEL_ID}`;
     const res = await fetch(url, {
       method: "POST",
       headers: {

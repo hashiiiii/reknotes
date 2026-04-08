@@ -11,19 +11,26 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
   private segmenter = new Intl.Segmenter("ja", { granularity: "word" });
 
   private async ensureLoaded(): Promise<{ model: PreTrainedModel; tokenizer: PreTrainedTokenizer }> {
-    if (this.model && this.tokenizer) return { model: this.model, tokenizer: this.tokenizer };
     if (!this.loading) {
       this.loading = (async () => {
         const { AutoModel, AutoTokenizer, env } = await import("@huggingface/transformers");
-        env.allowRemoteModels = true;
+        // ローカルキャッシュがあればそれを使う
         env.allowLocalModels = true;
         this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+        // reknotes ではタグの自動提案に embedding モデルを利用しており
+        // タグ候補とノート全体の類似度が高いものをいくつか採用するというプロトコル
+        // 量子化による細かい数値のズレが影響するほど厳密なものではないため 8 bit で十分
         this.model = await AutoModel.from_pretrained(MODEL_ID, { dtype: "q8" });
         console.log(`Embedding model loaded: ${MODEL_ID} (q8)`);
-      })();
+      })().catch((err) => {
+        this.loading = null;
+        throw err;
+      });
     }
 
     await this.loading;
+
+    // type narrowing のため必要
     if (!this.model || !this.tokenizer) throw new Error("Failed to load embedding model");
     return { model: this.model, tokenizer: this.tokenizer };
   }
