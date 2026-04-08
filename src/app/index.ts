@@ -1,6 +1,14 @@
 import { join } from "node:path";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { serveStatic } from "hono/bun";
+import { compress } from "hono/compress";
+import { csrf } from "hono/csrf";
+import { etag } from "hono/etag";
+import { logger } from "hono/logger";
+import { requestId } from "hono/request-id";
+import { secureHeaders } from "hono/secure-headers";
+import { timeout } from "hono/timeout";
 import { Liquid } from "liquidjs";
 import { fileRoutes } from "./presentation/routes/files";
 import { graphRoutes } from "./presentation/routes/graph";
@@ -31,12 +39,26 @@ engine.registerFilter("formatDate", (timestamp: number) => {
 export type AppEnv = {
   Variables: {
     render: (template: string, data?: Record<string, unknown>) => Promise<string>;
+    requestId: string;
   };
 };
 
 export { engine };
 
 const app = new Hono<AppEnv>();
+
+// --- Built-in ミドルウェア ---
+app.use(logger());
+app.use(requestId());
+app.use(secureHeaders());
+app.use(csrf());
+app.use(compress());
+app.use(timeout(30_000));
+app.use(etag());
+app.use(bodyLimit({ maxSize: 256 * 1024 }));
+
+// アップロード用: 50MB まで許可
+app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
 // LiquidJS ミドルウェア
 app.use("*", async (c, next) => {
