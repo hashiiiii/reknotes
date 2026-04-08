@@ -47,7 +47,6 @@ export { engine };
 
 const app = new Hono<AppEnv>();
 
-// --- Built-in ミドルウェア ---
 app.use(logger());
 app.use(requestId());
 app.use(csrf());
