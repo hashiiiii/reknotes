@@ -50,12 +50,13 @@ const app = new Hono<AppEnv>();
 // --- Built-in ミドルウェア ---
 app.use(logger());
 app.use(requestId());
-app.use(secureHeaders());
 app.use(csrf());
 app.use(compress());
 app.use(timeout(30_000));
 app.use(etag());
 app.use(bodyLimit({ maxSize: 256 * 1024 }));
+// secureHeaders は他のヘッダ操作ミドルウェアより後に配置（後勝ちルール）
+app.use(secureHeaders());
 
 // アップロード用: 50MB まで許可
 app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
