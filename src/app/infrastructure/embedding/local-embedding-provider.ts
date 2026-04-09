@@ -37,7 +37,7 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
 
   private async embed(text: string): Promise<Float32Array> {
     const { model, tokenizer } = await this.ensureLoaded();
-    const inputs = await tokenizer(text, { padding: true });
+    const inputs = await tokenizer(text);
     const output = await model(inputs);
     return Float32Array.from(output.sentence_embedding.data as ArrayLike<number>);
   }
