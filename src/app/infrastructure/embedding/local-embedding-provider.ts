@@ -1,5 +1,10 @@
 import type { PreTrainedModel, PreTrainedTokenizer } from "@huggingface/transformers";
-import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../application/port/embedding-provider";
+import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
+
+// モデルに与えるノートとタグにそれぞれ prefix をつける必要がある
+// これがついた状態でベクトル変換されることで、ノートとタグの類似度比較が正しく機能する
+const NOTE_PREFIX = "title: none | text: ";
+const TAG_PREFIX = "task: search result | query: ";
 
 const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
 
@@ -35,6 +40,7 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     return { model: this.model, tokenizer: this.tokenizer };
   }
 
+  // 入力をベクトル変換する
   private async embed(text: string): Promise<Float32Array> {
     const { model, tokenizer } = await this.ensureLoaded();
     const inputs = await tokenizer(text);
@@ -46,15 +52,15 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     await this.ensureLoaded();
   }
 
-  async embedPassage(text: string): Promise<Float32Array> {
-    return this.embed(`${PASSAGE_PREFIX}${text}`);
+  async embedNote(text: string): Promise<Float32Array> {
+    return this.embed(`${NOTE_PREFIX}${text}`);
   }
 
   async embedTag(tagName: string): Promise<Float32Array> {
     const cached = this.tagCache.get(tagName);
     if (cached) return cached;
 
-    const emb = await this.embed(`${QUERY_PREFIX}${tagName}`);
+    const emb = await this.embed(`${TAG_PREFIX}${tagName}`);
     this.tagCache.set(tagName, emb);
     return emb;
   }
@@ -63,7 +69,6 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     for (const name of tagNames) {
       await this.embedTag(name);
     }
-    console.log(`Tag embedding cache built: ${tagNames.length} tags`);
   }
 
   async tokenize(text: string): Promise<string[]> {

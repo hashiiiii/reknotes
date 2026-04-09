@@ -1,4 +1,9 @@
-import { type IEmbeddingProvider, PASSAGE_PREFIX, QUERY_PREFIX } from "../../application/port/embedding-provider";
+import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
+
+// モデルに与えるノートとタグにそれぞれ prefix をつける必要がある
+// これがついた状態でベクトル変換されることで、ノートとタグの類似度比較が正しく機能する
+const NOTE_PREFIX = "title: none | text: ";
+const TAG_PREFIX = "task: search result | query: ";
 
 const MODEL_ID = "@cf/google/embeddinggemma-300m";
 
@@ -15,8 +20,8 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     // この provider は API ベースのため事前ロードは不要
   }
 
-  async embedPassage(text: string): Promise<Float32Array> {
-    const [embedding] = await this.embed([`${PASSAGE_PREFIX}${text}`]);
+  async embedNote(text: string): Promise<Float32Array> {
+    const [embedding] = await this.embed([`${NOTE_PREFIX}${text}`]);
     return embedding;
   }
 
@@ -24,7 +29,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     const cached = this.tagCache.get(tagName);
     if (cached) return cached;
 
-    const [embedding] = await this.embed([`${QUERY_PREFIX}${tagName}`]);
+    const [embedding] = await this.embed([`${TAG_PREFIX}${tagName}`]);
     this.tagCache.set(tagName, embedding);
     return embedding;
   }
@@ -33,7 +38,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     if (tagNames.length === 0) return;
 
     // バッチで一括取得（API は最大100件）
-    const prefixed = tagNames.map((name) => `${QUERY_PREFIX}${name}`);
+    const prefixed = tagNames.map((name) => `${TAG_PREFIX}${name}`);
     for (let i = 0; i < prefixed.length; i += 100) {
       const batch = prefixed.slice(i, i + 100);
       const embeddings = await this.embed(batch);
