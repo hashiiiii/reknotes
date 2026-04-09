@@ -22,7 +22,7 @@ export async function suggestTags(
   const text = `${title}\n${body}`.slice(0, 512);
   if (!text.trim()) return [];
 
-  const noteEmbedding = await embeddingProvider.embedPassage(text);
+  const noteEmbedding = await embeddingProvider.embedNote(text);
 
   // Step 1: tokenizer で分かち書き → N-gram 候補を生成
   const words = await embeddingProvider.tokenize(text);
@@ -58,7 +58,7 @@ export async function suggestTags(
   const keywords = scored.slice(0, MAX_TAGS);
 
   // Step 3: 既存タグとの正規化
-  const existingTags = await tagRepo.findAllNames();
+  const existingTags = await tagRepo.findAll();
 
   // 既存タグの embedding を一括取得してキャッシュに載せる
   await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));

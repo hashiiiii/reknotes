@@ -18,5 +18,5 @@ export async function rebuildAllTags(
     if (tags.length > 0) await addTagsToNote(tagRepo, note.id, tags);
   }
 
-  await embeddingProvider.buildTagCache((await tagRepo.findAllNames()).map((t) => t.name));
+  await embeddingProvider.buildTagCache((await tagRepo.findAll()).map((t) => t.name));
 }

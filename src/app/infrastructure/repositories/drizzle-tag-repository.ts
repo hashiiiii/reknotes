@@ -43,8 +43,8 @@ export class DrizzleTagRepository implements ITagRepository {
       .orderBy(desc(count(noteTags.noteId)));
   }
 
-  async findAllNames(): Promise<Tag[]> {
-    return this.db.select({ id: tags.id, name: tags.name }).from(tags).orderBy(tags.name);
+  async findAll(): Promise<Tag[]> {
+    return this.db.select().from(tags);
   }
 
   async deleteAllNoteTagLinks(): Promise<void> {

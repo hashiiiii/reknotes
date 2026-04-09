@@ -6,7 +6,7 @@ export interface ITagRepository {
   linkToNote(noteId: number, tagId: number): Promise<void>;
   clearByNoteId(noteId: number): Promise<void>;
   findAllWithCount(): Promise<TagWithCount[]>;
-  findAllNames(): Promise<Tag[]>;
+  findAll(): Promise<Tag[]>;
   deleteAllNoteTagLinks(): Promise<void>;
   removeById(id: number): Promise<boolean>;
   removeOrphanTag(tagId: number): Promise<void>;
