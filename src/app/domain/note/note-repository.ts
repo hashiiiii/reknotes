@@ -10,5 +10,4 @@ export interface INoteRepository {
   findTagsByNoteIds(noteIds: number[]): Promise<Map<number, string[]>>;
   findAllWithSnippet(): Promise<NoteWithSnippet[]>;
   search(pattern: string): Promise<Note[]>;
-  findAll(): Promise<Pick<Note, "id" | "title" | "body">[]>;
 }
