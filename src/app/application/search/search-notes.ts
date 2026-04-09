@@ -14,7 +14,8 @@ export async function searchNotes(noteRepo: INoteRepository, query: string): Pro
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const pattern = `%${trimmed}%`;
+  const escaped = trimmed.replace(/[%_]/g, "\\$&");
+  const pattern = `%${escaped}%`;
   const rows = await noteRepo.search(pattern);
 
   return rows.map((r) => ({
