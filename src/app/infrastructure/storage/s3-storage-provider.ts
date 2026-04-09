@@ -28,16 +28,23 @@ export class S3StorageProvider implements IStorageProvider {
   }
 
   async get(key: string): Promise<{ body: ReadableStream; contentType: string } | null> {
-    const object = await this.s3.send(
-      new GetObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-      }),
-    );
-    if (!object.Body) return null;
-    return {
-      body: object.Body.transformToWebStream(),
-      contentType: object.ContentType ?? "application/octet-stream",
-    };
+    try {
+      const object = await this.s3.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+      if (!object.Body) return null;
+      return {
+        body: object.Body.transformToWebStream(),
+        contentType: object.ContentType ?? "application/octet-stream",
+      };
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "NoSuchKey") {
+        return null;
+      }
+      throw error;
+    }
   }
 }
