@@ -15,7 +15,6 @@ import { graphRoutes } from "./presentation/routes/graph";
 import { noteRoutes } from "./presentation/routes/notes";
 import { pageRoutes } from "./presentation/routes/pages";
 import { searchRoutes } from "./presentation/routes/search";
-import { tagRoutes } from "./presentation/routes/tags";
 import { uploadRoutes } from "./presentation/routes/upload";
 
 // LiquidJS エンジン初期化
@@ -78,7 +77,6 @@ app.route("/", pageRoutes);
 app.route("/api/notes", noteRoutes);
 app.route("/api/search", searchRoutes);
 app.route("/api/graph", graphRoutes);
-app.route("/api/tags", tagRoutes);
 app.route("/api/upload", uploadRoutes);
 app.route("/api/files", fileRoutes);
 
