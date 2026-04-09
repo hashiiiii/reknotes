@@ -1,5 +1,5 @@
-import { count, desc, eq } from "drizzle-orm";
-import type { Tag, TagWithCount } from "../../domain/tag/tag";
+import { eq } from "drizzle-orm";
+import type { Tag } from "../../domain/tag/tag";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import type { DrizzleDb } from "../db";
 import { noteTags, tags } from "../db/schema";
@@ -30,30 +30,12 @@ export class DrizzleTagRepository implements ITagRepository {
     await this.db.delete(noteTags).where(eq(noteTags.noteId, noteId));
   }
 
-  async findAllWithCount(): Promise<TagWithCount[]> {
-    return this.db
-      .select({
-        id: tags.id,
-        name: tags.name,
-        count: count(noteTags.noteId),
-      })
-      .from(tags)
-      .innerJoin(noteTags, eq(tags.id, noteTags.tagId))
-      .groupBy(tags.id)
-      .orderBy(desc(count(noteTags.noteId)));
-  }
-
   async findAll(): Promise<Tag[]> {
     return this.db.select().from(tags);
   }
 
   async deleteAllNoteTagLinks(): Promise<void> {
     await this.db.delete(noteTags);
-  }
-
-  async removeById(id: number): Promise<boolean> {
-    const deleted = await this.db.delete(tags).where(eq(tags.id, id)).returning();
-    return deleted.length > 0;
   }
 
   async removeOrphanTag(tagId: number): Promise<void> {

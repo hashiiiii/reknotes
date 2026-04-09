@@ -3,8 +3,6 @@ import { noteRepository, tagRepository } from "../../infrastructure/container";
 import { createNote } from "../note/create-note";
 import { addTagToNote } from "./add-tag-to-note";
 import { addTagsToNote } from "./add-tags-to-note";
-import { deleteTag } from "./delete-tag";
-import { getAllTags } from "./get-all-tags";
 import { removeOrphanTag } from "./remove-orphan-tag";
 
 describe("tag use cases", () => {
@@ -55,33 +53,6 @@ describe("tag use cases", () => {
       await addTagsToNote(tagRepository, note.id, []);
       const tags = await noteRepository.findTagsByNoteId(note.id);
       expect(tags.length).toBe(0);
-    });
-  });
-
-  describe("getAllTags", () => {
-    test("タグ一覧をノート数付きで取得できる", async () => {
-      const note1 = await createNote(noteRepository, "一覧テスト1", "本文");
-      const note2 = await createNote(noteRepository, "一覧テスト2", "本文");
-      const tagName = `unique-tag-${Date.now()}`;
-      await addTagsToNote(tagRepository, note1.id, [tagName]);
-      await addTagsToNote(tagRepository, note2.id, [tagName]);
-
-      const allTags = await getAllTags(tagRepository);
-      const found = allTags.find((t) => t.name === tagName);
-      expect(found).not.toBeUndefined();
-      expect(Number(found?.count)).toBe(2);
-    });
-  });
-
-  describe("deleteTag", () => {
-    test("タグをIDで削除できる", async () => {
-      const note = await createNote(noteRepository, "削除テスト", "本文");
-      const tag = await addTagToNote(tagRepository, note.id, `del-${Date.now()}`);
-      expect(await deleteTag(tagRepository, tag.id)).toBe(true);
-    });
-
-    test("存在しないIDはfalseを返す", async () => {
-      expect(await deleteTag(tagRepository, 99999)).toBe(false);
     });
   });
 
