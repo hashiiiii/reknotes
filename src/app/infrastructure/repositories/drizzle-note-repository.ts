@@ -1,5 +1,5 @@
-import { desc, eq, ilike, inArray, lt, or, sql } from "drizzle-orm";
-import type { Note, NoteWithSnippet } from "../../domain/note/note";
+import { desc, eq, ilike, inArray, lt, or } from "drizzle-orm";
+import type { Note } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
@@ -71,18 +71,6 @@ export class DrizzleNoteRepository implements INoteRepository {
       map.set(row.noteId, list);
     }
     return map;
-  }
-
-  async findAllWithSnippet(): Promise<NoteWithSnippet[]> {
-    return this.db
-      .select({
-        id: notes.id,
-        title: notes.title,
-        createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
-        linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
-      })
-      .from(notes);
   }
 
   async search(pattern: string): Promise<Note[]> {
