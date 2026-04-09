@@ -1,10 +1,6 @@
 import type { PreTrainedModel, PreTrainedTokenizer } from "@huggingface/transformers";
+import { NOTE_PREFIX, TAG_PREFIX } from "../../application/port/embedding-prefix";
 import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
-
-// モデルに与えるノートとタグにそれぞれ prefix をつける必要がある
-// これがついた状態でベクトル変換されることで、ノートとタグの類似度比較が正しく機能する
-const NOTE_PREFIX = "title: none | text: ";
-const TAG_PREFIX = "task: search result | query: ";
 
 const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
 
