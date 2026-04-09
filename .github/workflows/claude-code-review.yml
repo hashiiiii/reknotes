@@ -113,12 +113,14 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: "claude"
+          show_full_output: true
           prompt: |
             /code-review
             REPO: ${{ github.repository }}
             PR: #${{ fromJSON(steps.pr-info.outputs.result).number }}
           claude_args: |
             --max-turns 30
+            --verbose
             --append-system-prompt "Output all review comment body text in **Japanese**."
             --allowedTools "${{ env.ALLOWED_TOOLS }}"
             --disallowedTools "${{ env.DISALLOWED_TOOLS }}"
