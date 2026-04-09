@@ -15,8 +15,7 @@ export async function deleteNote(
   storageProvider: IStorageProvider,
   id: number,
 ) {
-  const note = await noteRepo.findById(id);
-  const tagNames = await noteRepo.findTagsByNoteId(id);
+  const [note, tagNames] = await Promise.all([noteRepo.findById(id), noteRepo.findTagsByNoteId(id)]);
   const result = await noteRepo.remove(id);
 
   if (result) {
