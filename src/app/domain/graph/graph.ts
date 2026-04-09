@@ -38,3 +38,23 @@ export interface NoteTagLink {
   noteId: number;
   tagId: number;
 }
+
+export function toNoteGraphNode(n: NoteNode): GraphNode {
+  return {
+    id: `note-${n.id}`,
+    label: n.title || "無題",
+    type: "note" as const,
+    val: Math.max(1, n.linkCount),
+    created_at: n.createdAt,
+    snippet: n.snippet,
+  };
+}
+
+export function toTagGraphNode(t: TagNode): GraphNode {
+  return {
+    id: `tag-${t.id}`,
+    label: t.name,
+    type: "tag" as const,
+    val: Math.max(1, t.noteCount),
+  };
+}

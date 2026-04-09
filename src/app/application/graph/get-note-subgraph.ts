@@ -1,4 +1,10 @@
-import type { GraphData, GraphLink, GraphNode } from "../../domain/graph/graph";
+import {
+  type GraphData,
+  type GraphLink,
+  type GraphNode,
+  toNoteGraphNode,
+  toTagGraphNode,
+} from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 
 export async function getNoteSubgraph(graphRepo: IGraphRepository, noteId: number): Promise<GraphData> {
@@ -13,22 +19,7 @@ export async function getNoteSubgraph(graphRepo: IGraphRepository, noteId: numbe
 
   const allNoteIds = new Set(allNotes.map((n) => n.id));
 
-  const nodes: GraphNode[] = [
-    ...allNotes.map((n) => ({
-      id: `note-${n.id}`,
-      label: n.title || "無題",
-      type: "note" as const,
-      val: Math.max(1, n.linkCount),
-      created_at: n.createdAt,
-      snippet: n.snippet,
-    })),
-    ...relatedTags.map((t) => ({
-      id: `tag-${t.id}`,
-      label: t.name,
-      type: "tag" as const,
-      val: Math.max(1, t.noteCount),
-    })),
-  ];
+  const nodes: GraphNode[] = [...allNotes.map(toNoteGraphNode), ...relatedTags.map(toTagGraphNode)];
 
   const links: GraphLink[] = linkRows
     .filter((l) => allNoteIds.has(l.noteId))

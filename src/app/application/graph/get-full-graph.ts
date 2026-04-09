@@ -1,4 +1,10 @@
-import type { GraphData, GraphLink, GraphNode } from "../../domain/graph/graph";
+import {
+  type GraphData,
+  type GraphLink,
+  type GraphNode,
+  toNoteGraphNode,
+  toTagGraphNode,
+} from "../../domain/graph/graph";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 
 export async function getFullGraph(graphRepo: IGraphRepository): Promise<GraphData> {
@@ -6,22 +12,7 @@ export async function getFullGraph(graphRepo: IGraphRepository): Promise<GraphDa
   const tagRows = await graphRepo.findAllTagNodes();
   const linkRows = await graphRepo.findAllLinks();
 
-  const nodes: GraphNode[] = [
-    ...noteRows.map((n) => ({
-      id: `note-${n.id}`,
-      label: n.title || "無題",
-      type: "note" as const,
-      val: Math.max(1, n.linkCount),
-      created_at: n.createdAt,
-      snippet: n.snippet,
-    })),
-    ...tagRows.map((t) => ({
-      id: `tag-${t.id}`,
-      label: t.name,
-      type: "tag" as const,
-      val: Math.max(1, t.noteCount),
-    })),
-  ];
+  const nodes: GraphNode[] = [...noteRows.map(toNoteGraphNode), ...tagRows.map(toTagGraphNode)];
 
   const links: GraphLink[] = linkRows.map((l) => ({
     source: `note-${l.noteId}`,
