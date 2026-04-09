@@ -8,8 +8,7 @@ embeddingProvider
     await buildTagCache(embeddingProvider, tagRepository);
   })
   .catch((err) => {
-    console.error("Embedding init failed:", err);
-    process.exit(1);
+    console.warn("Embedding init failed (auto-tagging disabled):", err);
   });
 
 export default {
