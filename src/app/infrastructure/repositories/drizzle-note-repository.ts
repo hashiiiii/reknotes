@@ -93,8 +93,4 @@ export class DrizzleNoteRepository implements INoteRepository {
       .orderBy(desc(notes.createdAt))
       .limit(SEARCH_LIMIT);
   }
-
-  async findAll(): Promise<Pick<Note, "id" | "title" | "body">[]> {
-    return this.db.select({ id: notes.id, title: notes.title, body: notes.body }).from(notes).orderBy(notes.id);
-  }
 }
