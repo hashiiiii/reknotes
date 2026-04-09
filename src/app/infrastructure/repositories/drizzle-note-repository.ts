@@ -3,6 +3,7 @@ import type { Note, NoteWithSnippet } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
+import { SNIPPET_LENGTH } from "./constants";
 
 const PAGE_SIZE = 20;
 const SEARCH_LIMIT = 50;
@@ -79,7 +80,7 @@ export class DrizzleNoteRepository implements INoteRepository {
         id: notes.id,
         title: notes.title,
         createdAt: notes.createdAt,
-        snippet: sql<string>`SUBSTR(${notes.body}, 1, 120)`,
+        snippet: sql<string>`SUBSTR(${notes.body}, 1, ${SNIPPET_LENGTH})`,
         linkCount: sql<number>`(SELECT COUNT(*) FROM note_tags WHERE note_id = ${notes.id})`,
       })
       .from(notes);
