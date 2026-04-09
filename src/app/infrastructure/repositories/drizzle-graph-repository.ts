@@ -61,7 +61,9 @@ export class DrizzleGraphRepository implements IGraphRepository {
       })
       .from(notes)
       .innerJoin(noteTags, eq(notes.id, noteTags.noteId))
-      .where(sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId})`)
+      .where(
+        sql`${noteTags.tagId} IN (SELECT tag_id FROM note_tags WHERE note_id = ${noteId}) AND ${notes.id} != ${noteId}`,
+      )
       .groupBy(notes.id);
   }
 
