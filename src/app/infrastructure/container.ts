@@ -47,7 +47,18 @@ function createEmbeddingProvider(): IEmbeddingProvider {
 const noteRepository: INoteRepository = new DrizzleNoteRepository(db);
 const tagRepository: ITagRepository = new DrizzleTagRepository(db);
 const graphRepository: IGraphRepository = new DrizzleGraphRepository(db);
-const storageProvider: IStorageProvider = createStorageProvider();
-const embeddingProvider: IEmbeddingProvider = createEmbeddingProvider();
 
-export { embeddingProvider, graphRepository, noteRepository, storageProvider, tagRepository };
+let _storageProvider: IStorageProvider | undefined;
+let _embeddingProvider: IEmbeddingProvider | undefined;
+
+function getStorageProvider(): IStorageProvider {
+  _storageProvider ??= createStorageProvider();
+  return _storageProvider;
+}
+
+function getEmbeddingProvider(): IEmbeddingProvider {
+  _embeddingProvider ??= createEmbeddingProvider();
+  return _embeddingProvider;
+}
+
+export { getEmbeddingProvider, getStorageProvider, graphRepository, noteRepository, tagRepository };

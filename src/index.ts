@@ -1,11 +1,11 @@
 import { app } from "./app";
 import { buildTagCache } from "./app/application/embedding/build-tag-cache";
-import { embeddingProvider, tagRepository } from "./app/infrastructure/container";
+import { getEmbeddingProvider, tagRepository } from "./app/infrastructure/container";
 
-embeddingProvider
+getEmbeddingProvider()
   .preload()
   .then(async () => {
-    await buildTagCache(embeddingProvider, tagRepository);
+    await buildTagCache(getEmbeddingProvider(), tagRepository);
   })
   .catch((err) => {
     console.error("Embedding init failed:", err);
