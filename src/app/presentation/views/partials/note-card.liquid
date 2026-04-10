@@ -16,6 +16,7 @@
           hx-delete="/api/notes/{{ note.id }}"
           hx-target="#note-{{ note.id }}"
           hx-swap="delete"
+          hx-confirm="本当に削除しますか？"
           onclick="event.stopPropagation()">削除</button>
       </div>
     </div>
