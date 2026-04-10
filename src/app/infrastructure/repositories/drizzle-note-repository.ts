@@ -39,12 +39,12 @@ export class DrizzleNoteRepository implements INoteRepository {
     const filtered = cursor ? base.where(lt(notes.id, cursor)) : base;
     const rows = await filtered.orderBy(desc(notes.id)).limit(PAGE_SIZE + 1);
     const hasMore = rows.length > PAGE_SIZE;
-    if (hasMore) rows.pop();
+    const result = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
 
     return {
-      notes: rows,
+      notes: result,
       hasMore,
-      nextCursor: hasMore ? rows[rows.length - 1]?.id : undefined,
+      nextCursor: hasMore ? result[result.length - 1]?.id : undefined,
     };
   }
 
