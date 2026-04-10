@@ -497,6 +497,7 @@ function createGlowLayer(color, size, layerIndex, DPR) {
 }
 
 // ── テキストラベル（任天堂UI風カプセル型） ──
+var _measureCtx = null;
 function createTextLabel(node, isTag, DPR) {
   var text = isTag ? "#" + node.label : node.label;
   var baseFontSize = isTag ? 26 : 18;
@@ -506,9 +507,9 @@ function createTextLabel(node, isTag, DPR) {
   var fontSize = Math.round(baseFontSize * DPR);
   var fontStr = (isTag ? "600 " : "500 ") + fontSize + "px -apple-system, 'Helvetica Neue', Arial, sans-serif";
 
-  var measure = document.createElement("canvas").getContext("2d");
-  measure.font = fontStr;
-  var textWidth = Math.ceil(measure.measureText(text).width);
+  if (!_measureCtx) _measureCtx = document.createElement("canvas").getContext("2d");
+  _measureCtx.font = fontStr;
+  var textWidth = Math.ceil(_measureCtx.measureText(text).width);
   var padX = Math.round(20 * DPR);
   var padY = Math.round(14 * DPR);
 
