@@ -1,14 +1,10 @@
+import type { Note } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 
-export interface SearchResult {
-  id: number;
-  title: string;
-  body: string;
-  createdAt: number;
-  updatedAt: number;
+export type SearchResult = Note & {
   highlightedTitle: string;
   highlightedBody: string;
-}
+};
 
 export async function searchNotes(noteRepo: INoteRepository, query: string): Promise<SearchResult[]> {
   const trimmed = query.trim();
