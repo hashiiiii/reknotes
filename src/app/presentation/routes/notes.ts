@@ -8,8 +8,6 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
-import { embeddingProvider, noteRepository, storageProvider, tagRepository } from "../../infrastructure/container";
-
 const noteRoutes = new Hono<AppEnv>();
 
 const MAX_TITLE_LENGTH = 200;
@@ -42,7 +40,7 @@ noteRoutes.post("/", async (c) => {
 
   if (!body.trim()) return c.text("本文を入力してください", 400);
 
-  const { note, tags } = await createNoteWithTags(noteRepository, tagRepository, embeddingProvider, title, body);
+  const { note, tags } = await createNoteWithTags(c.var.noteRepository, c.var.tagRepository, c.var.embeddingProvider, title, body);
 
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
@@ -54,7 +52,7 @@ noteRoutes.post("/", async (c) => {
 // ノート一覧（無限スクロール用）
 noteRoutes.get("/", async (c) => {
   const cursor = c.req.query("cursor") ? Number(c.req.query("cursor")) : undefined;
-  const { notes, hasMore, nextCursor } = await listNotesWithTags(noteRepository, cursor);
+  const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository, cursor);
 
   let html = "";
   for (const note of notes) {
@@ -69,10 +67,10 @@ noteRoutes.get("/", async (c) => {
 // ノートカード単体の再描画（AI処理後のUI更新用）
 noteRoutes.get("/:id/card", async (c) => {
   const id = Number(c.req.param("id"));
-  const note = await getNote(noteRepository, id);
+  const note = await getNote(c.var.noteRepository, id);
   if (!note) return c.notFound();
 
-  const tags = await getNoteTags(noteRepository, id);
+  const tags = await getNoteTags(c.var.noteRepository, id);
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
     showMenu: true,
@@ -90,7 +88,7 @@ noteRoutes.put("/:id", async (c) => {
   const error = validateNoteInput(title, body);
   if (error) return c.text(error, 400);
 
-  const note = await updateNoteWithTags(noteRepository, tagRepository, embeddingProvider, id, title, body);
+  const note = await updateNoteWithTags(c.var.noteRepository, c.var.tagRepository, c.var.embeddingProvider, id, title, body);
   if (!note) return c.notFound();
 
   return c.redirect(`/notes/${id}`, 303);
@@ -99,7 +97,7 @@ noteRoutes.put("/:id", async (c) => {
 // ノート削除
 noteRoutes.delete("/:id", async (c) => {
   const id = Number(c.req.param("id"));
-  const deleted = await deleteNote(noteRepository, tagRepository, storageProvider, id);
+  const deleted = await deleteNote(c.var.noteRepository, c.var.tagRepository, c.var.storageProvider, id);
 
   if (!deleted) return c.notFound();
 

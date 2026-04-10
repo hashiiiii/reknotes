@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../..";
 import { uploadFile } from "../../application/file/upload-file";
-import { storageProvider } from "../../infrastructure/container";
-
 const uploadRoutes = new Hono<AppEnv>();
 
 uploadRoutes.post("/", async (c) => {
@@ -13,7 +11,7 @@ uploadRoutes.post("/", async (c) => {
     return c.json({ error: "ファイルが選択されていません" }, 400);
   }
 
-  const result = await uploadFile(storageProvider, file);
+  const result = await uploadFile(c.var.storageProvider, file);
   if (!result.ok) {
     return c.json({ error: result.error }, result.status);
   }

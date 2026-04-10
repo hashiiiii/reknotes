@@ -10,6 +10,18 @@ import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { timeout } from "hono/timeout";
 import { Liquid } from "liquidjs";
+import type { IEmbeddingProvider } from "./application/port/embedding-provider";
+import type { IStorageProvider } from "./application/port/storage-provider";
+import type { IGraphRepository } from "./domain/graph/graph-repository";
+import type { INoteRepository } from "./domain/note/note-repository";
+import type { ITagRepository } from "./domain/tag/tag-repository";
+import {
+  embeddingProvider,
+  graphRepository,
+  noteRepository,
+  storageProvider,
+  tagRepository,
+} from "./infrastructure/container";
 import { fileRoutes } from "./presentation/routes/files";
 import { graphRoutes } from "./presentation/routes/graph";
 import { noteRoutes } from "./presentation/routes/notes";
@@ -39,6 +51,11 @@ export type AppEnv = {
   Variables: {
     render: (template: string, data?: Record<string, unknown>) => Promise<string>;
     requestId: string;
+    noteRepository: INoteRepository;
+    tagRepository: ITagRepository;
+    graphRepository: IGraphRepository;
+    storageProvider: IStorageProvider;
+    embeddingProvider: IEmbeddingProvider;
   };
 };
 
@@ -57,6 +74,16 @@ app.use(secureHeaders());
 
 // アップロード用: 50MB まで許可
 app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+
+// DI ミドルウェア
+app.use("*", async (c, next) => {
+  c.set("noteRepository", noteRepository);
+  c.set("tagRepository", tagRepository);
+  c.set("graphRepository", graphRepository);
+  c.set("storageProvider", storageProvider);
+  c.set("embeddingProvider", embeddingProvider);
+  await next();
+});
 
 // LiquidJS ミドルウェア
 app.use("*", async (c, next) => {
