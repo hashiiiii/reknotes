@@ -17,8 +17,8 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
     private apiToken: string,
   ) {}
 
-  async preload(): Promise<void> {
-    // この provider は API ベースのため事前ロードは不要
+  async load(): Promise<void> {
+    // この provider は API ベースのためロードは不要
   }
 
   async embedNote(text: string): Promise<Float32Array> {

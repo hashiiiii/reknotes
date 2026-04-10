@@ -48,7 +48,7 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     return Float32Array.from(output.sentence_embedding.data as ArrayLike<number>);
   }
 
-  async preload(): Promise<void> {
+  async load(): Promise<void> {
     await this.ensureLoaded();
   }
 

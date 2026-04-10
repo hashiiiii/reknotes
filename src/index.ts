@@ -3,7 +3,7 @@ import { buildTagCache } from "./app/application/embedding/build-tag-cache";
 import { embeddingProvider, tagRepository } from "./app/infrastructure/container";
 
 embeddingProvider
-  .preload()
+  .load()
   .then(async () => {
     await buildTagCache(embeddingProvider, tagRepository);
   })

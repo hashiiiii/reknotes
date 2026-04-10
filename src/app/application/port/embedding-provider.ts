@@ -1,5 +1,5 @@
 export interface IEmbeddingProvider {
-  preload(): Promise<void>;
+  load(): Promise<void>;
   embedNote(text: string): Promise<Float32Array>;
   embedTag(tagName: string): Promise<Float32Array>;
   buildTagCache(tagNames: string[]): Promise<void>;
