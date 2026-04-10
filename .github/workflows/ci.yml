@@ -26,8 +26,7 @@ jobs:
       ENVIRONMENT: test
       DEPLOYMENT: local
       DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432/reknotes
-      # S3StorageProvider のコンストラクタ用ダミー値
-      R2_ENDPOINT: http://localhost:9000
+      R2_ENDPOINT: dummy
       R2_ACCESS_KEY_ID: dummy
       R2_SECRET_ACCESS_KEY: dummy
       R2_BUCKET_NAME: reknotes-test
