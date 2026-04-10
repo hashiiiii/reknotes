@@ -115,7 +115,7 @@ jobs:
           prompt: "/refactor-builder"
           claude_args: |
             --model opus[1m]
-            --max-turns 50
+            --max-turns 80
             --allowedTools '${{ env.BUILDER_TOOLS }}'
             --disallowedTools '${{ env.BUILDER_DISALLOWED }}'
             --append-system-prompt "Issue・PR・コメントはすべて日本語で記述すること。"
