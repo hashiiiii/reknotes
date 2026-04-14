@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../..";
 import { uploadFile } from "../../application/file/upload-file";
+
 const uploadRoutes = new Hono<AppEnv>();
 
 uploadRoutes.post("/", async (c) => {

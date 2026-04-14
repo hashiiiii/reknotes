@@ -26,10 +26,10 @@ jobs:
       ENVIRONMENT: test
       DEPLOYMENT: local
       DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432/reknotes
-      R2_ENDPOINT: dummy
-      R2_ACCESS_KEY_ID: dummy
-      R2_SECRET_ACCESS_KEY: dummy
-      R2_BUCKET_NAME: reknotes-test
+      S3_ENDPOINT: dummy
+      S3_ACCESS_KEY_ID: dummy
+      S3_SECRET_ACCESS_KEY: dummy
+      S3_BUCKET_NAME: reknotes-test
 
     steps:
       - uses: actions/checkout@v6

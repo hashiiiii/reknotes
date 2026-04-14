@@ -6,6 +6,7 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { searchNotes } from "../../application/search/search-notes";
+
 const pageRoutes = new Hono<AppEnv>();
 
 // ホーム

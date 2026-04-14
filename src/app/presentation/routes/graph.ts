@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "../..";
 import { getFullGraph } from "../../application/graph/get-full-graph";
 import { getNoteSubgraph } from "../../application/graph/get-note-subgraph";
+
 const graphRoutes = new Hono<AppEnv>();
 
 // 全グラフデータ

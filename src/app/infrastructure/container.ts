@@ -19,10 +19,10 @@ function requireEnv(name: string): string {
 }
 
 function createStorageProvider(): IStorageProvider {
-  const endpoint = requireEnv("R2_ENDPOINT");
-  const accessKeyId = requireEnv("R2_ACCESS_KEY_ID");
-  const secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY");
-  const bucket = requireEnv("R2_BUCKET_NAME");
+  const endpoint = requireEnv("S3_ENDPOINT");
+  const accessKeyId = requireEnv("S3_ACCESS_KEY_ID");
+  const secretAccessKey = requireEnv("S3_SECRET_ACCESS_KEY");
+  const bucket = requireEnv("S3_BUCKET_NAME");
 
   const s3 = new S3Client({
     region: "auto",

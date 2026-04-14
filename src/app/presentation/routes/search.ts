@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "../..";
 import { engine } from "../..";
 import { searchNotes } from "../../application/search/search-notes";
+
 const searchRoutes = new Hono<AppEnv>();
 
 // htmx インクリメンタルサーチ（グリッド絞り込み）
