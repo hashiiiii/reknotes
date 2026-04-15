@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:17.9
     environment:
       POSTGRES_USER: reknotes
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -10,7 +10,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   minio:
-    image: pgsty/minio
+    image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z
     ports:
       - "9000:9000"
       - "9001:9001"
