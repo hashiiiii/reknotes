@@ -3,9 +3,6 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: "Branch or tag to deploy (e.g. v1.1.0, main)"
-        required: true
       environment:
         description: "Target environment"
         required: true
@@ -23,8 +20,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.ref }}
 
       - uses: docker/setup-buildx-action@v4
 
@@ -39,7 +34,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/hashiiiii/reknotes:${{ inputs.ref }}
+            ghcr.io/hashiiiii/reknotes:${{ github.ref_name }}
             ghcr.io/hashiiiii/reknotes:${{ inputs.environment }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
