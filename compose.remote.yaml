@@ -8,7 +8,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy-data:/data
     environment:
-      DOMAIN: reknotes.hashiiiii.com
+      DOMAIN: ${DOMAIN}
+      AUTH_USER: ${AUTH_USER}
+      AUTH_PASS_HASH: ${AUTH_PASS_HASH}
     restart: unless-stopped
 
   app:
