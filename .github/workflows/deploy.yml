@@ -34,7 +34,7 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/hashiiiii/reknotes:${{ github.ref_name }}
-            ghcr.io/hashiiiii/reknotes:${{ inputs.environment }}
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ inputs.environment }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

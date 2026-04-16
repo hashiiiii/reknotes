@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   app:
-    image: ghcr.io/hashiiiii/reknotes:${ENVIRONMENT}
+    image: ghcr.io/${GITHUB_REPOSITORY}:${ENVIRONMENT}
     env_file: .env
     restart: unless-stopped
 
