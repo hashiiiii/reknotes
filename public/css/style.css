@@ -19,6 +19,11 @@
   --shadow-card: rgba(0,0,0,0.06); --shadow-panel: rgba(0,0,0,0.08); --shadow-hover: rgba(0,0,0,0.1);
 }
 
+/* テーマ切替時に CSS 変数の変化がアニメーションされるのを防ぐ */
+html.no-transition, html.no-transition *, html.no-transition *::before, html.no-transition *::after {
+  transition-duration: 0s !important;
+}
+
 html { scrollbar-gutter: stable; }
 body {
   font-family: 'Nunito', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.7;
