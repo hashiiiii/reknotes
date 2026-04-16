@@ -108,6 +108,8 @@ document.addEventListener('drop', function(e) {
   btn.addEventListener('click', function() {
     if (animating) return;
     animating = true;
+    // テーマ切替中は transition を無効化
+    root.classList.add('no-transition');
     if (isDark()) {
       root.setAttribute('data-theme', 'light');
       localStorage.setItem('theme', 'light');
@@ -115,6 +117,8 @@ document.addEventListener('drop', function(e) {
       root.removeAttribute('data-theme');
       localStorage.removeItem('theme');
     }
+    root.offsetHeight;
+    root.classList.remove('no-transition');
     setIcon(isDark() ? svgSun : svgMoon, true);
     if (window.reknotesCy && typeof GraphCommon !== 'undefined') {
       window.reknotesCy.style(GraphCommon.getThemedStyles());

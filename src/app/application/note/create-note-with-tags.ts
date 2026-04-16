@@ -13,8 +13,12 @@ export async function createNoteWithTags(
   body: string,
 ) {
   const note = await createNote(noteRepo, title, body);
-  const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
-  if (generatedTags.length > 0) await addTagsToNote(tagRepo, note.id, generatedTags);
+  try {
+    const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
+    if (generatedTags.length > 0) await addTagsToNote(tagRepo, note.id, generatedTags);
+  } catch (e) {
+    console.error("Auto-tagging failed (note was created successfully):", e);
+  }
   const tags = await noteRepo.findTagsByNoteId(note.id);
   return { note, tags };
 }

@@ -65,6 +65,16 @@ function buildAdjacency(data) {
 
 var _highlightState = { active: false, nodeId: null, neighborIds: null };
 
+// ── カメラオフセット計算（ノード位置→カメラ位置） ──
+// ノードから見て原点方向の反対側に CAMERA.DISTANCE だけ離れた位置を返す
+// ノードが原点付近にいる場合は +Z 方向にフォールバック
+function cameraOffset(x, y, z) {
+  var hyp = Math.hypot(x, y, z);
+  if (hyp < 0.01) return { x: 0, y: 0, z: CAMERA.DISTANCE };
+  var d = CAMERA.DISTANCE / hyp;
+  return { x: x + x * d, y: y + y * d, z: z + z * d };
+}
+
 // 脈動アニメーション用: タグノードの参照リスト
 var _pulsingTags = [];
 
@@ -154,12 +164,12 @@ function initCosmicGraph(container, data) {
     })
     .onNodeClick(function (node) {
       highlightNeighbors(node, data, adjacency, Graph);
+      // パネル表示前に座標をスナップショット（レイアウト変更で物理座標がずれるのを防ぐ）
+      var nx = node.x, ny = node.y, nz = node.z;
       showPanel(node, data, Graph);
-      var hyp = Math.hypot(node.x, node.y, node.z) || 1;
-      var distRatio = 1 + CAMERA.DISTANCE / hyp;
       Graph.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-        { x: node.x, y: node.y, z: node.z },
+        cameraOffset(nx, ny, nz),
+        { x: nx, y: ny, z: nz },
         CAMERA.DURATION
       );
       var url = new URL(window.location);
@@ -197,10 +207,8 @@ function initCosmicGraph(container, data) {
       if (tags.length === 0) return;
       var target = tags[Math.floor(Math.random() * tags.length)];
       if (!target.x && !target.y && !target.z) return;
-      var hyp = Math.hypot(target.x, target.y, target.z) || 1;
-      var ratio = 1 + CAMERA.DISTANCE / hyp;
       Graph.cameraPosition(
-        { x: target.x * ratio, y: target.y * ratio, z: target.z * ratio },
+        cameraOffset(target.x, target.y, target.z),
         { x: target.x, y: target.y, z: target.z },
         CAMERA.DURATION
       );
@@ -235,10 +243,10 @@ function initCosmicGraph(container, data) {
       // パネルを先に表示してグラフを縮小 → カメラが可視領域の中央にノードを配置
       showPanel(initNode, data, Graph);
       setTimeout(function () {
-        var ratio = 1 + CAMERA.DISTANCE / (Math.hypot(initNode.x || 1, initNode.y || 1, initNode.z || 1));
+        var nx = initNode.x || 0, ny = initNode.y || 0, nz = initNode.z || 0;
         Graph.cameraPosition(
-          { x: (initNode.x || 0) * ratio, y: (initNode.y || 0) * ratio, z: (initNode.z || 0) * ratio },
-          { x: initNode.x || 0, y: initNode.y || 0, z: initNode.z || 0 },
+          cameraOffset(nx, ny, nz),
+          { x: nx, y: ny, z: nz },
           CAMERA.DURATION
         );
       }, CAMERA.DELAY);
@@ -625,10 +633,11 @@ function addBloom(Graph) {
 //  パネル
 // ══════════════════════════════════════════════
 
-function updateGraphHeight() {
+function updateGraphDimensions() {
   var Graph = window._reknGraph;
   var container = document.getElementById("graph-container");
   if (Graph && container) {
+    Graph.width(container.clientWidth);
     Graph.height(container.clientHeight);
   }
 }
@@ -692,7 +701,7 @@ function showPanel(node, data) {
   }
 
   panel.hidden = false;
-  updateGraphHeight();
+  updateGraphDimensions();
 }
 
 function dismissPanel() {
@@ -705,7 +714,7 @@ function dismissPanel() {
 function closePanel() {
   var panel = document.getElementById("graph-panel");
   if (panel) panel.hidden = true;
-  updateGraphHeight();
+  updateGraphDimensions();
 }
 
 function formatDate(dateStr) {
