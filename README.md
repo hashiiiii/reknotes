@@ -19,7 +19,7 @@
 ## Setup
 
 ```bash
-docker compose -f compose.development.yaml up -d   # Start PostgreSQL & MinIO
+docker compose -f compose.local.yaml up -d   # Start PostgreSQL & MinIO
 bun run setup          # Install deps, build assets, run migrations
 ```
 
@@ -64,7 +64,7 @@ bun run setup          # Install deps, build assets, run migrations
 
 ## Docker
 
-`docker compose -f compose.development.yaml up` starts development infrastructure:
+`docker compose -f compose.local.yaml up` starts development infrastructure:
 
 - **PostgreSQL 17** — Primary database
 - **MinIO** — S3-compatible object storage (console: `localhost:9001`)
