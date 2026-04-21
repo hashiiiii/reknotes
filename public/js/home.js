@@ -53,9 +53,12 @@ function togglePreview() {
   var placed = new WeakSet();
   var currentCols = 0;
 
+  var MIN_COL_W = 240;
+
   function colCount() {
     var w = grid.clientWidth;
-    return w <= 480 ? 1 : w <= 768 ? 2 : 3;
+    if (w <= 480) return 1;
+    return Math.max(1, Math.floor((w + GAP) / (MIN_COL_W + GAP)));
   }
 
   function placeNew() {

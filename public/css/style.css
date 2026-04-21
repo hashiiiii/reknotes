@@ -31,9 +31,9 @@ body {
 
 /* Nav */
 .nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 0.5rem 1rem; position: sticky; top: 0; z-index: 10; }
-.nav-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+.nav-inner { display: grid; grid-template-columns: 1fr minmax(0, 720px) 1fr; align-items: center; gap: 1rem; }
 .nav-brand { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--accent); flex-shrink: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; }
-.nav-search { flex: 1; max-width: 480px; }
+.nav-search { max-width: 720px; width: 100%; }
 .nav-search-input {
   width: 100%; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.45rem 0.9rem;
   font-size: 0.85rem; font-family: inherit; background: var(--bg-secondary); color: var(--fg);
@@ -41,7 +41,7 @@ body {
 .nav-search-input:focus { outline: none; border-color: var(--accent); }
 .nav-search-input::placeholder { color: var(--muted); }
 .nav-search-input:disabled { opacity: 0.4; cursor: not-allowed; }
-.nav-links { display: flex; gap: 1rem; flex-shrink: 0; align-items: center; }
+.nav-links { display: flex; gap: 1rem; flex-shrink: 0; align-items: center; justify-self: end; }
 .nav-links a { text-decoration: none; color: var(--text-secondary); font-size: 0.9rem; display: inline-flex; flex-direction: column; align-items: center; }
 .nav-links a::after { content: attr(data-text); font-weight: 600; height: 0; visibility: hidden; overflow: hidden; pointer-events: none; }
 .nav-links a:hover { color: var(--fg); }
@@ -49,7 +49,7 @@ body {
 
 
 /* Container */
-.container { max-width: 960px; margin: 0 auto; padding: var(--gap); }
+.container { margin: 0 auto; padding: var(--gap); }
 .container-full { width: 100%; padding: 0; overflow: hidden; }
 /* Compose bar (Google Keep style) */
 .compose-bar {
@@ -245,10 +245,10 @@ mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; bord
 /* ── Responsive: mobile ≤768px ── */
 @media (max-width: 768px) {
   /* Nav: stack search and links below brand */
-  .nav { padding: 0.5rem 0.75rem; }
-  .nav-inner { flex-wrap: wrap; gap: 0.5rem; }
+  .nav { padding: 0.5rem 0.75rem 0.75rem; }
+  .nav-inner { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .nav-search { order: 3; flex-basis: 100%; max-width: 100%; }
-  .nav-links { margin-left: auto; }
+  .nav-links { margin-left: auto; justify-self: auto; }
   .nav-links a { font-size: 0.82rem; min-height: 44px; justify-content: center; }
 
   /* Container padding */
