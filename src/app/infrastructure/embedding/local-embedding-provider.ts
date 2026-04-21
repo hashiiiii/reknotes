@@ -13,7 +13,6 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
   private tokenizer: PreTrainedTokenizer | null = null;
   private loading: Promise<void> | null = null;
   private tagCache = new Map<string, Float32Array>();
-  private segmenter = new Intl.Segmenter("ja", { granularity: "word" });
 
   private async ensureLoaded(): Promise<{ model: PreTrainedModel; tokenizer: PreTrainedTokenizer }> {
     if (!this.loading) {
@@ -71,7 +70,4 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     }
   }
 
-  async tokenize(text: string): Promise<string[]> {
-    return [...this.segmenter.segment(text)].filter((seg) => seg.isWordLike).map((seg) => seg.segment);
-  }
 }

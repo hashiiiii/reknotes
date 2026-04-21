@@ -30,6 +30,76 @@ const SCORE_CUTOFF_RATIO = 0.5;
 // 0.7 は「関連性を重視しつつ、似すぎるタグは避ける」バランス。
 const MMR_LAMBDA = 0.7;
 
+// --- 漢字判定 ---
+// バイグラム生成で1文字漢字（接辞）を識別するために使う。
+// CJK統合漢字（U+4E00–U+9FFF）と拡張A（U+3400–U+4DBF）をカバー。
+function isKanji(char: string): boolean {
+  const code = char.codePointAt(0);
+  if (code === undefined) return false;
+  return (code >= 0x4e00 && code <= 0x9fff) || (code >= 0x3400 && code <= 0x4dbf);
+}
+
+// --- コードブロック除去 ---
+// 候補語抽出の前にトリプルバッククォート（```）で囲まれたコードブロックを除去する。
+// コードブロック内の数式・変数名（4x, ax^4, value 等）がノイズ候補になるのを防ぐ。
+// ノート embedding には全文を使い、候補語の抽出だけコードブロックを除く。
+//
+// 正規表現の解説:
+//   ```        → 開始のトリプルバッククォートにマッチ
+//   [\s\S]*?   → 改行を含む任意の文字列に非貪欲（最短）マッチ
+//                （ . は改行にマッチしないため [\s\S] を使う）
+//   ```        → 終了のトリプルバッククォートにマッチ
+//   /g         → テキスト中の全コードブロックを対象にする
+function stripCodeBlocks(text: string): string {
+  return text.replace(/```[\s\S]*?```/g, " ");
+}
+
+// --- 候補語抽出 ---
+// テキストから unigram（単語）と bigram（複合語）のタグ候補を抽出する。
+//
+// unigram: Intl.Segmenter で分かち書きした単語のうち 2〜20 文字のもの。
+//   1文字の助詞（は、の、が...）は長さフィルタで除外され、
+//   2文字以上の機能語（した、ある...）は embedding スコアが低いので相対閾値で自然に落ちる。
+//
+// bigram: 原文で直接隣接する2つの word-like セグメントを結合する。ただし条件あり:
+//   - 片方が1文字の漢字（接辞: 法、式、型、量、化 等）であること
+//   - もう片方が2文字以上であること
+//   これにより「ホーナー＋法→ホーナー法」「計算＋量→計算量」を復元しつつ、
+//   ひらがな助詞との誤結合（「法＋の→法の」等）を防ぐ。
+function extractCandidateWords(text: string): string[] {
+  const segmenter = new Intl.Segmenter("ja", { granularity: "word" });
+  const allSegments = [...segmenter.segment(text)];
+
+  const candidates = new Set<string>();
+
+  for (const seg of allSegments) {
+    if (seg.isWordLike && seg.segment.length >= 2 && seg.segment.length <= 20) {
+      candidates.add(seg.segment);
+    }
+  }
+
+  for (let i = 0; i < allSegments.length - 1; i++) {
+    if (!allSegments[i].isWordLike || !allSegments[i + 1].isWordLike) continue;
+
+    const left = allSegments[i].segment;
+    const right = allSegments[i + 1].segment;
+
+    const leftIsOneCharKanji = left.length === 1 && isKanji(left);
+    const rightIsOneCharKanji = right.length === 1 && isKanji(right);
+
+    // 1文字漢字接辞 + 2文字以上の内容語、またはその逆の並びのみ結合する
+    const shouldJoin = (leftIsOneCharKanji && right.length >= 2) || (rightIsOneCharKanji && left.length >= 2);
+    if (!shouldJoin) continue;
+
+    const compound = left + right;
+    if (compound.length >= 2 && compound.length <= 20) {
+      candidates.add(compound);
+    }
+  }
+
+  return [...candidates];
+}
+
 type Candidate = { name: string; embedding: Float32Array; score: number };
 
 function mmrSelect(candidates: Candidate[], maxTags: number): Candidate[] {
@@ -66,7 +136,7 @@ function mmrSelect(candidates: Candidate[], maxTags: number): Candidate[] {
  * ノートの内容からタグを提案する。
  *
  * 1. 既存タグをノートとの類似度でスコアリングし、候補プールに入れる
- * 2. テキストから内容語(unigram)を抽出し、ノートとの類似度でスコアリング
+ * 2. テキストから内容語(unigram + 1文字漢字バイグラム)を抽出し、ノートとの類似度でスコアリング
  * 3. 全候補を相対閾値でフィルタし、MMR で多様性を確保しつつ上位を選択する
  */
 export async function suggestTags(
@@ -102,11 +172,11 @@ export async function suggestTags(
   }
 
   // Step 2: テキストから内容語を抽出してスコアリング
-  // Intl.Segmenter で分かち書きした単語のうち、2文字以上のものを候補にする。
-  // 1文字の助詞（は、の、が...）は長さフィルタで除外され、
-  // 2文字以上の機能語（した、ある...）は embedding スコアが低いので相対閾値で自然に落ちる。
-  const words = await embeddingProvider.tokenize(text);
-  const contentWords = [...new Set(words.filter((w) => w.length >= 2 && w.length <= 20))];
+  // コードブロック内の数式・変数名がノイズ候補になるのを防ぐため、
+  // 候補語の抽出はコードブロックを除いたテキストから行う。
+  // unigram に加えて1文字漢字バイグラム（ホーナー法、計算量 等）も候補に含める。
+  const textForCandidates = stripCodeBlocks(text);
+  const contentWords = extractCandidateWords(textForCandidates);
   const existingTagNames = new Set(existingTags.map((t) => t.name));
 
   for (const word of contentWords) {

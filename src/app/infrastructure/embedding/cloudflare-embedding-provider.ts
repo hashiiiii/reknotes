@@ -10,7 +10,6 @@ const BATCH_SIZE = 100;
 
 export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   private tagCache = new Map<string, Float32Array>();
-  private segmenter = new Intl.Segmenter("ja", { granularity: "word" });
 
   constructor(
     private accountId: string,
@@ -46,10 +45,6 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
         this.tagCache.set(tagNames[i + j], embeddings[j]);
       }
     }
-  }
-
-  async tokenize(text: string): Promise<string[]> {
-    return [...this.segmenter.segment(text)].filter((seg) => seg.isWordLike).map((seg) => seg.segment);
   }
 
   private async embed(texts: string[]): Promise<Float32Array[]> {
