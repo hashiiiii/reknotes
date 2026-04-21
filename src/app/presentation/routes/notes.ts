@@ -115,8 +115,10 @@ noteRoutes.delete("/:id", async (c) => {
 
   if (!deleted) return c.notFound();
 
-  // HTMX リクエスト（ホームのカード削除）は 200 を返す
   if (c.req.header("HX-Request")) {
+    if (c.req.header("HX-Current-URL")?.includes("/notes/")) {
+      c.header("HX-Redirect", "/");
+    }
     return c.body(null, 200);
   }
   return c.redirect("/", 303);

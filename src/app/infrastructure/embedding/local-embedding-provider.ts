@@ -69,5 +69,4 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
       await this.embedTag(name);
     }
   }
-
 }
