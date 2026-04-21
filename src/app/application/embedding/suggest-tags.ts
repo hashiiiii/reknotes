@@ -11,9 +11,11 @@ import type { IEmbeddingProvider } from "../port/embedding-provider";
 //   0.10  : 完全に無関係（"料理" vs 素数の記事）
 //
 // 既存タグは「一度ユーザーが承認したタグ」なので、緩めの閾値で積極的に再利用する。
-// 新規タグはテキストから自動抽出した単語なので、厳しめの閾値でノイズを弾く。
+// 新規タグはテキストから自動抽出した単語なので、やや厳しめの閾値でノイズを弾く。
+// 0.35 だと数式やコードが多いノート（自然言語の割合が低い）で候補不足になるため 0.30 に設定。
+// 機能語（した、ある等）は 0.20 以下なので 0.30 でも混入しない。
 const EXISTING_TAG_THRESHOLD = 0.25;
-const NEW_TAG_THRESHOLD = 0.35;
+const NEW_TAG_THRESHOLD = 0.3;
 
 const MAX_TAGS = 3;
 
