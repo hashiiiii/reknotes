@@ -94,6 +94,8 @@ function extractCandidateWords(text: string): string[] {
     const compound = left + right;
     if (compound.length >= 2 && compound.length <= 20) {
       candidates.add(compound);
+      // 複合語を作ったら構成元の内容語は候補から外す（「ホーナー法」があれば「ホーナー」は不要）
+      candidates.delete(leftIsOneCharKanji ? right : left);
     }
   }
 
