@@ -2,22 +2,21 @@ import type { ITagRepository } from "../../domain/tag/tag-repository";
 import { dotProduct } from "../../domain/tag/tag-suggestion";
 import type { IEmbeddingProvider } from "../port/embedding-provider";
 
-// --- 閾値 ---
-// embedding モデルはテキスト同士の「意味的な近さ」を 0〜1 のスコアで返す。
-// スコアの目安（embeddinggemma-300m での実測値）:
-//   0.45+ : 強く関連（"TypeScript" vs TypeScriptの記事）
-//   0.30  : やや関連（"素数" vs 素数の記事）
-//   0.20  : ほぼ無関係（"React" vs 素数の記事）
-//   0.10  : 完全に無関係（"料理" vs 素数の記事）
-//
-// 既存タグは「一度ユーザーが承認したタグ」なので、緩めの閾値で積極的に再利用する。
-// 新規タグはテキストから自動抽出した単語なので、やや厳しめの閾値でノイズを弾く。
-// 0.35 だと数式やコードが多いノート（自然言語の割合が低い）で候補不足になるため 0.30 に設定。
-// 機能語（した、ある等）は 0.20 以下なので 0.30 でも混入しない。
-const EXISTING_TAG_THRESHOLD = 0.25;
-const NEW_TAG_THRESHOLD = 0.3;
-
 const MAX_TAGS = 3;
+
+// --- 相対閾値 ---
+// 全候補のうち最高スコアの SCORE_CUTOFF_RATIO 未満のものを除外する。
+// 固定閾値（例: 0.30）だとモデルや量子化方式によってスコアの絶対値が変わるため、
+// ローカル ONNX と Cloudflare Workers AI のようにモデル実装が異なる環境間で
+// 閾値のチューニン��が二重に必要になってしまう。
+// 相対閾値ならスコアのスケールに自動追従するため、モデルが変わっても調整不要。
+//
+// 0.5 = 最高スコアの半分未満を除外。実測で:
+//   - 関連語は最高スコアの 60〜100% に分布
+//   - 無関係な既存タグは最高スコアの 30〜45% に分布
+//   - 機能語（した、ある等）は最高スコアの 20〜40% に分布
+// 0.5 はこれらの間にあり、関連語を残しつつノイズを弾くバランス。
+const SCORE_CUTOFF_RATIO = 0.5;
 
 // --- MMR (Maximal Marginal Relevance) ---
 // 単純にスコア上位3つを選ぶと「TypeScript」「TS」「型」のように似た意味のタグが並んでしまう。
@@ -66,9 +65,9 @@ function mmrSelect(candidates: Candidate[], maxTags: number): Candidate[] {
 /**
  * ノートの内容からタグを提案する。
  *
- * 1. 既存タグをノートとの類似度でスコアリングし、関連するものを候補に入れる
+ * 1. 既存タグをノートとの類似度でスコアリングし、候補プールに入れる
  * 2. テキストから内容語(unigram)を抽出し、ノートとの類似度でスコアリング
- * 3. 全候補から MMR で多様性を確保しつつ上位を選択する
+ * 3. 全候補を相対閾値でフィルタし、MMR で多様性を確保しつつ上位を選択する
  */
 export async function suggestTags(
   embeddingProvider: IEmbeddingProvider,
@@ -91,24 +90,21 @@ export async function suggestTags(
   const candidates: Candidate[] = [];
 
   // Step 1: 既存タグをスコアリング
-  // 既存タグを「そのまま候補に入れる」ことで、タグの再利用が自然に起きる。
-  // タグが蓄積されるほど「コンポーネント設計」のような複合語も直接マッチするようになる。
+  // 既存タグを「そのまま候補に入れ��」ことで、タグの再利用が自然に起きる。
+  // タグが蓄積されるほど「��ンポーネント設計」のような複合語も直接マッチするようになる。
   const existingTags = await tagRepo.findAll();
   if (existingTags.length > 0) {
     await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));
     for (const tag of existingTags) {
       const embedding = await embeddingProvider.embedTag(tag.name);
-      const s = score(embedding);
-      if (s >= EXISTING_TAG_THRESHOLD) {
-        candidates.push({ name: tag.name, embedding, score: s });
-      }
+      candidates.push({ name: tag.name, embedding, score: score(embedding) });
     }
   }
 
   // Step 2: テキストから内容語を抽出してスコアリング
   // Intl.Segmenter で分かち書きした単語のうち、2文字以上のものを候補にする。
   // 1文字の助詞（は、の、が...）は長さフィルタで除外され、
-  // 2文字以上の機能語（した、ある...）は embedding スコアが低いので閾値で自然に落ちる。
+  // 2文字以上の機能語（した、ある...）は embedding スコアが低いので相対閾値で自然に落ちる。
   const words = await embeddingProvider.tokenize(text);
   const contentWords = [...new Set(words.filter((w) => w.length >= 2 && w.length <= 20))];
   const existingTagNames = new Set(existingTags.map((t) => t.name));
@@ -116,15 +112,14 @@ export async function suggestTags(
   for (const word of contentWords) {
     if (existingTagNames.has(word.toLowerCase())) continue;
     const embedding = await embeddingProvider.embedTag(word);
-    const s = score(embedding);
-    if (s >= NEW_TAG_THRESHOLD) {
-      candidates.push({ name: word, embedding, score: s });
-    }
+    candidates.push({ name: word, embedding, score: score(embedding) });
   }
 
   if (candidates.length === 0) return [];
 
-  // Step 3: MMR で多様性を確保しつつ上位を選択
-  const selected = mmrSelect(candidates, MAX_TAGS);
+  // Step 3: 相対閾値でフィルタし、MMR で多様性を確保しつつ上位を選択
+  const maxScore = Math.max(...candidates.map((c) => c.score));
+  const filtered = candidates.filter((c) => c.score >= maxScore * SCORE_CUTOFF_RATIO);
+  const selected = mmrSelect(filtered, MAX_TAGS);
   return selected.map((c) => c.name);
 }

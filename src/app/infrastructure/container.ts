@@ -5,6 +5,7 @@ import type { IGraphRepository } from "../domain/graph/graph-repository";
 import type { INoteRepository } from "../domain/note/note-repository";
 import type { ITagRepository } from "../domain/tag/tag-repository";
 import { db } from "./db";
+import { CloudflareEmbeddingProvider } from "./embedding/cloudflare-embedding-provider";
 import { LocalEmbeddingProvider } from "./embedding/local-embedding-provider";
 import { DrizzleGraphRepository } from "./repositories/drizzle-graph-repository";
 import { DrizzleNoteRepository } from "./repositories/drizzle-note-repository";
@@ -35,11 +36,9 @@ function createStorageProvider(): IStorageProvider {
 
 function createEmbeddingProvider(): IEmbeddingProvider {
   if (process.env.DEPLOYMENT === "remote") {
-    // TODO: LocalEmbeddingProvider だけで良くなった場合は削除する
-    // const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID");
-    // const apiToken = requireEnv("CLOUDFLARE_API_TOKEN");
-    // return new CloudflareEmbeddingProvider(accountId, apiToken);
-    return new LocalEmbeddingProvider();
+    const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID");
+    const apiToken = requireEnv("CLOUDFLARE_API_TOKEN");
+    return new CloudflareEmbeddingProvider(accountId, apiToken);
   }
 
   return new LocalEmbeddingProvider();
