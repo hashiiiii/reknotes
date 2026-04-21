@@ -17,7 +17,7 @@ Presentation → Application → Domain ← Infrastructure
 
 ## Environment Variables
 
-- `DEPLOYMENT`: Switches embedding implementation (`remote` → Cloudflare Workers AI / otherwise → local ONNX)
+- `DEPLOYMENT`: Switches DB connection and migration behavior (`remote` → uses `DATABASE_URL` directly / otherwise → local PostgreSQL)
 - `ENVIRONMENT`: Isolates databases (`test` → reknotes_test / `development` → reknotes_development)
 
 ## Code Conventions

@@ -16,6 +16,8 @@ services:
   app:
     image: ghcr.io/${GITHUB_REPOSITORY}:${ENVIRONMENT}
     env_file: .env
+    volumes:
+      - embedding-model-cache:/app/node_modules/@huggingface/transformers/.cache
     restart: unless-stopped
 
   watchtower:
@@ -38,3 +40,4 @@ services:
 volumes:
   caddy-data:
   postgres-data:
+  embedding-model-cache:
