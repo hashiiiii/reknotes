@@ -26,15 +26,5 @@ services:
       WATCHTOWER_POLL_INTERVAL: 60
     restart: unless-stopped
 
-  postgres:
-    image: postgres:17.9
-    environment:
-      POSTGRES_USER: reknotes
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-
 volumes:
   caddy-data:
-  postgres-data:
