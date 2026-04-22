@@ -49,7 +49,7 @@ body {
 
 
 /* Container */
-.container { margin: 0 auto; padding: var(--gap); }
+.container { margin: 0 auto; padding: var(--gap) 5vw; }
 .container-full { width: 100%; padding: 0; overflow: hidden; }
 /* Compose bar (Google Keep style) */
 .compose-bar {
@@ -257,9 +257,6 @@ mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; bord
   /* Compose bar: full width */
   .compose-bar { max-width: 100%; }
 
-  /* Note grid: single column via masonry override */
-  .note-grid { display: flex !important; flex-direction: column; gap: var(--gap); }
-  .note-grid .note-card { position: relative !important; visibility: visible !important; width: 100% !important; left: auto !important; top: auto !important; }
 
   /* Note detail */
   .note-header-row h1 { font-size: 1.25rem; }
