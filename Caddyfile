@@ -1,6 +1,3 @@
 {$DOMAIN} {
-    basic_auth {
-        {$AUTH_USER} {$AUTH_PASS_HASH}
-    }
-    reverse_proxy app:3000
+    reverse_proxy oauth2-proxy:4180
 }

@@ -59,8 +59,10 @@ jobs:
           S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}
           CLOUDFLARE_ACCOUNT_ID=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN=${{ secrets.CLOUDFLARE_API_TOKEN }}
-          AUTH_USER=${{ secrets.AUTH_USER }}
-          AUTH_PASS_HASH=${{ secrets.AUTH_PASS_HASH }}
+          OAUTH2_PROXY_CLIENT_ID=${{ secrets.OAUTH2_PROXY_CLIENT_ID }}
+          OAUTH2_PROXY_CLIENT_SECRET=${{ secrets.OAUTH2_PROXY_CLIENT_SECRET }}
+          OAUTH2_PROXY_COOKIE_SECRET=${{ secrets.OAUTH2_PROXY_COOKIE_SECRET }}
+          OAUTH2_PROXY_GITHUB_USER=${{ secrets.OAUTH2_PROXY_GITHUB_USER }}
           EOF
 
           scp -i ~/.ssh/deploy_key /tmp/.env ubuntu@${{ secrets.VM_HOST }}:~/reknotes/.env
