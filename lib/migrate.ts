@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import postgres from "postgres";
 
 // データ消失系 SQL のパターン。制約強化系 (SET NOT NULL / ADD UNIQUE) は意図的に含めない
@@ -10,6 +9,9 @@ const DESTRUCTIVE_PATTERNS = [/\bDROP\s+TABLE\b/i, /\bDROP\s+COLUMN\b/i, /\bSET\
 
 const HOOKS_DIR = "drizzle/migrations";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
+// drizzle-kit の import 解決が project の node_modules を辿れるよう、tmp は project 内の
+// node_modules/.cache 配下に作る (/tmp だと module 解決が失敗する)
+const CACHE_PARENT = "node_modules/.cache/reknotes-migrate";
 
 type Mode = "apply" | "check" | "bootstrap";
 
@@ -159,20 +161,38 @@ function listSqlFiles(dir: string): Set<string> {
   return new Set(readdirSync(dir).filter((f) => /^[0-9]+_.*\.sql$/.test(f)));
 }
 
+function writeTempDrizzleConfig(tmpOut: string): string {
+  const tmpConfigPath = join(tmpOut, "drizzle.config.ts");
+  const absSchema = resolve(SCHEMA_PATH);
+  writeFileSync(
+    tmpConfigPath,
+    `import { defineConfig } from "drizzle-kit";
+export default defineConfig({
+  dialect: "postgresql",
+  schema: ${JSON.stringify(absSchema)},
+  out: ${JSON.stringify(tmpOut)},
+  dbCredentials: { url: process.env.DATABASE_URL! },
+});
+`,
+  );
+  return tmpConfigPath;
+}
+
 async function generateDiffSql(url: string): Promise<{ sql: string | null; error: string | null }> {
-  const tmpOut = await mkdtemp(join(tmpdir(), "reknotes-migrate-"));
+  mkdirSync(CACHE_PARENT, { recursive: true });
+  const tmpOut = await mkdtemp(join(CACHE_PARENT, "run-"));
   try {
-    // DATABASE_URL は spawnDrizzle の env 経由で渡す (ps aux / /proc/<pid>/cmdline への漏洩を避ける)
-    const introspectCode = spawnDrizzle(["introspect", "--dialect=postgresql", `--out=${tmpOut}`], url);
+    // drizzle-kit は --config と他 CLI 引数 (--url など) を併用できない仕様。
+    // --url を CLI に出すとクレデンシャルが ps aux に漏れるため、tmp 配下に config を動的生成し --config だけで呼ぶ。
+    // DATABASE_URL は spawnDrizzle が env で渡し、tmp config の `process.env.DATABASE_URL!` が子プロセスで評価する。
+    const tmpConfigPath = writeTempDrizzleConfig(tmpOut);
+    const introspectCode = spawnDrizzle(["introspect", `--config=${tmpConfigPath}`], url);
     if (introspectCode !== 0) {
       return { sql: null, error: "drizzle-kit introspect failed" };
     }
     // introspect 直後に存在する SQL ファイル (現 DB 構造の再構築 SQL)。空 DB では 0 件のこともある
     const beforeGenerate = listSqlFiles(tmpOut);
-    const generateCode = spawnDrizzle(
-      ["generate", "--dialect=postgresql", `--schema=${SCHEMA_PATH}`, `--out=${tmpOut}`],
-      url,
-    );
+    const generateCode = spawnDrizzle(["generate", `--config=${tmpConfigPath}`], url);
     if (generateCode !== 0) {
       return {
         sql: null,
