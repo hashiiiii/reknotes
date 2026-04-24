@@ -32,7 +32,7 @@ ALTER TABLE "notes" DROP COLUMN "title";`;
     expect(results).toHaveLength(4);
   });
 
-  test("passes Scenario C output (🟡 constraint strengthening)", () => {
+  test("passes Scenario C output (constraint strengthening)", () => {
     const sql = `ALTER TABLE "notes" ALTER COLUMN "body" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "tags" ALTER COLUMN "name" SET NOT NULL;--> statement-breakpoint
 ALTER TABLE "tags" ADD CONSTRAINT "tags_name_unique" UNIQUE("name");`;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-echo "▶ Running pre-push checks..."
+echo "Running pre-push checks..."
 bun run check
 bun run migrate -- --check
-echo "✅ pre-push checks passed"
+echo "pre-push checks passed"

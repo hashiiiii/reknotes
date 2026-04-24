@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import postgres from "postgres";
 
-// 🔴 データ消失系 SQL のパターン。🟡 制約強化系 (SET NOT NULL / ADD UNIQUE) は意図的に含めない
+// データ消失系 SQL のパターン。制約強化系 (SET NOT NULL / ADD UNIQUE) は意図的に含めない
 const DESTRUCTIVE_PATTERNS = [/\bDROP\s+TABLE\b/i, /\bDROP\s+COLUMN\b/i, /\bSET\s+DATA\s+TYPE\b/i];
 
 const HOOKS_DIR = "drizzle/migrations";
@@ -121,7 +121,7 @@ async function applyHook(url: string, hook: HookFile): Promise<void> {
         hook.checksum,
       ]);
     });
-    console.log(`  ✅ applied ${hook.filename}`);
+    console.log(`  applied ${hook.filename}`);
   } finally {
     await client.end();
   }
@@ -138,7 +138,7 @@ async function markHooksAsApplied(url: string, hooks: HookFile[]): Promise<void>
         ON CONFLICT (filename) DO NOTHING
       `;
     }
-    console.log(`  ✅ marked ${hooks.length} hook(s) as applied (bootstrap)`);
+    console.log(`  marked ${hooks.length} hook(s) as applied (bootstrap)`);
   } finally {
     await client.end();
   }
@@ -200,44 +200,44 @@ async function drizzlePush(url: string): Promise<number> {
 }
 
 async function runCheck(url: string): Promise<number> {
-  console.log("▶ Running destructive-change check...");
+  console.log("Running destructive-change check...");
   if (!(await probeDatabase(url))) {
-    console.warn(`⚠️  Skipped destructive check (DB unreachable at ${redactUrl(url)})`);
+    console.warn(`Skipped destructive check (DB unreachable at ${redactUrl(url)})`);
     return 0;
   }
   const { sql, error } = await generateDiffSql(url);
   if (error) {
-    console.error(`🛑 ${error}`);
+    console.error(error);
     return 1;
   }
   if (!sql) {
-    console.log("✅ No schema changes detected");
+    console.log("No schema changes detected");
     return 0;
   }
   const destructive = findDestructive(sql);
   if (destructive.length > 0) {
-    console.error("🔴 Destructive changes detected (will not be auto-applied):");
-    for (const d of destructive) console.error(`   • ${d}`);
+    console.error("Destructive changes detected (will not be auto-applied):");
+    for (const d of destructive) console.error(`  - ${d}`);
     console.error("\nSee drizzle/migrations/README.md for manual handling.");
     return 1;
   }
-  console.log("✅ Schema changes are safe (no destructive operations)");
+  console.log("Schema changes are safe (no destructive operations)");
   return 0;
 }
 
 async function runApply(url: string): Promise<number> {
-  console.log("▶ Running apply migration...");
+  console.log("Running apply migration...");
   await ensureHooksAppliedTable(url);
   const { sql, error } = await generateDiffSql(url);
   if (error) {
-    console.error(`🛑 ${error}`);
+    console.error(error);
     return 1;
   }
   if (sql) {
     const destructive = findDestructive(sql);
     if (destructive.length > 0) {
-      console.error("🔴 Destructive changes detected. Aborting apply.");
-      for (const d of destructive) console.error(`   • ${d}`);
+      console.error("Destructive changes detected. Aborting apply.");
+      for (const d of destructive) console.error(`  - ${d}`);
       console.error("\nSee drizzle/migrations/README.md for manual handling.");
       return 1;
     }
@@ -249,7 +249,7 @@ async function runApply(url: string): Promise<number> {
     const prior = appliedMap.get(h.filename);
     if (prior !== undefined && prior !== h.checksum) {
       console.error(
-        `🛑 Applied hook was edited: ${h.filename}\n` +
+        `Applied hook was edited: ${h.filename}\n` +
           `   Original checksum: ${prior}\n` +
           `   Current checksum:  ${h.checksum}\n` +
           `   To fix: revert the file, or add a NEW hook with a later date.`,
@@ -259,30 +259,30 @@ async function runApply(url: string): Promise<number> {
   }
   const pendingPre = hooks.filter((h) => h.kind === "pre" && !appliedMap.has(h.filename));
   if (pendingPre.length > 0) {
-    console.log(`▶ Applying ${pendingPre.length} pre-hook(s)...`);
+    console.log(`Applying ${pendingPre.length} pre-hook(s)...`);
     for (const h of pendingPre) await applyHook(url, h);
   }
-  console.log("▶ Syncing schema via drizzle-kit push...");
+  console.log("Syncing schema via drizzle-kit push...");
   const pushCode = await drizzlePush(url);
   if (pushCode !== 0) return pushCode;
   const pendingPost = hooks.filter((h) => h.kind === "post" && !appliedMap.has(h.filename));
   if (pendingPost.length > 0) {
-    console.log(`▶ Applying ${pendingPost.length} post-hook(s)...`);
+    console.log(`Applying ${pendingPost.length} post-hook(s)...`);
     for (const h of pendingPost) await applyHook(url, h);
   }
-  console.log("✅ Migration complete");
+  console.log("Migration complete");
   return 0;
 }
 
 async function runBootstrap(url: string): Promise<number> {
-  console.log("▶ Running bootstrap...");
-  console.log("▶ Syncing schema via drizzle-kit push...");
+  console.log("Running bootstrap...");
+  console.log("Syncing schema via drizzle-kit push...");
   const pushCode = await drizzlePush(url);
   if (pushCode !== 0) return pushCode;
   await ensureHooksAppliedTable(url);
   const hooks = enumerateHooks(HOOKS_DIR);
   await markHooksAsApplied(url, hooks);
-  console.log("✅ Bootstrap complete");
+  console.log("Bootstrap complete");
   return 0;
 }
 
