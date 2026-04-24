@@ -131,13 +131,15 @@ async function markHooksAsApplied(url: string, hooks: HookFile[]): Promise<void>
   if (hooks.length === 0) return;
   const client = postgres(url, { onnotice: () => {} });
   try {
-    for (const h of hooks) {
-      await client`
-        INSERT INTO "_hooks_applied" (filename, checksum)
-        VALUES (${h.filename}, ${h.checksum})
-        ON CONFLICT (filename) DO NOTHING
-      `;
-    }
+    // 全件成功 or 全件ロールバックを保証 (途中で切断されて一部だけ登録された状態を避ける)
+    await client.begin(async (tx) => {
+      for (const h of hooks) {
+        await tx.unsafe(
+          `INSERT INTO "_hooks_applied" (filename, checksum) VALUES ($1, $2) ON CONFLICT (filename) DO NOTHING`,
+          [h.filename, h.checksum],
+        );
+      }
+    });
     console.log(`  marked ${hooks.length} hook(s) as applied (bootstrap)`);
   } finally {
     await client.end();
@@ -149,16 +151,24 @@ function spawnDrizzle(args: string[], url: string): number {
     env: { ...process.env, DATABASE_URL: url },
     stdio: ["inherit", "inherit", "inherit"],
   });
-  return proc.exitCode ?? 0;
+  // SIGKILL / OOM kill 等で exitCode が null になった場合は失敗扱い
+  return proc.exitCode ?? 1;
+}
+
+function listSqlFiles(dir: string): Set<string> {
+  return new Set(readdirSync(dir).filter((f) => /^[0-9]+_.*\.sql$/.test(f)));
 }
 
 async function generateDiffSql(url: string): Promise<{ sql: string | null; error: string | null }> {
   const tmpOut = await mkdtemp(join(tmpdir(), "reknotes-migrate-"));
   try {
-    const introspectCode = spawnDrizzle(["introspect", "--dialect=postgresql", `--url=${url}`, `--out=${tmpOut}`], url);
+    // DATABASE_URL は spawnDrizzle の env 経由で渡す (ps aux / /proc/<pid>/cmdline への漏洩を避ける)
+    const introspectCode = spawnDrizzle(["introspect", "--dialect=postgresql", `--out=${tmpOut}`], url);
     if (introspectCode !== 0) {
       return { sql: null, error: "drizzle-kit introspect failed" };
     }
+    // introspect 直後に存在する SQL ファイル (現 DB 構造の再構築 SQL)。空 DB では 0 件のこともある
+    const beforeGenerate = listSqlFiles(tmpOut);
     const generateCode = spawnDrizzle(
       ["generate", "--dialect=postgresql", `--schema=${SCHEMA_PATH}`, `--out=${tmpOut}`],
       url,
@@ -171,12 +181,10 @@ async function generateDiffSql(url: string): Promise<{ sql: string | null; error
           "To handle: run `bunx drizzle-kit push` locally with TTY to resolve rename ambiguity.",
       };
     }
-    const numberedSql = readdirSync(tmpOut)
-      .filter((f) => /^[0-9]+_.*\.sql$/.test(f))
-      .sort();
-    // [0] は introspect が吐いた現 DB の再構築 SQL、[1+] が generate の diff
-    if (numberedSql.length < 2) return { sql: "", error: null };
-    const diffFile = join(tmpOut, numberedSql[numberedSql.length - 1]);
+    // generate が新規追加した SQL ファイルだけが diff。introspect のファイル数に依存しないので空 DB でも正しく検出できる
+    const afterGenerate = [...listSqlFiles(tmpOut)].filter((f) => !beforeGenerate.has(f)).sort();
+    if (afterGenerate.length === 0) return { sql: "", error: null };
+    const diffFile = join(tmpOut, afterGenerate[afterGenerate.length - 1]);
     return { sql: readFileSync(diffFile, "utf-8"), error: null };
   } finally {
     await rm(tmpOut, { recursive: true, force: true });

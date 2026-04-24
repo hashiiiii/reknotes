@@ -1,6 +1,4 @@
 .env
-*.sql
-!drizzle/migrations/*.sql
 .vscode/
 .idea/
 .playwright-mcp/
