@@ -17,8 +17,7 @@ database:
   - changed-files:
       - any-glob-to-any-file:
           - "src/app/infrastructure/db/**"
-          - "drizzle/**"
-          - "lib/migrate.ts"
+          - "lib/migration/**"
 
 ci:
   - changed-files:

@@ -43,12 +43,12 @@ export async function applyMigration(deps: ApplyMigrationDeps): Promise<ApplyRes
   }
 
   const pendingPre = filterPending(allHooks, appliedMap, "pre");
-  for (const h of pendingPre) await deps.db.applyHook(h);
+  await deps.db.applyHooks(pendingPre);
 
   await deps.schema.push();
 
   const pendingPost = filterPending(allHooks, appliedMap, "post");
-  for (const h of pendingPost) await deps.db.applyHook(h);
+  await deps.db.applyHooks(pendingPost);
 
   return { kind: "applied", preCount: pendingPre.length, postCount: pendingPost.length };
 }

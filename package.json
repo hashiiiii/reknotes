@@ -7,7 +7,7 @@
     "setup": "bun install && bun run build && bun run lib/setup.ts && ENVIRONMENT=development bun run migrate && ENVIRONMENT=test bun run migrate",
     "build": "bun run lib/build.ts",
     "dev": "bun run build && bun run --watch src/index.ts",
-    "migrate": "bun run lib/migrate.ts",
+    "migrate": "bun run lib/migration/migrate.ts",
     "seed": "bun run lib/seed.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
     "test": "ENVIRONMENT=test bun test"

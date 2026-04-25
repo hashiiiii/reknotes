@@ -20,10 +20,13 @@ export class PostgresMigrationDatabase implements IMigrationDatabase {
     }
   }
 
+  // port には載せない。lib (composition root) から bootstrap として直接呼ぶ。
   async createLocalIfMissing(): Promise<void> {
     if (this.isRemote) return;
-    const dbName = new URL(this.url).pathname.slice(1);
-    const adminUrl = this.url.replace(`/${dbName}`, "/postgres");
+    const parsed = new URL(this.url);
+    const dbName = parsed.pathname.slice(1);
+    parsed.pathname = "/postgres";
+    const adminUrl = parsed.toString();
     const admin = postgres(adminUrl);
     try {
       await admin.unsafe(`CREATE DATABASE "${dbName}"`);
@@ -62,16 +65,20 @@ export class PostgresMigrationDatabase implements IMigrationDatabase {
     }
   }
 
-  async applyHook(hook: HookFile): Promise<void> {
+  async applyHooks(hooks: HookFile[]): Promise<void> {
+    if (hooks.length === 0) return;
     const client = postgres(this.url, { onnotice: () => {} });
     try {
-      // tx tagged-template は postgres.js の TransactionSql<{}> 型問題で TS2349 に当たるので unsafe + params を使う
+      // 1 接続 + 1 トランザクションで全 hook を適用 (N+1 接続を避ける)
       await client.begin(async (tx) => {
-        await tx.unsafe(hook.content);
-        await tx.unsafe(`INSERT INTO "_hooks_applied" (filename, checksum) VALUES ($1, $2)`, [
-          hook.filename,
-          hook.checksum,
-        ]);
+        for (const hook of hooks) {
+          // tx tagged-template は postgres.js の TransactionSql<{}> 型問題で TS2349 に当たるので unsafe + params を使う
+          await tx.unsafe(hook.content);
+          await tx.unsafe(`INSERT INTO "_hooks_applied" (filename, checksum) VALUES ($1, $2)`, [
+            hook.filename,
+            hook.checksum,
+          ]);
+        }
       });
     } finally {
       await client.end();

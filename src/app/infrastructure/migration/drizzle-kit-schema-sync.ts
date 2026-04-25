@@ -42,7 +42,15 @@ export class DrizzleKitSchemaSync implements ISchemaSync {
       // generate が新規追加した SQL ファイルだけが diff。introspect のファイル数に依存しないので空 DB でも正しく検出できる
       const afterGenerate = [...listSqlFiles(tmpOut)].filter((f) => !beforeGenerate.has(f)).sort();
       if (afterGenerate.length === 0) return { sql: "", error: null };
-      const diffFile = join(tmpOut, afterGenerate[afterGenerate.length - 1]);
+      // drizzle-kit generate は通常 1 実行 1 ファイル。複数生成された場合は仕様変更の可能性があり、
+      // 黙って末尾だけ読むと変更を取りこぼすため明示的にエラーにする。
+      if (afterGenerate.length > 1) {
+        return {
+          sql: null,
+          error: `drizzle-kit generate produced ${afterGenerate.length} files (expected 1): ${afterGenerate.join(", ")}`,
+        };
+      }
+      const diffFile = join(tmpOut, afterGenerate[0]);
       return { sql: readFileSync(diffFile, "utf-8"), error: null };
     } finally {
       await rm(tmpOut, { recursive: true, force: true });

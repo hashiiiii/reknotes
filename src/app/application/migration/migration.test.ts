@@ -10,27 +10,31 @@ import { checkMigration } from "./check-migration";
 class FakeDatabase implements IMigrationDatabase {
   reachable = true;
   applied: AppliedHook[] = [];
-  appliedHookCalls: HookFile[] = [];
+  applyHooksCalls: HookFile[][] = [];
   markCalls: HookFile[][] = [];
   ensureCalled = 0;
 
   async probe(): Promise<boolean> {
     return this.reachable;
   }
-  async createLocalIfMissing(): Promise<void> {}
   async ensureHooksAppliedTable(): Promise<void> {
     this.ensureCalled++;
   }
   async loadAppliedHooks(): Promise<AppliedHook[]> {
     return this.applied;
   }
-  async applyHook(hook: HookFile): Promise<void> {
-    this.appliedHookCalls.push(hook);
-    this.applied.push({ filename: hook.filename, checksum: hook.checksum });
+  async applyHooks(hooks: HookFile[]): Promise<void> {
+    this.applyHooksCalls.push(hooks);
+    for (const h of hooks) this.applied.push({ filename: h.filename, checksum: h.checksum });
   }
   async markHooksAsApplied(hooks: HookFile[]): Promise<void> {
     this.markCalls.push(hooks);
     for (const h of hooks) this.applied.push({ filename: h.filename, checksum: h.checksum });
+  }
+
+  // 個別 hook 呼び出し列をテストアサーションに使うためのヘルパー
+  flatAppliedFilenames(): string[] {
+    return this.applyHooksCalls.flatMap((batch) => batch.map((h) => h.filename));
   }
 }
 
@@ -138,11 +142,8 @@ describe("applyMigration", () => {
     hooks.hooks = [hook("20260101-a.pre.sql"), hook("20260101-a.post.sql"), hook("20260201-b.pre.sql")];
     const result = await applyMigration({ db, schema, hooks });
     expect(result).toEqual({ kind: "applied", preCount: 2, postCount: 1 });
-    expect(db.appliedHookCalls.map((h) => h.filename)).toEqual([
-      "20260101-a.pre.sql",
-      "20260201-b.pre.sql",
-      "20260101-a.post.sql",
-    ]);
+    expect(db.applyHooksCalls).toHaveLength(2); // pre 1 batch + post 1 batch
+    expect(db.flatAppliedFilenames()).toEqual(["20260101-a.pre.sql", "20260201-b.pre.sql", "20260101-a.post.sql"]);
     expect(schema.pushCalls).toBe(1);
     expect(db.ensureCalled).toBe(1);
   });
@@ -154,7 +155,7 @@ describe("applyMigration", () => {
     hooks.hooks = [hook("20260101-a.pre.sql"), hook("20260201-b.pre.sql")];
     const result = await applyMigration({ db, schema: new FakeSchema(), hooks });
     expect(result).toEqual({ kind: "applied", preCount: 1, postCount: 0 });
-    expect(db.appliedHookCalls.map((h) => h.filename)).toEqual(["20260201-b.pre.sql"]);
+    expect(db.flatAppliedFilenames()).toEqual(["20260201-b.pre.sql"]);
   });
 });
 
@@ -169,7 +170,7 @@ describe("bootstrapMigration", () => {
     expect(schema.pushCalls).toBe(1);
     expect(db.markCalls).toHaveLength(1);
     expect(db.markCalls[0]).toHaveLength(2);
-    expect(db.appliedHookCalls).toHaveLength(0); // hook SQL は実行されない
+    expect(db.applyHooksCalls).toHaveLength(0); // hook SQL は実行されない
   });
 
   test("succeeds with zero hooks", async () => {
