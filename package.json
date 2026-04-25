@@ -4,7 +4,7 @@
   "description": "Personal knowledge management with auto-organization and fast search",
   "type": "module",
   "scripts": {
-    "setup": "bun install && bun run build && bun run lib/setup.ts && ENVIRONMENT=development bun run migrate && ENVIRONMENT=test bun run migrate",
+    "setup": "bun install && bun run build && bun run lib/setup.ts && ENVIRONMENT=development bun run migrate -- --apply && ENVIRONMENT=test bun run migrate -- --apply",
     "build": "bun run lib/build.ts",
     "dev": "bun run build && bun run --watch src/index.ts",
     "migrate": "bun run lib/migration/migrate.ts",

@@ -41,7 +41,7 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - name: Run migrations
-        run: bun run migrate
+        run: bun run migrate -- --apply
 
       - name: Run tests
         run: bun test

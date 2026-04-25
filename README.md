@@ -30,7 +30,7 @@ bun run setup          # Install deps, build assets, run migrations
 | `bun run setup` | Full setup (install, build, migrate) |
 | `bun run dev` | Start dev server (watch mode) |
 | `bun run build` | Bundle frontend assets to `dist/` |
-| `bun run migrate` | Run database migrations (`ENVIRONMENT=development bun run migrate`). Prompts for destructive changes in TTY; auto-applies in non-TTY (CI) |
+| `bun run migrate -- <mode>` | Run database migrations. `<mode>` is one of `--apply`, `--check`, `--bootstrap`. See `bun run migrate -- --help`. |
 | `bun run seed` | Insert sample data |
 | `bun run check` | Lint + format (Biome) and type-check |
 | `bun test` | Run tests |
