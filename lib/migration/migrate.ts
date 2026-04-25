@@ -1,6 +1,6 @@
-import { type ApplyResult, applyMigration } from "../../src/app/application/migration/apply-migration";
-import { type BootstrapResult, bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
-import { type CheckResult, checkMigration } from "../../src/app/application/migration/check-migration";
+import { applyMigration } from "../../src/app/application/migration/apply-migration";
+import { bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
+import { checkMigration } from "../../src/app/application/migration/check-migration";
 import { createMigrationDeps } from "../../src/app/infrastructure/container";
 
 const HELP_TEXT = `Usage: bun run migrate [option]
@@ -15,6 +15,8 @@ Environment:
   DATABASE_URL  Required. Base connection URL.
   ENVIRONMENT   Required. development / test / etc.
   DEPLOYMENT    "remote" -> use DATABASE_URL as-is. Otherwise -> append /reknotes_<ENVIRONMENT>.
+
+For destructive-change handling and hook authoring, see lib/migration/hooks/README.md.
 `;
 
 type Mode = "apply" | "check" | "bootstrap";
@@ -41,87 +43,30 @@ function parseArgs(argv: string[]): ParsedArgs {
   }
 }
 
-function printCheck(result: CheckResult): void {
-  switch (result.kind) {
-    case "skipped":
-      console.warn(`Skipped destructive check (${result.reason})`);
-      return;
-    case "no-changes":
-      console.log("No schema changes detected");
-      return;
-    case "safe":
-      console.log("Schema changes are safe (no destructive operations)");
-      return;
-    case "destructive":
-      console.error("Destructive changes detected (will not be auto-applied):");
-      for (const s of result.statements) console.error(`  - ${s}`);
-      console.error("\nSee lib/migration/hooks/README.md for manual handling.");
-      return;
-    case "error":
-      console.error(result.message);
-      return;
-  }
-}
+// kind ごとに整形した文章を組み立てず、Result 構造体を 1 行 JSON でそのまま出す。
+// kind が増えても print 関数を変更する必要がなく、ログ仕様が Result 型から一意に決まる。
+const FAILURE_KINDS = new Set(["destructive", "edited-hook", "error"]);
 
-function printApply(result: ApplyResult): void {
-  switch (result.kind) {
-    case "destructive":
-      console.error("Destructive changes detected. Aborting apply.");
-      for (const s of result.statements) console.error(`  - ${s}`);
-      console.error("\nSee lib/migration/hooks/README.md for manual handling.");
-      return;
-    case "edited-hook": {
-      const e = result.edited;
-      console.error(
-        `Applied hook was edited: ${e.filename} (prior=${e.priorChecksum.slice(0, 8)}, current=${e.currentChecksum.slice(0, 8)}). Revert the file or add a NEW hook with a later date.`,
-      );
-      return;
-    }
-    case "error":
-      console.error(result.message);
-      return;
-    case "applied":
-      if (result.preCount > 0) console.log(`Applied ${result.preCount} pre-hook(s)`);
-      if (result.postCount > 0) console.log(`Applied ${result.postCount} post-hook(s)`);
-      console.log("Migration complete");
-      return;
-  }
+function print<R extends { kind: string }>(result: R): boolean {
+  const failed = FAILURE_KINDS.has(result.kind);
+  (failed ? console.error : console.log)(JSON.stringify(result));
+  return !failed;
 }
-
-function printBootstrap(result: BootstrapResult): void {
-  console.log(`Bootstrap complete (marked ${result.markedCount} hook(s) as applied)`);
-}
-
-// 各 use case の Result.kind のうち成功扱いするもの。これ以外は exit code 1。
-const SUCCESS_KINDS = new Set(["skipped", "no-changes", "safe", "applied", "bootstrapped"]);
 
 async function run(mode: Mode): Promise<boolean> {
   const deps = createMigrationDeps();
 
   // check モードでは DB 不在を unreachable と区別したいので作成しない
-  if (mode !== "check") {
-    await deps.db.createLocalIfMissing();
-  }
+  if (mode !== "check") await deps.db.createLocalIfMissing();
 
+  console.log(`Running ${mode}...`);
   switch (mode) {
-    case "check": {
-      console.log("Running destructive-change check...");
-      const result = await checkMigration(deps);
-      printCheck(result);
-      return SUCCESS_KINDS.has(result.kind);
-    }
-    case "apply": {
-      console.log("Running apply migration...");
-      const result = await applyMigration(deps);
-      printApply(result);
-      return SUCCESS_KINDS.has(result.kind);
-    }
-    case "bootstrap": {
-      console.log("Running bootstrap...");
-      const result = await bootstrapMigration(deps);
-      printBootstrap(result);
-      return SUCCESS_KINDS.has(result.kind);
-    }
+    case "check":
+      return print(await checkMigration(deps));
+    case "apply":
+      return print(await applyMigration(deps));
+    case "bootstrap":
+      return print(await bootstrapMigration(deps));
   }
 }
 
