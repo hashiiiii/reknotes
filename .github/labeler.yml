@@ -3,7 +3,7 @@ frontend:
       - any-glob-to-any-file:
           - "public/**"
           - "src/app/presentation/views/**"
-          - "lib/build.ts"
+          - "scripts/build.ts"
 
 backend:
   - changed-files:
@@ -17,7 +17,7 @@ database:
   - changed-files:
       - any-glob-to-any-file:
           - "src/app/infrastructure/db/**"
-          - "lib/migration/**"
+          - "scripts/migration/**"
 
 ci:
   - changed-files:

@@ -7,7 +7,7 @@ RUN bun install --frozen-lockfile
 
 COPY src/ src/
 COPY public/ public/
-COPY lib/ lib/
+COPY scripts/ scripts/
 
 RUN bun run build
 
@@ -21,7 +21,7 @@ RUN bun install --frozen-lockfile
 COPY --from=build /app/dist dist/
 COPY public/ public/
 COPY src/ src/
-COPY lib/ lib/
+COPY scripts/ scripts/
 COPY drizzle.config.ts ./
 
 # ENVIRONMENT と DEPLOYMENT は実行時に外部から設定する

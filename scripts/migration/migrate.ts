@@ -15,7 +15,7 @@ Environment:
   ENVIRONMENT   Required. development / test / etc.
   DEPLOYMENT    "remote" -> use DATABASE_URL as-is. Otherwise -> append /reknotes_<ENVIRONMENT>.
 
-For destructive-change handling and hook authoring, see lib/migration/hooks/README.md.
+For destructive-change handling and hook authoring, see scripts/migration/hooks/README.md.
 `;
 
 type Mode = "apply" | "check" | "bootstrap";

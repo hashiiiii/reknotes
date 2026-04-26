@@ -30,7 +30,7 @@ Handle these manually:
 1. Run the destructive SQL yourself against the database (e.g., `psql` on Neon).
 2. Commit the matching `schema.ts` change so the next `drizzle-kit push` sees no diff.
 
-Place hook files in this directory (`lib/migration/hooks/`).
+Place hook files in this directory (`scripts/migration/hooks/`).
 
 ## Bootstrap
 

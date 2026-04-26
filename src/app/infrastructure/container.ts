@@ -53,9 +53,9 @@ const graphRepository: IGraphRepository = new DrizzleGraphRepository(db);
 const storageProvider: IStorageProvider = createStorageProvider();
 const embeddingProvider: IEmbeddingProvider = createEmbeddingProvider();
 
-// Migration runner 用の DI ファクトリ。lib/migration/migrate.ts から呼ばれる。
+// Migration runner 用の DI ファクトリ。scripts/migration/migrate.ts から呼ばれる。
 // Web app と異なり module-level singleton にせず、CLI 起動ごとに新規生成する。
-const HOOKS_DIR = "lib/migration/hooks";
+const HOOKS_DIR = "scripts/migration/hooks";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
 
 export function createMigrationDeps(): {
