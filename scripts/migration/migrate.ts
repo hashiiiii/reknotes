@@ -21,8 +21,6 @@ For destructive-change handling and hook authoring, see scripts/migration/hooks/
 
 type Mode = "apply" | "check" | "bootstrap" | "help";
 
-// 認識する 3 つの mode フラグ以外 (no args / 複数 args / 未知 / --help / -h) は全て help 扱い。
-// no args をデフォルトで apply に倒さないことで、destructive 操作を暗黙起動するのを防ぐ。
 function parseArgs(argv: string[]): Mode {
   const args = argv.slice(2).filter((a) => a !== "--");
   if (args.length !== 1) return "help";
