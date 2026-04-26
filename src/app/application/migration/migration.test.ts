@@ -32,7 +32,6 @@ class FakeDatabase implements IMigrationDatabase {
     for (const h of hooks) this.applied.push({ filename: h.filename, checksum: h.checksum });
   }
 
-  // 個別 hook 呼び出し列をテストアサーションに使うためのヘルパー
   flatAppliedFilenames(): string[] {
     return this.applyHooksCalls.flatMap((batch) => batch.map((h) => h.filename));
   }
@@ -67,12 +66,12 @@ function hook(filename: string, content = "SELECT 1;", checksum?: string): HookF
 }
 
 describe("checkMigration", () => {
-  test("skipped when DB unreachable", async () => {
+  test("ok skipped when DB unreachable", async () => {
     const db = new FakeDatabase();
     db.reachable = false;
-    const schema = new FakeSchema();
-    const result = await checkMigration({ db, schema });
-    expect(result).toEqual({ kind: "skipped", reason: "DB unreachable" });
+    const result = await checkMigration({ db, schema: new FakeSchema() });
+    expect(result.kind).toBe("ok");
+    expect(result.message).toContain("skipped");
   });
 
   test("error propagates from schema sync", async () => {
@@ -82,33 +81,36 @@ describe("checkMigration", () => {
     expect(result).toEqual({ kind: "error", message: "drizzle-kit generate failed" });
   });
 
-  test("no-changes when diff sql is empty", async () => {
+  test("ok no-changes when diff sql is empty", async () => {
     const result = await checkMigration({ db: new FakeDatabase(), schema: new FakeSchema() });
-    expect(result).toEqual({ kind: "no-changes" });
+    expect(result.kind).toBe("ok");
+    expect(result.message).toBe("no-changes");
   });
 
-  test("destructive when DROP COLUMN present", async () => {
+  test("error when DROP COLUMN present", async () => {
     const schema = new FakeSchema();
     schema.diff = { sql: `ALTER TABLE "notes" DROP COLUMN "foo";`, error: null };
     const result = await checkMigration({ db: new FakeDatabase(), schema });
-    expect(result.kind).toBe("destructive");
-    if (result.kind === "destructive") expect(result.statements).toHaveLength(1);
+    expect(result.kind).toBe("error");
+    expect(result.message).toContain("destructive");
+    expect(result.message).toContain("DROP COLUMN");
   });
 
-  test("safe when only ADD COLUMN", async () => {
+  test("ok safe when only ADD COLUMN", async () => {
     const schema = new FakeSchema();
     schema.diff = { sql: `ALTER TABLE "notes" ADD COLUMN "foo" text;`, error: null };
     const result = await checkMigration({ db: new FakeDatabase(), schema });
-    expect(result).toEqual({ kind: "safe" });
+    expect(result).toEqual({ kind: "ok", message: "safe" });
   });
 });
 
 describe("applyMigration", () => {
-  test("aborts with destructive when DROP COLUMN in diff", async () => {
+  test("error with destructive when DROP COLUMN in diff", async () => {
     const schema = new FakeSchema();
     schema.diff = { sql: `ALTER TABLE "notes" DROP COLUMN "foo";`, error: null };
     const result = await applyMigration({ db: new FakeDatabase(), schema, hooks: new FakeHooks() });
-    expect(result.kind).toBe("destructive");
+    expect(result.kind).toBe("error");
+    expect(result.message).toContain("destructive");
     expect(schema.pushCalls).toBe(0);
   });
 
@@ -121,28 +123,23 @@ describe("applyMigration", () => {
 
   test("detects edited hook (checksum mismatch)", async () => {
     const db = new FakeDatabase();
-    db.applied = [{ filename: "20260101-a.pre.sql", checksum: "ORIGINAL" }];
+    db.applied = [{ filename: "20260101-a.pre.sql", checksum: "ORIGINALCHECKSUM" }];
     const hooks = new FakeHooks();
-    hooks.hooks = [hook("20260101-a.pre.sql", "edited", "EDITED")];
+    hooks.hooks = [hook("20260101-a.pre.sql", "edited", "EDITEDCHECKSUM")];
     const result = await applyMigration({ db, schema: new FakeSchema(), hooks });
-    expect(result.kind).toBe("edited-hook");
-    if (result.kind === "edited-hook") {
-      expect(result.edited).toEqual({
-        filename: "20260101-a.pre.sql",
-        priorChecksum: "ORIGINAL",
-        currentChecksum: "EDITED",
-      });
-    }
+    expect(result.kind).toBe("error");
+    expect(result.message).toContain("edited-hook");
+    expect(result.message).toContain("20260101-a.pre.sql");
   });
 
-  test("applies pending pre-hooks, then push, then post-hooks", async () => {
+  test("ok applied: applies pending pre-hooks, then push, then post-hooks", async () => {
     const db = new FakeDatabase();
     const schema = new FakeSchema();
     const hooks = new FakeHooks();
     hooks.hooks = [hook("20260101-a.pre.sql"), hook("20260101-a.post.sql"), hook("20260201-b.pre.sql")];
     const result = await applyMigration({ db, schema, hooks });
-    expect(result).toEqual({ kind: "applied", preCount: 2, postCount: 1 });
-    expect(db.applyHooksCalls).toHaveLength(2); // pre 1 batch + post 1 batch
+    expect(result).toEqual({ kind: "ok", message: "applied: pre=2, post=1" });
+    expect(db.applyHooksCalls).toHaveLength(2);
     expect(db.flatAppliedFilenames()).toEqual(["20260101-a.pre.sql", "20260201-b.pre.sql", "20260101-a.post.sql"]);
     expect(schema.pushCalls).toBe(1);
     expect(db.ensureCalled).toBe(1);
@@ -154,30 +151,30 @@ describe("applyMigration", () => {
     const hooks = new FakeHooks();
     hooks.hooks = [hook("20260101-a.pre.sql"), hook("20260201-b.pre.sql")];
     const result = await applyMigration({ db, schema: new FakeSchema(), hooks });
-    expect(result).toEqual({ kind: "applied", preCount: 1, postCount: 0 });
+    expect(result).toEqual({ kind: "ok", message: "applied: pre=1, post=0" });
     expect(db.flatAppliedFilenames()).toEqual(["20260201-b.pre.sql"]);
   });
 });
 
 describe("bootstrapMigration", () => {
-  test("pushes schema then marks all hooks as applied without executing", async () => {
+  test("ok: pushes schema then marks all hooks as applied without executing", async () => {
     const db = new FakeDatabase();
     const schema = new FakeSchema();
     const hooks = new FakeHooks();
     hooks.hooks = [hook("20260101-a.pre.sql"), hook("20260101-a.post.sql")];
     const result = await bootstrapMigration({ db, schema, hooks });
-    expect(result).toEqual({ kind: "bootstrapped", markedCount: 2 });
+    expect(result).toEqual({ kind: "ok", message: "bootstrapped: marked 2 hook(s)" });
     expect(schema.pushCalls).toBe(1);
     expect(db.markCalls).toHaveLength(1);
     expect(db.markCalls[0]).toHaveLength(2);
-    expect(db.applyHooksCalls).toHaveLength(0); // hook SQL は実行されない
+    expect(db.applyHooksCalls).toHaveLength(0);
   });
 
-  test("succeeds with zero hooks", async () => {
+  test("ok with zero hooks", async () => {
     const db = new FakeDatabase();
     const schema = new FakeSchema();
     const result = await bootstrapMigration({ db, schema, hooks: new FakeHooks() });
-    expect(result).toEqual({ kind: "bootstrapped", markedCount: 0 });
+    expect(result).toEqual({ kind: "ok", message: "bootstrapped: marked 0 hook(s)" });
     expect(schema.pushCalls).toBe(1);
   });
 });

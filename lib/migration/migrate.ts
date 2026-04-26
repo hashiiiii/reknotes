@@ -25,7 +25,6 @@ type ParsedArgs = { kind: "mode"; mode: Mode } | { kind: "help" };
 // 認識する 3 つの mode フラグ以外 (no args / 複数 args / 未知 / --help / -h) は全て help 扱い。
 // no args をデフォルトで apply に倒さないことで、destructive 操作を暗黙起動するのを防ぐ。
 function parseArgs(argv: string[]): ParsedArgs {
-  // `bun run migrate -- --check` の "--" セパレータが残るケースに備えて除外
   const args = argv.slice(2).filter((a) => a !== "--");
   if (args.length === 1) {
     switch (args[0]) {
@@ -40,30 +39,25 @@ function parseArgs(argv: string[]): ParsedArgs {
   return { kind: "help" };
 }
 
-// kind ごとに整形した文章を組み立てず、Result 構造体を 1 行 JSON でそのまま出す。
-// kind が増えても print 関数を変更する必要がなく、ログ仕様が Result 型から一意に決まる。
-const FAILURE_KINDS = new Set(["destructive", "edited-hook", "error"]);
-
-function print<R extends { kind: string }>(result: R): boolean {
-  const failed = FAILURE_KINDS.has(result.kind);
-  (failed ? console.error : console.log)(JSON.stringify(result));
-  return !failed;
-}
-
 async function run(mode: Mode): Promise<boolean> {
   const deps = createMigrationDeps();
-
-  // check モードでは DB 不在を unreachable と区別したいので作成しない
   if (mode !== "check") await deps.db.createLocalIfMissing();
 
   console.log(`Running ${mode}...`);
-  switch (mode) {
-    case "check":
-      return print(await checkMigration(deps));
-    case "apply":
-      return print(await applyMigration(deps));
-    case "bootstrap":
-      return print(await bootstrapMigration(deps));
+  try {
+    const result =
+      mode === "check"
+        ? await checkMigration(deps)
+        : mode === "apply"
+          ? await applyMigration(deps)
+          : await bootstrapMigration(deps);
+    (result.kind === "ok" ? console.log : console.error)(JSON.stringify(result));
+    return result.kind === "ok";
+  } catch (e) {
+    // use case が throw したものを Result と同じ形に整えて出す
+    const message = e instanceof Error ? e.message : String(e);
+    console.error(JSON.stringify({ kind: "error", message }));
+    return false;
   }
 }
 
@@ -77,7 +71,6 @@ async function main(): Promise<number> {
 }
 
 // Bun の entry-point イディオム (Python の `if __name__ == "__main__":` 相当)。
-// 直接 `bun run` で起動された時のみ main を実行し、テスト等で import した場合は実行しない。
 if (import.meta.main) {
   process.exit(await main());
 }

@@ -3,14 +3,7 @@ import type { HookFile } from "../../domain/migration/hook";
 import type { IHookSource } from "../port/hook-source";
 import type { IMigrationDatabase } from "../port/migration-database";
 import type { ISchemaSync } from "../port/schema-sync";
-
-export type EditedHook = { filename: string; priorChecksum: string; currentChecksum: string };
-
-export type ApplyResult =
-  | { kind: "destructive"; statements: string[] }
-  | { kind: "edited-hook"; edited: EditedHook }
-  | { kind: "error"; message: string }
-  | { kind: "applied"; preCount: number; postCount: number };
+import { err, ok, type Result } from "./result";
 
 export type ApplyMigrationDeps = {
   db: IMigrationDatabase;
@@ -18,14 +11,14 @@ export type ApplyMigrationDeps = {
   hooks: IHookSource;
 };
 
-export async function applyMigration(deps: ApplyMigrationDeps): Promise<ApplyResult> {
+export async function applyMigration(deps: ApplyMigrationDeps): Promise<Result> {
   await deps.db.ensureHooksAppliedTable();
 
   const diff = await deps.schema.generateDiff();
-  if (diff.error !== null) return { kind: "error", message: diff.error };
+  if (diff.error !== null) return err(diff.error);
   if (diff.sql !== "") {
     const destructive = findDestructive(diff.sql);
-    if (destructive.length > 0) return { kind: "destructive", statements: destructive };
+    if (destructive.length > 0) return err(`destructive: ${destructive.join(" | ")}`);
   }
 
   const allHooks = deps.hooks.list();
@@ -35,10 +28,7 @@ export async function applyMigration(deps: ApplyMigrationDeps): Promise<ApplyRes
   for (const h of allHooks) {
     const prior = appliedMap.get(h.filename);
     if (prior !== undefined && prior !== h.checksum) {
-      return {
-        kind: "edited-hook",
-        edited: { filename: h.filename, priorChecksum: prior, currentChecksum: h.checksum },
-      };
+      return err(`edited-hook: ${h.filename} (prior=${prior.slice(0, 8)}, current=${h.checksum.slice(0, 8)})`);
     }
   }
 
@@ -50,7 +40,7 @@ export async function applyMigration(deps: ApplyMigrationDeps): Promise<ApplyRes
   const pendingPost = filterPending(allHooks, appliedMap, "post");
   await deps.db.applyHooks(pendingPost);
 
-  return { kind: "applied", preCount: pendingPre.length, postCount: pendingPost.length };
+  return ok(`applied: pre=${pendingPre.length}, post=${pendingPost.length}`);
 }
 
 function filterPending(hooks: HookFile[], appliedMap: Map<string, string>, kind: "pre" | "post"): HookFile[] {
