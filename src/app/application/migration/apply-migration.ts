@@ -12,6 +12,7 @@ export type ApplyMigrationDeps = {
 };
 
 export async function applyMigration(deps: ApplyMigrationDeps): Promise<Result> {
+  await deps.db.ensureDatabaseExists();
   await deps.db.ensureHooksAppliedTable();
 
   const diff = await deps.schema.generateDiff();

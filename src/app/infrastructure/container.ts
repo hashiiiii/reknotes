@@ -1,5 +1,8 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import type { IEmbeddingProvider } from "../application/port/embedding-provider";
+import type { IHookSource } from "../application/port/hook-source";
+import type { IMigrationDatabase } from "../application/port/migration-database";
+import type { ISchemaSync } from "../application/port/schema-sync";
 import type { IStorageProvider } from "../application/port/storage-provider";
 import type { IGraphRepository } from "../domain/graph/graph-repository";
 import type { INoteRepository } from "../domain/note/note-repository";
@@ -59,9 +62,9 @@ const HOOKS_DIR = "scripts/migration/hooks";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
 
 export function createMigrationDeps(): {
-  db: PostgresMigrationDatabase;
-  schema: DrizzleKitSchemaSync;
-  hooks: FsHookSource;
+  db: IMigrationDatabase;
+  schema: ISchemaSync;
+  hooks: IHookSource;
 } {
   const environment = requireEnv("ENVIRONMENT");
   const databaseUrlBase = requireEnv("DATABASE_URL");

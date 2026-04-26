@@ -20,8 +20,7 @@ export class PostgresMigrationDatabase implements IMigrationDatabase {
     }
   }
 
-  // port には載せない。lib (composition root) から bootstrap として直接呼ぶ。
-  async createLocalIfMissing(): Promise<void> {
+  async ensureDatabaseExists(): Promise<void> {
     if (this.isRemote) return;
     const parsed = new URL(this.url);
     const dbName = parsed.pathname.slice(1);

@@ -10,6 +10,7 @@ export type BootstrapMigrationDeps = {
 };
 
 export async function bootstrapMigration(deps: BootstrapMigrationDeps): Promise<Result> {
+  await deps.db.ensureDatabaseExists();
   await deps.schema.push();
   await deps.db.ensureHooksAppliedTable();
   const allHooks = deps.hooks.list();

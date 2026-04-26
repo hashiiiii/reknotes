@@ -1,6 +1,7 @@
 import { applyMigration } from "../../src/app/application/migration/apply-migration";
 import { bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
 import { checkMigration } from "../../src/app/application/migration/check-migration";
+import type { Result } from "../../src/app/application/migration/result";
 import { createMigrationDeps } from "../../src/app/infrastructure/container";
 
 const HELP_TEXT = `Usage: bun run migrate -- <mode>
@@ -37,23 +38,28 @@ function parseArgs(argv: string[]): Mode {
   }
 }
 
+type RunMode = Exclude<Mode, "help">;
+
+function dispatch(mode: RunMode, deps: ReturnType<typeof createMigrationDeps>): Promise<Result> {
+  switch (mode) {
+    case "check":
+      return checkMigration(deps);
+    case "apply":
+      return applyMigration(deps);
+    case "bootstrap":
+      return bootstrapMigration(deps);
+  }
+}
+
 async function run(mode: Mode): Promise<boolean> {
   if (mode === "help") {
     console.log(HELP_TEXT);
     return true;
   }
 
-  const deps = createMigrationDeps();
-  if (mode !== "check") await deps.db.createLocalIfMissing();
-
   console.log(`Running ${mode}...`);
   try {
-    const result =
-      mode === "check"
-        ? await checkMigration(deps)
-        : mode === "apply"
-          ? await applyMigration(deps)
-          : await bootstrapMigration(deps);
+    const result = await dispatch(mode, createMigrationDeps());
     (result.kind === "ok" ? console.log : console.error)(JSON.stringify(result));
     return result.kind === "ok";
   } catch (e) {

@@ -13,7 +13,11 @@ class FakeDatabase implements IMigrationDatabase {
   applyHooksCalls: HookFile[][] = [];
   markCalls: HookFile[][] = [];
   ensureCalled = 0;
+  ensureDbCalled = 0;
 
+  async ensureDatabaseExists(): Promise<void> {
+    this.ensureDbCalled++;
+  }
   async probe(): Promise<boolean> {
     return this.reachable;
   }
@@ -143,6 +147,7 @@ describe("applyMigration", () => {
     expect(db.flatAppliedFilenames()).toEqual(["20260101-a.pre.sql", "20260201-b.pre.sql", "20260101-a.post.sql"]);
     expect(schema.pushCalls).toBe(1);
     expect(db.ensureCalled).toBe(1);
+    expect(db.ensureDbCalled).toBe(1);
   });
 
   test("skips hooks already in _hooks_applied", async () => {
@@ -168,6 +173,7 @@ describe("bootstrapMigration", () => {
     expect(db.markCalls).toHaveLength(1);
     expect(db.markCalls[0]).toHaveLength(2);
     expect(db.applyHooksCalls).toHaveLength(0);
+    expect(db.ensureDbCalled).toBe(1);
   });
 
   test("ok with zero hooks", async () => {
