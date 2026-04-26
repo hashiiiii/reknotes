@@ -51,30 +51,30 @@ function dispatch(mode: RunMode, deps: ReturnType<typeof createMigrationDeps>): 
   }
 }
 
-async function run(mode: Mode): Promise<boolean> {
+async function run(mode: Mode): Promise<number> {
   if (mode === "help") {
     console.log(HELP_TEXT);
-    return true;
+    return 0;
   }
 
   console.log(`Running ${mode}...`);
   try {
     const result = await dispatch(mode, createMigrationDeps());
-    (result.kind === "ok" ? console.log : console.error)(JSON.stringify(result));
-    return result.kind === "ok";
+    if (result.kind === "ok") {
+      console.log(JSON.stringify(result));
+      return 0;
+    }
+    console.error(JSON.stringify(result));
+    return 1;
   } catch (e) {
     // use case が throw したものを Result と同じ形に整えて出す
     const message = e instanceof Error ? e.message : String(e);
     console.error(JSON.stringify({ kind: "error", message }));
-    return false;
+    return 1;
   }
-}
-
-async function main(): Promise<number> {
-  return (await run(parseArgs(process.argv))) ? 0 : 1;
 }
 
 // Bun の entry-point イディオム (Python の `if __name__ == "__main__":` 相当)。
 if (import.meta.main) {
-  process.exit(await main());
+  process.exit(await run(parseArgs(process.argv)));
 }
