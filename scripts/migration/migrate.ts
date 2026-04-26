@@ -65,7 +65,6 @@ async function run(mode: Mode): Promise<number> {
     console.error(JSON.stringify(result));
     return 1;
   } catch (e) {
-    // use case が throw したものを Result と同じ形に整えて出す
     const message = e instanceof Error ? e.message : String(e);
     console.error(JSON.stringify({ kind: "error", message }));
     return 1;
