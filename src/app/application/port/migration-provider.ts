@@ -1,6 +1,6 @@
 import type { AppliedHook, HookFile } from "../../domain/migration/hook";
 
-export interface IMigrationDatabase {
+export interface IMigrationProvider {
   /** target DB が利用可能な状態を保証する。local では未作成なら CREATE DATABASE、remote (managed) では no-op。冪等。 */
   ensureDatabaseExists(): Promise<void>;
 

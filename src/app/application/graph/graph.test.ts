@@ -1,9 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { graphRepository, noteRepository, tagRepository } from "../../infrastructure/container";
+import { createGraphRepository, createNoteRepository, createTagRepository } from "../../infrastructure/container";
 import { createNote } from "../note/create-note";
 import { addTagsToNote } from "../tag/add-tags-to-note";
 import { getFullGraph } from "./get-full-graph";
 import { getNoteSubgraph } from "./get-note-subgraph";
+
+const noteRepository = createNoteRepository();
+const tagRepository = createTagRepository();
+const graphRepository = createGraphRepository();
 
 describe("graph use cases", () => {
   test("getFullGraph でノードとリンクを取得できる", async () => {

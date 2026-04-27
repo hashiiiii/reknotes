@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { IHookSource } from "../../application/port/hook-source";
+import type { IHookProvider } from "../../application/port/hook-provider";
 import { computeChecksum } from "../../domain/migration/checksum";
 import { classifyHook, type HookFile, isHookFilename, sortHooks } from "../../domain/migration/hook";
 
-export class FsHookSource implements IHookSource {
+export class FsHookProvider implements IHookProvider {
   constructor(private readonly dir: string) {}
 
   list(): HookFile[] {

@@ -15,13 +15,7 @@ import type { IStorageProvider } from "./application/port/storage-provider";
 import type { IGraphRepository } from "./domain/graph/graph-repository";
 import type { INoteRepository } from "./domain/note/note-repository";
 import type { ITagRepository } from "./domain/tag/tag-repository";
-import {
-  embeddingProvider,
-  graphRepository,
-  noteRepository,
-  storageProvider,
-  tagRepository,
-} from "./infrastructure/container";
+import type { WebDeps } from "./infrastructure/container";
 import { fileRoutes } from "./presentation/routes/files";
 import { graphRoutes } from "./presentation/routes/graph";
 import { noteRoutes } from "./presentation/routes/notes";
@@ -61,50 +55,52 @@ export type AppEnv = {
 
 export { engine };
 
-const app = new Hono<AppEnv>();
+export function createApp(deps: WebDeps): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
 
-app.use(logger());
-app.use(requestId());
-app.use(csrf());
-app.use(compress());
-app.use(timeout(30_000));
-app.use(etag());
-app.use(bodyLimit({ maxSize: 256 * 1024 }));
-app.use(secureHeaders());
+  app.use(logger());
+  app.use(requestId());
+  app.use(csrf());
+  app.use(compress());
+  app.use(timeout(30_000));
+  app.use(etag());
+  app.use(bodyLimit({ maxSize: 256 * 1024 }));
+  app.use(secureHeaders());
 
-// アップロード用: 50MB まで許可
-app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+  // アップロード用: 50MB まで許可
+  app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
-// DI ミドルウェア
-app.use("*", async (c, next) => {
-  c.set("noteRepository", noteRepository);
-  c.set("tagRepository", tagRepository);
-  c.set("graphRepository", graphRepository);
-  c.set("storageProvider", storageProvider);
-  c.set("embeddingProvider", embeddingProvider);
-  await next();
-});
-
-// LiquidJS ミドルウェア
-app.use("*", async (c, next) => {
-  c.set("render", async (template: string, data: Record<string, unknown> = {}) => {
-    return engine.renderFile(`pages/${template}`, {
-      ...data,
-      currentPath: c.req.path,
-    });
+  // DI ミドルウェア: entry point で構築済みの deps を request scope に流し込む
+  app.use("*", async (c, next) => {
+    c.set("noteRepository", deps.noteRepository);
+    c.set("tagRepository", deps.tagRepository);
+    c.set("graphRepository", deps.graphRepository);
+    c.set("storageProvider", deps.storageProvider);
+    c.set("embeddingProvider", deps.embeddingProvider);
+    await next();
   });
-  await next();
-});
 
-// 静的ファイル配信（dist/ からビルド済みアセットを配信）
-app.use("/static/*", serveStatic({ root: "./dist/", rewriteRequestPath: (path) => path.replace("/static", "") }));
+  // LiquidJS ミドルウェア
+  app.use("*", async (c, next) => {
+    c.set("render", async (template: string, data: Record<string, unknown> = {}) => {
+      return engine.renderFile(`pages/${template}`, {
+        ...data,
+        currentPath: c.req.path,
+      });
+    });
+    await next();
+  });
 
-// ルート登録
-app.route("/", pageRoutes);
-app.route("/api/notes", noteRoutes);
-app.route("/api/search", searchRoutes);
-app.route("/api/graph", graphRoutes);
-app.route("/api/upload", uploadRoutes);
-app.route("/api/files", fileRoutes);
+  // 静的ファイル配信（dist/ からビルド済みアセットを配信）
+  app.use("/static/*", serveStatic({ root: "./dist/", rewriteRequestPath: (path) => path.replace("/static", "") }));
 
-export { app };
+  // ルート登録
+  app.route("/", pageRoutes);
+  app.route("/api/notes", noteRoutes);
+  app.route("/api/search", searchRoutes);
+  app.route("/api/graph", graphRoutes);
+  app.route("/api/upload", uploadRoutes);
+  app.route("/api/files", fileRoutes);
+
+  return app;
+}

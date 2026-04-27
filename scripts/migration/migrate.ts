@@ -2,7 +2,7 @@ import { applyMigration } from "../../src/app/application/migration/apply-migrat
 import { bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
 import { checkMigration } from "../../src/app/application/migration/check-migration";
 import type { Result } from "../../src/app/application/migration/result";
-import { createMigrationDeps } from "../../src/app/infrastructure/container";
+import { createMigrationDeps, type MigrationDeps } from "../../src/app/infrastructure/container";
 
 const HELP_TEXT = `Usage: bun run migrate -- <mode>
 
@@ -38,7 +38,7 @@ function parseArgs(argv: string[]): Mode {
 
 type RunMode = Exclude<Mode, "help">;
 
-function dispatch(mode: RunMode, deps: ReturnType<typeof createMigrationDeps>): Promise<Result> {
+function dispatch(mode: RunMode, deps: MigrationDeps): Promise<Result> {
   switch (mode) {
     case "check":
       return checkMigration(deps);

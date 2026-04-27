@@ -1,14 +1,14 @@
 import { findDestructive } from "../../domain/migration/destructive";
 import type { HookFile } from "../../domain/migration/hook";
-import type { IHookSource } from "../port/hook-source";
-import type { IMigrationDatabase } from "../port/migration-database";
-import type { ISchemaSync } from "../port/schema-sync";
+import type { IHookProvider } from "../port/hook-provider";
+import type { IMigrationProvider } from "../port/migration-provider";
+import type { ISchemaSyncProvider } from "../port/schema-sync-provider";
 import { err, ok, type Result } from "./result";
 
 export type ApplyMigrationDeps = {
-  db: IMigrationDatabase;
-  schema: ISchemaSync;
-  hooks: IHookSource;
+  db: IMigrationProvider;
+  schema: ISchemaSyncProvider;
+  hooks: IHookProvider;
 };
 
 export async function applyMigration(deps: ApplyMigrationDeps): Promise<Result> {

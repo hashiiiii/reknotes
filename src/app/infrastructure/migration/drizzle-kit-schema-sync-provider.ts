@@ -1,13 +1,13 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import type { DiffResult, ISchemaSync } from "../../application/port/schema-sync";
+import type { DiffResult, ISchemaSyncProvider } from "../../application/port/schema-sync-provider";
 
 // drizzle-kit の import 解決が project の node_modules を辿れるよう、tmp は project 内の
 // node_modules/.cache 配下に作る (/tmp だと module 解決が失敗する)
 const CACHE_PARENT = "node_modules/.cache/reknotes-migrate";
 
-export class DrizzleKitSchemaSync implements ISchemaSync {
+export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
   constructor(
     private readonly url: string,
     private readonly schemaPath: string,

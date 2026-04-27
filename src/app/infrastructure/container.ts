@@ -1,8 +1,8 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import type { IEmbeddingProvider } from "../application/port/embedding-provider";
-import type { IHookSource } from "../application/port/hook-source";
-import type { IMigrationDatabase } from "../application/port/migration-database";
-import type { ISchemaSync } from "../application/port/schema-sync";
+import type { IHookProvider } from "../application/port/hook-provider";
+import type { IMigrationProvider } from "../application/port/migration-provider";
+import type { ISchemaSyncProvider } from "../application/port/schema-sync-provider";
 import type { IStorageProvider } from "../application/port/storage-provider";
 import type { IGraphRepository } from "../domain/graph/graph-repository";
 import type { INoteRepository } from "../domain/note/note-repository";
@@ -10,9 +10,9 @@ import type { ITagRepository } from "../domain/tag/tag-repository";
 import { db } from "./db";
 import { CloudflareEmbeddingProvider } from "./embedding/cloudflare-embedding-provider";
 import { LocalEmbeddingProvider } from "./embedding/local-embedding-provider";
-import { DrizzleKitSchemaSync } from "./migration/drizzle-kit-schema-sync";
-import { FsHookSource } from "./migration/fs-hook-source";
-import { PostgresMigrationDatabase } from "./migration/postgres-migration-database";
+import { DrizzleKitSchemaSyncProvider } from "./migration/drizzle-kit-schema-sync-provider";
+import { FsHookProvider } from "./migration/fs-hook-provider";
+import { PostgresMigrationProvider } from "./migration/postgres-migration-provider";
 import { DrizzleGraphRepository } from "./repositories/drizzle-graph-repository";
 import { DrizzleNoteRepository } from "./repositories/drizzle-note-repository";
 import { DrizzleTagRepository } from "./repositories/drizzle-tag-repository";
@@ -24,7 +24,23 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function createStorageProvider(): IStorageProvider {
+// ── Granular factories ──
+// テストや特殊な script が「必要な依存だけ」を組み立てたいとき用。
+// 呼ばれない factory は env 検証も走らないので、test の起動条件が最小化される。
+
+export function createNoteRepository(): INoteRepository {
+  return new DrizzleNoteRepository(db);
+}
+
+export function createTagRepository(): ITagRepository {
+  return new DrizzleTagRepository(db);
+}
+
+export function createGraphRepository(): IGraphRepository {
+  return new DrizzleGraphRepository(db);
+}
+
+export function createStorageProvider(): IStorageProvider {
   const endpoint = requireEnv("S3_ENDPOINT");
   const accessKeyId = requireEnv("S3_ACCESS_KEY_ID");
   const secretAccessKey = requireEnv("S3_SECRET_ACCESS_KEY");
@@ -40,7 +56,7 @@ function createStorageProvider(): IStorageProvider {
   return new S3StorageProvider(s3, bucket);
 }
 
-function createEmbeddingProvider(): IEmbeddingProvider {
+export function createEmbeddingProvider(): IEmbeddingProvider {
   if (process.env.DEPLOYMENT === "remote") {
     const accountId = requireEnv("CLOUDFLARE_ACCOUNT_ID");
     const apiToken = requireEnv("CLOUDFLARE_API_TOKEN");
@@ -50,22 +66,50 @@ function createEmbeddingProvider(): IEmbeddingProvider {
   return new LocalEmbeddingProvider();
 }
 
-const noteRepository: INoteRepository = new DrizzleNoteRepository(db);
-const tagRepository: ITagRepository = new DrizzleTagRepository(db);
-const graphRepository: IGraphRepository = new DrizzleGraphRepository(db);
-const storageProvider: IStorageProvider = createStorageProvider();
-const embeddingProvider: IEmbeddingProvider = createEmbeddingProvider();
+// ── Bundle factories ──
+// 各 entry point (web app / seed / migration) が起動時に 1 回呼ぶ。
+// granular factory を組み合わせて「この起動コンテキストが必要な束」を返す。
 
-// Migration runner 用の DI ファクトリ。scripts/migration/migrate.ts から呼ばれる。
-// Web app と異なり module-level singleton にせず、CLI 起動ごとに新規生成する。
+export type WebDeps = {
+  noteRepository: INoteRepository;
+  tagRepository: ITagRepository;
+  graphRepository: IGraphRepository;
+  storageProvider: IStorageProvider;
+  embeddingProvider: IEmbeddingProvider;
+};
+
+export type SeedDeps = {
+  noteRepository: INoteRepository;
+  tagRepository: ITagRepository;
+};
+
+export type MigrationDeps = {
+  db: IMigrationProvider;
+  schema: ISchemaSyncProvider;
+  hooks: IHookProvider;
+};
+
+export function createWebDeps(): WebDeps {
+  return {
+    noteRepository: createNoteRepository(),
+    tagRepository: createTagRepository(),
+    graphRepository: createGraphRepository(),
+    storageProvider: createStorageProvider(),
+    embeddingProvider: createEmbeddingProvider(),
+  };
+}
+
+export function createSeedDeps(): SeedDeps {
+  return {
+    noteRepository: createNoteRepository(),
+    tagRepository: createTagRepository(),
+  };
+}
+
 const HOOKS_DIR = "scripts/migration/hooks";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
 
-export function createMigrationDeps(): {
-  db: IMigrationDatabase;
-  schema: ISchemaSync;
-  hooks: IHookSource;
-} {
+export function createMigrationDeps(): MigrationDeps {
   const environment = requireEnv("ENVIRONMENT");
   const databaseUrlBase = requireEnv("DATABASE_URL");
   const isRemote = process.env.DEPLOYMENT === "remote";
@@ -73,10 +117,8 @@ export function createMigrationDeps(): {
   // remote (Neon 等) では DATABASE_URL がそのまま完全な接続先を指す。
   const url = isRemote ? databaseUrlBase : `${databaseUrlBase}/reknotes_${environment}`;
   return {
-    db: new PostgresMigrationDatabase(url, isRemote),
-    schema: new DrizzleKitSchemaSync(url, SCHEMA_PATH),
-    hooks: new FsHookSource(HOOKS_DIR),
+    db: new PostgresMigrationProvider(url, isRemote),
+    schema: new DrizzleKitSchemaSyncProvider(url, SCHEMA_PATH),
+    hooks: new FsHookProvider(HOOKS_DIR),
   };
 }
-
-export { embeddingProvider, graphRepository, noteRepository, storageProvider, tagRepository };

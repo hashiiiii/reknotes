@@ -1,11 +1,15 @@
-import { app } from "./app";
+import { createApp } from "./app";
 import { initialize } from "./app/application/initialize";
-import { embeddingProvider, tagRepository } from "./app/infrastructure/container";
+import { createWebDeps } from "./app/infrastructure/container";
 
-initialize(embeddingProvider, tagRepository).catch((err) => {
+const deps = createWebDeps();
+
+initialize(deps.embeddingProvider, deps.tagRepository).catch((err) => {
   console.error("Initialization failed:", err);
   process.exit(1);
 });
+
+const app = createApp(deps);
 
 export default {
   fetch: app.fetch,

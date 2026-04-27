@@ -1,11 +1,11 @@
 import { findDestructive } from "../../domain/migration/destructive";
-import type { IMigrationDatabase } from "../port/migration-database";
-import type { ISchemaSync } from "../port/schema-sync";
+import type { IMigrationProvider } from "../port/migration-provider";
+import type { ISchemaSyncProvider } from "../port/schema-sync-provider";
 import { err, ok, type Result } from "./result";
 
 export type CheckMigrationDeps = {
-  db: IMigrationDatabase;
-  schema: ISchemaSync;
+  db: IMigrationProvider;
+  schema: ISchemaSyncProvider;
 };
 
 export async function checkMigration(deps: CheckMigrationDeps): Promise<Result> {

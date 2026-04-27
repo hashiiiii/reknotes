@@ -1,6 +1,6 @@
 export type DiffResult = { sql: string; error: null } | { sql: null; error: string };
 
-export interface ISchemaSync {
+export interface ISchemaSyncProvider {
   /**
    * 現 DB と schema.ts の差分 SQL を生成する (DB は変更しない)。
    * sql === "" は差分なし、sql に内容ありで非破壊な場合はそのまま push 候補、

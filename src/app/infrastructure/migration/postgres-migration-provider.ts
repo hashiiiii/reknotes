@@ -1,8 +1,8 @@
 import postgres from "postgres";
-import type { IMigrationDatabase } from "../../application/port/migration-database";
+import type { IMigrationProvider } from "../../application/port/migration-provider";
 import type { AppliedHook, HookFile } from "../../domain/migration/hook";
 
-export class PostgresMigrationDatabase implements IMigrationDatabase {
+export class PostgresMigrationProvider implements IMigrationProvider {
   constructor(
     private readonly url: string,
     private readonly isRemote: boolean,

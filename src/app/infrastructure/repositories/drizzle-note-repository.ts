@@ -34,6 +34,11 @@ export class DrizzleNoteRepository implements INoteRepository {
     return result != null;
   }
 
+  async deleteAll(): Promise<void> {
+    // note_tags は notes への FK CASCADE で同時に消える。tags は別途 ITagRepository.deleteAll で消す。
+    await this.db.delete(notes);
+  }
+
   async list(cursor?: number): Promise<{ notes: Note[]; hasMore: boolean; nextCursor?: number }> {
     const base = this.db.select().from(notes);
     const filtered = cursor ? base.where(lt(notes.id, cursor)) : base;

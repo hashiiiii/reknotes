@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import type { AppliedHook, HookFile } from "../../domain/migration/hook";
-import type { IHookSource } from "../port/hook-source";
-import type { IMigrationDatabase } from "../port/migration-database";
-import type { DiffResult, ISchemaSync } from "../port/schema-sync";
+import type { IHookProvider } from "../port/hook-provider";
+import type { IMigrationProvider } from "../port/migration-provider";
+import type { DiffResult, ISchemaSyncProvider } from "../port/schema-sync-provider";
 import { applyMigration } from "./apply-migration";
 import { bootstrapMigration } from "./bootstrap-migration";
 import { checkMigration } from "./check-migration";
 
-class FakeDatabase implements IMigrationDatabase {
+class FakeDatabase implements IMigrationProvider {
   reachable = true;
   applied: AppliedHook[] = [];
   applyHooksCalls: HookFile[][] = [];
@@ -41,7 +41,7 @@ class FakeDatabase implements IMigrationDatabase {
   }
 }
 
-class FakeSchema implements ISchemaSync {
+class FakeSchema implements ISchemaSyncProvider {
   diff: DiffResult = { sql: "", error: null };
   pushCalls = 0;
 
@@ -53,7 +53,7 @@ class FakeSchema implements ISchemaSync {
   }
 }
 
-class FakeHooks implements IHookSource {
+class FakeHooks implements IHookProvider {
   hooks: HookFile[] = [];
   list(): HookFile[] {
     return this.hooks;
