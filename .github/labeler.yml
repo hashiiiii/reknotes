@@ -24,8 +24,8 @@ ci:
   - changed-files:
       - any-glob-to-any-file:
           - ".github/workflows/**"
-          - ".github/dependabot.yml"
           - ".github/labeler.yml"
+          - "renovate.json"
 
 documentation:
   - changed-files:
