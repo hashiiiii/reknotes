@@ -15,7 +15,6 @@ import type { IStorageProvider } from "./application/port/storage-provider";
 import type { IGraphRepository } from "./domain/graph/graph-repository";
 import type { INoteRepository } from "./domain/note/note-repository";
 import type { ITagRepository } from "./domain/tag/tag-repository";
-import type { WebDeps } from "./infrastructure/container";
 import { fileRoutes } from "./presentation/routes/files";
 import { graphRoutes } from "./presentation/routes/graph";
 import { noteRoutes } from "./presentation/routes/notes";
@@ -33,7 +32,8 @@ const engine = new Liquid({
   cache: true,
 });
 
-// カスタムフィルター: unixtime → 人間が読める日時
+// LiquidJS のカスタムフィルター
+// unixtime から "YYYY/MM/DD HH:mm" 形式の日時文字列を生成するフィルター
 engine.registerFilter("formatDate", (timestamp: number) => {
   if (!timestamp) return "";
   const d = new Date(timestamp);
@@ -55,7 +55,13 @@ export type AppEnv = {
 
 export { engine };
 
-export function createApp(deps: WebDeps): Hono<AppEnv> {
+export function createApp(
+  noteRepository: INoteRepository,
+  tagRepository: ITagRepository,
+  graphRepository: IGraphRepository,
+  storageProvider: IStorageProvider,
+  embeddingProvider: IEmbeddingProvider,
+): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
 
   app.use(logger());
@@ -67,20 +73,21 @@ export function createApp(deps: WebDeps): Hono<AppEnv> {
   app.use(bodyLimit({ maxSize: 256 * 1024 }));
   app.use(secureHeaders());
 
-  // アップロード用: 50MB まで許可
+  // アップロード用
+  // 50MB まで許可する
   app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
-  // DI ミドルウェア: entry point で構築済みの deps を request scope に流し込む
+  // ルーティングで利用するリポジトリやプロバイダをコンテキストに登録するミドルウェア
   app.use("*", async (c, next) => {
-    c.set("noteRepository", deps.noteRepository);
-    c.set("tagRepository", deps.tagRepository);
-    c.set("graphRepository", deps.graphRepository);
-    c.set("storageProvider", deps.storageProvider);
-    c.set("embeddingProvider", deps.embeddingProvider);
+    c.set("noteRepository", noteRepository);
+    c.set("tagRepository", tagRepository);
+    c.set("graphRepository", graphRepository);
+    c.set("storageProvider", storageProvider);
+    c.set("embeddingProvider", embeddingProvider);
     await next();
   });
 
-  // LiquidJS ミドルウェア
+  // LiquidJS のレンダリングミドルウェア
   app.use("*", async (c, next) => {
     c.set("render", async (template: string, data: Record<string, unknown> = {}) => {
       return engine.renderFile(`pages/${template}`, {
