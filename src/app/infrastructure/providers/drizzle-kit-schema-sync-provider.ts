@@ -19,7 +19,8 @@ export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
     try {
       // drizzle-kit は --config と他 CLI 引数 (--url など) を併用できない仕様。
       // --url を CLI に出すとクレデンシャルが ps aux に漏れるため、tmp 配下に config を動的生成し --config だけで呼ぶ。
-      // DATABASE_URL は spawnDrizzle が env で渡し、tmp config の `process.env.DATABASE_URL!` が子プロセスで評価する。
+      // DATABASE_URL は spawn() が env で子プロセスへ渡し、tmp config 内の `process.env.DATABASE_URL!` を子プロセスが評価する。
+      // (= writeTempConfig が出力する文字列リテラル中の process.env は親プロセスの実行時には評価されない)
       const tmpConfigPath = this.writeTempConfig(tmpOut);
 
       const introspectCode = this.spawn(["introspect", `--config=${tmpConfigPath}`]);
@@ -74,6 +75,8 @@ export default defineConfig({
   dialect: "postgresql",
   schema: ${JSON.stringify(absSchema)},
   out: ${JSON.stringify(tmpOut)},
+  // ここの process.env.DATABASE_URL は drizzle-kit 子プロセス内で評価される。親の Config から URL を渡しても意味がない (子プロセスは自身の env を読む)。
+  // 親側は spawn() の env: { ...process.env, DATABASE_URL: this.url } で URL を子へ注入している。
   dbCredentials: { url: process.env.DATABASE_URL! },
 });
 `,

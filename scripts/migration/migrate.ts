@@ -1,8 +1,22 @@
+import type { Result } from "../../src/app/application/migration/_result";
 import { applyMigration } from "../../src/app/application/migration/apply-migration";
 import { bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
 import { checkMigration } from "../../src/app/application/migration/check-migration";
-import type { Result } from "../../src/app/application/migration/result";
-import { createMigrationDeps, type MigrationDeps } from "../../src/app/infrastructure/container";
+import type { IHookProvider } from "../../src/app/application/port/hook-provider";
+import type { IMigrationProvider } from "../../src/app/application/port/migration-provider";
+import type { ISchemaSyncProvider } from "../../src/app/application/port/schema-sync-provider";
+import { loadConfig } from "../../src/app/config";
+import {
+  createHookProvider,
+  createMigrationProvider,
+  createSchemaSyncProvider,
+} from "../../src/app/infrastructure/container";
+
+type MigrationDeps = {
+  db: IMigrationProvider;
+  schema: ISchemaSyncProvider;
+  hooks: IHookProvider;
+};
 
 const HELP_TEXT = `Usage: bun run migrate -- <mode>
 
@@ -57,7 +71,13 @@ async function run(mode: Mode): Promise<number> {
 
   console.log(`Running ${mode}...`);
   try {
-    const result = await dispatch(mode, createMigrationDeps());
+    const config = loadConfig();
+    const deps: MigrationDeps = {
+      db: createMigrationProvider(config),
+      schema: createSchemaSyncProvider(config),
+      hooks: createHookProvider(),
+    };
+    const result = await dispatch(mode, deps);
     if (result.kind === "ok") {
       console.log(JSON.stringify(result));
       return 0;

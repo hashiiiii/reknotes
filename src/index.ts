@@ -22,13 +22,7 @@ initialize(embeddingProvider, tagRepository).catch((err) => {
   process.exit(1);
 });
 
-const app = createApp(
-    noteRepository,
-    tagRepository,
-    graphRepository,
-    storageProvider,
-    embeddingProvider
-);
+const app = createApp(noteRepository, tagRepository, graphRepository, storageProvider, embeddingProvider);
 
 export default {
   fetch: app.fetch,

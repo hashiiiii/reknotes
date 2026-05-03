@@ -1,9 +1,12 @@
 import { clearAllData } from "../src/app/application/clear-all-data";
 import { createNote } from "../src/app/application/note/create-note";
 import { addTagsToNote } from "../src/app/application/tag/add-tags-to-note";
-import { createSeedDeps } from "../src/app/infrastructure/container";
+import { loadConfig } from "../src/app/config";
+import { createNoteRepository, createTagRepository } from "../src/app/infrastructure/container";
 
-const { noteRepository, tagRepository } = createSeedDeps();
+const config = loadConfig();
+const noteRepository = createNoteRepository(config);
+const tagRepository = createTagRepository(config);
 
 await clearAllData(noteRepository, tagRepository);
 

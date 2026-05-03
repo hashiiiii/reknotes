@@ -1,7 +1,7 @@
 import { findDestructive } from "../../domain/migration/destructive";
 import type { IMigrationProvider } from "../port/migration-provider";
 import type { ISchemaSyncProvider } from "../port/schema-sync-provider";
-import { err, ok, type Result } from "./result";
+import { err, ok, type Result } from "./_result";
 
 export type CheckMigrationDeps = {
   db: IMigrationProvider;

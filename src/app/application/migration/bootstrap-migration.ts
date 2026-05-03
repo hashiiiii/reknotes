@@ -1,7 +1,7 @@
 import type { IHookProvider } from "../port/hook-provider";
 import type { IMigrationProvider } from "../port/migration-provider";
 import type { ISchemaSyncProvider } from "../port/schema-sync-provider";
-import { ok, type Result } from "./result";
+import { ok, type Result } from "./_result";
 
 export type BootstrapMigrationDeps = {
   db: IMigrationProvider;
