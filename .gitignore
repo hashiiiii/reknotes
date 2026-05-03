@@ -2,7 +2,7 @@
 .vscode/
 .idea/
 .playwright-mcp/
-docs/
 node_modules/
 dist/
 memory/
+tmp/
