@@ -53,7 +53,7 @@ Presentation 層とは **外部入力を受け取り、どの use case を呼び
 
 簡単な判別法:「これはドメインエンティティを永続化するための仕組みか？」 → repository、`domain/` に配置。「これは application が呼び出す技術サービスか？」 → port、`application/port/` に配置。
 
-両者とも `I` プレフィックスを付ける（`INoteRepository`、`IEmbeddingProvider`）。
+両者とも `I` プレフィックスを付ける (`INoteRepository`、`IEmbeddingProvider`)。
 
 ## Dependency Injection
 
