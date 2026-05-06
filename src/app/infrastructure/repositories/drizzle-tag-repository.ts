@@ -42,4 +42,8 @@ export class DrizzleTagRepository implements ITagRepository {
       }
     });
   }
+
+  async deleteAll(): Promise<void> {
+    await this.db.delete(tags);
+  }
 }

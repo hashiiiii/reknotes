@@ -1,9 +1,14 @@
-import { db } from "../src/app/infrastructure/db";
-import { notes, tags } from "../src/app/infrastructure/db/schema";
+import { clearAllData } from "../src/app/application/clear-all-data";
+import { createNote } from "../src/app/application/note/create-note";
+import { addTagsToNote } from "../src/app/application/tag/add-tags-to-note";
+import { loadConfig } from "../src/app/config";
+import { createNoteRepository, createTagRepository } from "../src/app/infrastructure/container";
 
-// 既存データをクリア（notes 削除で note_tags も CASCADE 削除される）
-await db.delete(notes);
-await db.delete(tags);
+const config = loadConfig();
+const noteRepository = createNoteRepository(config);
+const tagRepository = createTagRepository(config);
+
+await clearAllData(noteRepository, tagRepository);
 
 const sampleNotes: { title: string; body: string; tags: string[] }[] = [
   // ── 認知科学・心理学 ──
@@ -366,14 +371,9 @@ const sampleNotes: { title: string; body: string; tags: string[] }[] = [
 
 console.log("Seeding database...");
 
-import { noteRepository, tagRepository } from "../src/app/infrastructure/container";
-
 for (const sample of sampleNotes) {
-  const note = await noteRepository.create(sample.title, sample.body);
-  for (const tagName of sample.tags) {
-    const tag = await tagRepository.findOrCreate(tagName);
-    await tagRepository.linkToNote(note.id, tag.id);
-  }
+  const note = await createNote(noteRepository, sample.title, sample.body);
+  await addTagsToNote(tagRepository, note.id, sample.tags);
 }
 
 console.log(`Created ${sampleNotes.length} notes, ${new Set(sampleNotes.flatMap((n) => n.tags)).size} tags.`);

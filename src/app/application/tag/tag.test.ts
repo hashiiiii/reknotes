@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { noteRepository, tagRepository } from "../../infrastructure/container";
+import { loadConfig } from "../../config";
+import { createNoteRepository, createTagRepository } from "../../infrastructure/container";
 import { createNote } from "../note/create-note";
 import { addTagToNote } from "./add-tag-to-note";
 import { addTagsToNote } from "./add-tags-to-note";
 import { removeOrphanTag } from "./remove-orphan-tag";
+
+const config = loadConfig();
+const noteRepository = createNoteRepository(config);
+const tagRepository = createTagRepository(config);
 
 describe("tag use cases", () => {
   describe("addTagToNote", () => {

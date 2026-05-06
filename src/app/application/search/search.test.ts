@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { noteRepository } from "../../infrastructure/container";
+import { loadConfig } from "../../config";
+import { createNoteRepository } from "../../infrastructure/container";
 import { createNote } from "../note/create-note";
 import { searchNotes } from "./search-notes";
+
+const config = loadConfig();
+const noteRepository = createNoteRepository(config);
 
 describe("search use cases", () => {
   test("タイトルで検索できる", async () => {

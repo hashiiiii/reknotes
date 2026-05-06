@@ -1,11 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { noteRepository, storageProvider, tagRepository } from "../../infrastructure/container";
+import { loadConfig } from "../../config";
+import { createNoteRepository, createStorageProvider, createTagRepository } from "../../infrastructure/container";
 import { addTagsToNote } from "../tag/add-tags-to-note";
 import { createNote } from "./create-note";
 import { deleteNote } from "./delete-note";
 import { getNote } from "./get-note";
 import { getNoteTags } from "./get-note-tags";
 import { updateNote } from "./update-note";
+
+const config = loadConfig();
+const noteRepository = createNoteRepository(config);
+const tagRepository = createTagRepository(config);
+const storageProvider = createStorageProvider(config);
 
 describe("note use cases", () => {
   test("createNote でノートを作成できる", async () => {

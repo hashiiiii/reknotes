@@ -1,4 +1,4 @@
-import { bigint, index, integer, pgTable, primaryKey, serial, text } from "drizzle-orm/pg-core";
+import { bigint, index, integer, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const notes = pgTable(
   "notes",
@@ -33,3 +33,11 @@ export const noteTags = pgTable(
   },
   (table) => [primaryKey({ columns: [table.noteId, table.tagId] }), index("idx_note_tags_tag_id").on(table.tagId)],
 );
+
+// 内部管理テーブル。drizzle 自身の `__drizzle_migrations` と同じく、アプリ層から触らない印として
+// 先頭 underscore を付ける。ユーザーデータではなく hook 適用履歴を保持する。
+export const hooksApplied = pgTable("_hooks_applied", {
+  filename: text("filename").primaryKey(),
+  checksum: text("checksum").notNull(),
+  appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+});

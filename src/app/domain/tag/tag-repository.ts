@@ -7,4 +7,5 @@ export interface ITagRepository {
   clearByNoteId(noteId: number): Promise<void>;
   findAll(): Promise<Tag[]>;
   removeOrphanTag(tagId: number): Promise<void>;
+  deleteAll(): Promise<void>;
 }

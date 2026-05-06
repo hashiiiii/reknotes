@@ -1,4 +1,4 @@
-// lib/build.ts - フロントエンド静的アセットのビルド
+// scripts/build.ts - フロントエンド静的アセットのビルド
 // vendor JS を Bun.build() でバンドルし、自作 JS/CSS はコピーして dist/ に出力する
 
 import { cpSync, mkdirSync, rmSync } from "node:fs";

@@ -8,5 +8,5 @@
     "outDir": "dist",
     "types": ["bun"]
   },
-  "include": ["*.ts", "src/**/*", "lib/**/*"],
+  "include": ["*.ts", "src/**/*", "scripts/**/*"],
 }
