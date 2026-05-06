@@ -74,13 +74,9 @@ For credentials and other variables, see `.env.example`. For deployment topology
                 └── partials/
 ```
 
-## Architecture
+## Docs
 
-`docs/ARCHITECTURE.md`
-
-## Infrastructure
-
-`docs/INFRASTRUCTURE.md`
+See [`docs/`](./docs/) for design and operational documentation.
 
 ## License
 

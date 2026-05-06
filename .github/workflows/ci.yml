@@ -3,11 +3,27 @@ name: CI
 on:
   pull_request:
 
+env:
+  ENVIRONMENT: test
+  DEPLOYMENT: local
+  DOMAIN: localhost
+  GITHUB_REPOSITORY: dummy/reknotes
+  DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
+  S3_ENDPOINT: dummy
+  S3_ACCESS_KEY_ID: dummy
+  S3_SECRET_ACCESS_KEY: dummy
+  S3_BUCKET_NAME: reknotes-test
+  CLOUDFLARE_ACCOUNT_ID: dummy
+  CLOUDFLARE_API_TOKEN: dummy
+  OAUTH2_PROXY_CLIENT_ID: dummy
+  OAUTH2_PROXY_CLIENT_SECRET: dummy
+  OAUTH2_PROXY_COOKIE_SECRET: dummy
+  OAUTH2_PROXY_GITHUB_USER: dummy
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    services:
+    services: &postgres-service
       postgres:
         image: postgres:17
         env:
@@ -22,31 +38,14 @@ jobs:
           --health-timeout=5s
           --health-retries=5
 
-    env:
-      ENVIRONMENT: test
-      DEPLOYMENT: local
-      DOMAIN: localhost
-      GITHUB_REPOSITORY: dummy/reknotes
-      DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
-      S3_ENDPOINT: dummy
-      S3_ACCESS_KEY_ID: dummy
-      S3_SECRET_ACCESS_KEY: dummy
-      S3_BUCKET_NAME: reknotes-test
-      CLOUDFLARE_ACCOUNT_ID: dummy
-      CLOUDFLARE_API_TOKEN: dummy
-      OAUTH2_PROXY_CLIENT_ID: dummy
-      OAUTH2_PROXY_CLIENT_SECRET: dummy
-      OAUTH2_PROXY_COOKIE_SECRET: dummy
-      OAUTH2_PROXY_GITHUB_USER: dummy
-
     steps:
       - uses: actions/checkout@v6
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.10"
 
-      - run: bun install --frozen-lockfile
+      - name: Install packages
+        run: bun install --frozen-lockfile
 
       - name: Run migrations
         run: bun run migrate -- --apply
@@ -59,15 +58,40 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: "1.3.10"
 
-      - run: bun install --frozen-lockfile
+      - name: Install packages
+        run: bun install --frozen-lockfile
 
       - name: Run lint & typecheck
         run: bun run check
 
       - name: Run build
         run: bun run build
+
+  destructive-check:
+    runs-on: ubuntu-latest
+    services: *postgres-service
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # feature と base とでブランチを行き来するため全履歴を取得しておく
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
+
+      - name: Apply base branch schema to plain DB
+        run: |
+          git checkout origin/${{ github.base_ref }}
+          bun install --frozen-lockfile
+          bun run migrate -- --apply
+
+      - name: Detect destructive diff against base branch
+        run: |
+          git checkout -
+          bun install --frozen-lockfile
+          bun run migrate -- --check

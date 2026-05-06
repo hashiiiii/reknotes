@@ -21,6 +21,24 @@ YYYYMMDD-<description>.post.sql
 - To correct a past hook, add a **new** file with a later date.
 - Each hook is run exactly once per database. Subsequent runs skip files already in `_hooks_applied`.
 
+## Idempotency
+
+All hooks (pre and post) must be idempotent: re-running a hook on the same database must produce the same end state as the first run. The same rule applies to manual destructive SQL.
+
+`_hooks_applied` skips files already applied, so the normal path runs each hook exactly once. Idempotency covers cases the run-once mechanism cannot:
+
+- A pre or post batch wraps every hook in a single transaction. If any hook in the batch fails, all hook bodies AND their `_hooks_applied` rows roll back, and the retry re-runs every hook.
+- Manual destructive SQL (see below) is outside the run-once mechanism entirely, so the operator may re-run the same statement.
+
+How to write idempotent SQL:
+
+- DDL: `CREATE TABLE IF NOT EXISTS`, `DROP TABLE IF EXISTS`, `CREATE INDEX IF NOT EXISTS`.
+- Inserts: `INSERT … ON CONFLICT DO NOTHING` (or `DO UPDATE`).
+- Updates: guard with `WHERE` so a second run is a no-op (`UPDATE foo SET bar = 'default' WHERE bar IS NULL`).
+- Avoid deltas (`counter = counter + 1`); prefer absolute assignments.
+
+`drizzle-kit push` is idempotent by construction (it diffs `schema.ts` against the live DB and applies only the difference).
+
 ## Destructive changes are not automated
 
 `DROP TABLE`, `DROP COLUMN`, and `SET DATA TYPE` are **rejected by the runner** — the deploy fails so no data is lost silently. Column renames are also rejected (drizzle-kit requires an interactive TTY to resolve rename ambiguity).
