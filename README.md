@@ -1,6 +1,6 @@
 # reknotes
 
-**re** + **knowledge** + **notes** — Personal knowledge management with auto-organization and fast search.
+**re** + **knowledge** + **notes** — A personal knowledge management tool that makes you want to revisit your past notes. Visual graph-based knowledge representation, fast search, ML-powered auto-tagging, and full online/offline support.
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -8,7 +8,7 @@ English | [日本語](README_JA.md)
 
 ## What is reknotes?
 
-reknotes is a self-hostable personal knowledge base. Write notes in Markdown, attach files, and let embedding-based auto-tagging cluster related ideas for you. Browse your notes as a 3D knowledge graph, or jump anywhere with fast search.
+reknotes is a self-hostable personal knowledge management tool built around making you want to revisit notes you wrote in the past. Every time you open the 3D knowledge graph, it recommends past notes for you, naturally sparking the feeling of "what did I write about that? let me take a look." ML-powered auto-tagging clusters related notes on the graph, so opening one note quietly pulls you into related ones before you realize it. Run it offline on your own machine, or online with services like Cloudflare + Neon.
 
 ## Features
 
