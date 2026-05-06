@@ -2,81 +2,85 @@
 
 **re** + **knowledge** + **notes** — Personal knowledge management with auto-organization and fast search.
 
-## Stack
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-- [Bun](https://bun.sh/) (>= 1.3)
-- [Hono](https://hono.dev/) — Web framework
-- TypeScript (strict)
-- HTML + [LiquidJS](https://liquidjs.com/) templates
-- [htmx](https://htmx.org/) — Dynamic UI without SPA
-- [PostgreSQL](https://www.postgresql.org/) 17 + [Drizzle ORM](https://orm.drizzle.team/)
-- [Biome](https://biomejs.dev/) v2 — Lint / format
-- [HuggingFace Transformers](https://huggingface.co/docs/transformers.js) / [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) — Embedding-based auto-tagging
-- [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/) — Knowledge graph visualization
-- [zenn-markdown-html](https://github.com/zenn-dev/zenn-editor) — Markdown rendering
-- S3-compatible storage ([Cloudflare R2](https://developers.cloudflare.com/r2/) / [MinIO](https://min.io/)) — File uploads
+English | [日本語](README_JA.md)
 
-## Setup
+## What is reknotes?
+
+reknotes is a self-hostable personal knowledge base. Write notes in Markdown, attach files, and let embedding-based auto-tagging cluster related ideas for you. Browse your notes as a 3D knowledge graph, or jump anywhere with fast search.
+
+## Features
+
+- **Auto-organization** — Notes are tagged automatically using embedding similarity. No manual tagging required.
+- **3D knowledge graph** — Walk through how your notes connect, rendered with Three.js.
+- **Markdown notes with file uploads** — Write in Markdown; attach files to any S3-compatible storage.
+- **Lightweight by design** — Bun + Hono + htmx. No SPA bundle, no heavy frontend framework.
+- **Run anywhere** — Self-host on your machine, or deploy to Cloudflare + Neon.
+
+## Quick Start
+
+You need [Bun](https://bun.sh/) (>= 1.3) and [Docker](https://www.docker.com/) installed.
 
 ```bash
+# Clone the repo
+git clone https://github.com/hashiiiii/reknotes.git
+cd reknotes
+
+# Start PostgreSQL and MinIO in containers
 docker compose -f compose.local.yaml up -d
+
+# Install dependencies, build assets, generate .env, run migrations
 bun run setup
+
+# Start the dev server
+bun run dev
 ```
 
-## Environments
+Open `http://localhost:3000` in your browser.
 
-`reknotes` runs in two **deployment modes**:
+## Tech Stack
 
-- **`DEPLOYMENT=local`** — local development with ONNX embedding, PostgreSQL container, and MinIO.
-- **`DEPLOYMENT=remote`** — production with Cloudflare Workers AI, Neon, and Cloudflare R2.
+- **Runtime** — [Bun](https://bun.sh/) >= 1.3, TypeScript (strict)
+- **Web** — [Hono](https://hono.dev/) + [LiquidJS](https://liquidjs.com/) + [htmx](https://htmx.org/)
+- **Database** — [PostgreSQL](https://www.postgresql.org/) 17 + [Drizzle ORM](https://orm.drizzle.team/)
+- **Embeddings** — [HuggingFace Transformers.js](https://huggingface.co/docs/transformers.js) (local) / [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) (remote)
+- **Visualization** — [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/)
+- **Storage** — S3-compatible: [MinIO](https://min.io/) (local) / [Cloudflare R2](https://developers.cloudflare.com/r2/) (remote)
+- **Markdown** — [zenn-markdown-html](https://github.com/zenn-dev/zenn-editor)
+- **Tooling** — [Biome](https://biomejs.dev/) v2
 
-Each mode has three **environments** (`ENVIRONMENT=development | test | production`) that select the database. With `DEPLOYMENT=local`, the database is `reknotes_<environment>`; with `DEPLOYMENT=remote`, `DATABASE_URL` is used as-is.
-
-For credentials and other variables, see `.env.example`. For deployment topology and infrastructure details, see [`docs/INFRASTRUCTURE.md`](./docs/INFRASTRUCTURE.md).
-
-## Scripts
+## Common Scripts
 
 | Command | Description |
 |---|---|
-| `bun run setup` | Install deps, build, scaffold `.env`, migrate dev + test DBs |
-| `bun run dev` | Start dev server (watch mode) |
-| `bun run build` | Bundle frontend assets to `dist/` |
-| `bun run migrate -- <mode>` | Run database migrations. `<mode>` is one of `--apply`, `--check`, `--bootstrap`. See `bun run migrate -- --help`. |
-| `bun run seed` | Insert sample data |
-| `bun run check` | Lint + format (Biome) and type-check |
+| `bun run dev` | Start the dev server (with file watch) |
+| `bun run check` | Run lint, format, and type checks |
 | `bun run test` | Run tests |
-
-## Docker
-
-`docker compose -f compose.local.yaml up` starts development infrastructure:
-
-- **PostgreSQL 17** — Primary database
-- **MinIO** — S3-compatible object storage
+| `bun run migrate -- <mode>` | Run database migrations. See [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md). |
+| `bun run seed` | Insert sample data |
 
 ## Project Structure
 
 ```
-├── scripts/                # CLI entry points (build, setup, seed, migration)
-├── public/                 # Source static assets (CSS, JS)
-├── dist/                   # Built assets (generated by bun run build)
-├── docs/                   # Architecture & design docs
+├── scripts/        # CLI entry points (build, setup, seed, migration)
+├── public/         # Source static assets (CSS, JS)
+├── dist/           # Built assets
+├── docs/           # Architecture & operational docs
 └── src/
-    ├── index.ts            # HTTP entry point
+    ├── index.ts    # HTTP entry point
     └── app/
         ├── domain/         # Entities & repository interfaces
         ├── application/    # Use cases & port interfaces
-        ├── infrastructure/ # Adapters (repositories, providers) & DB plumbing
+        ├── infrastructure/ # Adapters & DB plumbing
         └── presentation/
             ├── routes/     # Hono route handlers
-            └── views/
-                ├── layouts/
-                ├── pages/
-                └── partials/
+            └── views/      # LiquidJS templates (layouts, pages, partials)
 ```
 
-## Docs
+## Documentation
 
-See [`docs/`](./docs/) for design and operational documentation.
+For architecture, deployment, and migrations, see [`docs/`](./docs/).
 
 ## License
 
