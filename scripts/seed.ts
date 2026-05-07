@@ -1,4 +1,4 @@
-import { clearAllData } from "../src/app/application/clear-all-data";
+import { clearAllNotesAndTags } from "../src/app/application/maintenance/clear-all-notes-and-tags";
 import { createNote } from "../src/app/application/note/create-note";
 import { addTagsToNote } from "../src/app/application/tag/add-tags-to-note";
 import { loadConfig } from "../src/app/config";
@@ -8,7 +8,7 @@ const config = loadConfig();
 const noteRepository = createNoteRepository(config);
 const tagRepository = createTagRepository(config);
 
-await clearAllData(noteRepository, tagRepository);
+await clearAllNotesAndTags(noteRepository, tagRepository);
 
 const sampleNotes: { title: string; body: string; tags: string[] }[] = [
   // ── 認知科学・心理学 ──
