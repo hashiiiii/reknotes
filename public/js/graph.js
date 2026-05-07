@@ -633,15 +633,6 @@ function addBloom(Graph) {
 //  パネル
 // ══════════════════════════════════════════════
 
-function updateGraphDimensions() {
-  var Graph = window._reknGraph;
-  var container = document.getElementById("graph-container");
-  if (Graph && container) {
-    Graph.width(container.clientWidth);
-    Graph.height(container.clientHeight);
-  }
-}
-
 function showPanel(node, data) {
   var panel = document.getElementById("graph-panel");
   var content = document.getElementById("panel-content");
@@ -701,7 +692,6 @@ function showPanel(node, data) {
   }
 
   panel.hidden = false;
-  updateGraphDimensions();
 }
 
 function dismissPanel() {
@@ -714,7 +704,6 @@ function dismissPanel() {
 function closePanel() {
   var panel = document.getElementById("graph-panel");
   if (panel) panel.hidden = true;
-  updateGraphDimensions();
 }
 
 function formatDate(dateStr) {
