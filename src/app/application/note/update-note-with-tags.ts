@@ -15,7 +15,7 @@ export async function updateNoteWithTags(
 ) {
   const note = await updateNote(noteRepo, id, title, body);
   if (!note) return null;
-  await tagRepo.clearByNoteId(id);
+  await tagRepo.unlinkAllByNoteId(id);
   const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
   if (generatedTags.length > 0) await addTagsToNote(tagRepo, id, generatedTags);
   return note;

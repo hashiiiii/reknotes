@@ -17,7 +17,7 @@ export async function deleteNote(
 ) {
   const note = await noteRepo.findById(id);
   const tagNames = await noteRepo.findTagsByNoteId(id);
-  const result = await noteRepo.remove(id);
+  const result = await noteRepo.delete(id);
 
   if (result) {
     if (note) {

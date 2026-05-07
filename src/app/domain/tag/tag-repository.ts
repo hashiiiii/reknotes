@@ -4,8 +4,8 @@ export interface ITagRepository {
   findOrCreate(name: string): Promise<Tag>;
   findByName(name: string): Promise<Tag | null>;
   linkToNote(noteId: number, tagId: number): Promise<void>;
-  clearByNoteId(noteId: number): Promise<void>;
+  unlinkAllByNoteId(noteId: number): Promise<void>;
   findAll(): Promise<Tag[]>;
-  removeOrphanTag(tagId: number): Promise<void>;
+  deleteIfOrphan(tagId: number): Promise<void>;
   deleteAll(): Promise<void>;
 }
