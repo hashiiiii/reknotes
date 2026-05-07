@@ -1,4 +1,5 @@
 import type { IStorageProvider } from "../port/storage-provider";
+import { buildFileMarkdown, buildFileUrl } from "./_file-url";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -17,15 +18,14 @@ export interface UploadResult {
   filename: string;
 }
 
-export async function uploadFile(
-  storageProvider: IStorageProvider,
-  file: File,
-): Promise<{ ok: true; result: UploadResult } | { ok: false; error: string; status: 400 }> {
+export type UploadOutcome = { ok: true; result: UploadResult } | { ok: false; error: string };
+
+export async function uploadFile(storageProvider: IStorageProvider, file: File): Promise<UploadOutcome> {
   if (!ALLOWED_TYPES.includes(file.type)) {
-    return { ok: false, error: "対応していないファイル形式です", status: 400 };
+    return { ok: false, error: "対応していないファイル形式です" };
   }
   if (file.size > MAX_SIZE) {
-    return { ok: false, error: "ファイルサイズが大きすぎます（上限50MB）", status: 400 };
+    return { ok: false, error: "ファイルサイズが大きすぎます（上限50MB）" };
   }
 
   const ext = file.name.split(".").pop() || "bin";
@@ -34,9 +34,12 @@ export async function uploadFile(
   const buffer = new Uint8Array(await file.arrayBuffer());
   await storageProvider.upload(filename, buffer, file.type);
 
-  const url = `/api/files/${filename}`;
-  const isVideo = file.type.startsWith("video/");
-  const markdown = isVideo ? `<video src="${url}" controls></video>` : `![${file.name}](${url})`;
-
-  return { ok: true, result: { url, markdown, filename } };
+  return {
+    ok: true,
+    result: {
+      url: buildFileUrl(filename),
+      markdown: buildFileMarkdown({ filename, originalName: file.name, contentType: file.type }),
+      filename,
+    },
+  };
 }
