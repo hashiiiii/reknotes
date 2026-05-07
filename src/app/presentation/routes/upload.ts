@@ -14,7 +14,7 @@ uploadRoutes.post("/", async (c) => {
 
   const result = await uploadFile(c.var.storageProvider, file);
   if (!result.ok) {
-    return c.json({ error: result.error }, result.status);
+    return c.json({ error: result.error }, 400);
   }
 
   return c.json(result.result);
