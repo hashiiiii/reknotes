@@ -1,5 +1,5 @@
 import { createApp } from "./app";
-import { initialize } from "./app/application/initialize";
+import { preloadTagCache } from "./app/application/embedding/preload-tag-cache";
 import { loadConfig } from "./app/config";
 import {
   createEmbeddingProvider,
@@ -17,8 +17,8 @@ const graphRepository = createGraphRepository(config);
 const storageProvider = createStorageProvider(config);
 const embeddingProvider = createEmbeddingProvider(config);
 
-initialize(embeddingProvider, tagRepository).catch((err) => {
-  console.error("Initialization failed:", err);
+preloadTagCache(embeddingProvider, tagRepository).catch((err) => {
+  console.error("Failed to preload tag cache:", err);
   process.exit(1);
 });
 
