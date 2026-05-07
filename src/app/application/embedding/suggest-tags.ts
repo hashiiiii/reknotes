@@ -30,6 +30,23 @@ const SCORE_CUTOFF_RATIO = 0.5;
 // 0.7 は「関連性を重視しつつ、似すぎるタグは避ける」バランス。
 const MMR_LAMBDA = 0.7;
 
+// --- 候補語の品質フィルタ ---
+// 「早く知」「初めて使」「読み終」のような verb 活用形断片は、形態素解析の結果として候補プールに
+// 入ってしまうがタグとしては意味が薄い。ASCII (TypeScript / Bun 等) はそのまま通し、Japanese 文字列は
+// (1) kanji/katakana を含むこと、(2) 末尾以外の位置に hiragana を含まないこと、を要件にする。
+// 「内部に hiragana があれば活用形の途中」という経験則 (例:「読み終」「初めて使」)。
+// 「好き」「気持ち」「面白い」のように末尾だけ hiragana のものは通す。
+function isQualityCandidate(word: string): boolean {
+  if (/^[\x21-\x7e]+$/.test(word)) return true; // ASCII printable
+  const chars = [...word];
+  if (chars.length === 0) return false;
+  const kanjiKata = chars.filter((c) => /[一-鿿㐀-䶿゠-ヿ]/.test(c)).length;
+  if (kanjiKata === 0) return false; // 全 hiragana は弾く
+  const middleChars = chars.slice(0, -1);
+  const middleHiragana = middleChars.filter((c) => /[ぁ-ゖ]/.test(c)).length;
+  return middleHiragana === 0;
+}
+
 // --- 漢字判定 ---
 // バイグラム生成で1文字漢字（接辞）を識別するために使う。
 // CJK統合漢字（U+4E00–U+9FFF）と拡張A（U+3400–U+4DBF）をカバー。
@@ -162,12 +179,16 @@ export async function suggestTags(
   const candidates: Candidate[] = [];
 
   // Step 1: 既存タグをスコアリング
-  // 既存タグを「そのまま候補に入れ��」ことで、タグの再利用が自然に起きる。
-  // タグが蓄積されるほど「��ンポーネント設計」のような複合語も直接マッチするようになる。
+  // 既存タグを「そのまま候補に入れる」ことで、テキストに似ているタグがあれば自然に再利用される。
+  // 一律の bonus は付けない (試したが「意味的に近くないノートにも既存タグが押し付けられる」現象が起きた)。
+  // タグの再利用は cosine similarity が本物に高いケースに限られる。記事数 × 3 のユニークタグになって
+  // も、それが各記事の正直な要約ならその方が良い、という方針。
+  // 品質フィルタは既存タグにも適用する: 過去に noise tag として作られた既存タグが再選択されないため。
   const existingTags = await tagRepo.findAll();
-  if (existingTags.length > 0) {
-    await embeddingProvider.buildTagCache(existingTags.map((t) => t.name));
-    for (const tag of existingTags) {
+  const allowedExisting = existingTags.filter((t) => isQualityCandidate(t.name));
+  if (allowedExisting.length > 0) {
+    await embeddingProvider.buildTagCache(allowedExisting.map((t) => t.name));
+    for (const tag of allowedExisting) {
       const embedding = await embeddingProvider.embedTag(tag.name);
       candidates.push({ name: tag.name, embedding, score: score(embedding) });
     }
@@ -177,12 +198,14 @@ export async function suggestTags(
   // コードブロック内の数式・変数名がノイズ候補になるのを防ぐため、
   // 候補語の抽出はコードブロックを除いたテキストから行う。
   // unigram に加えて1文字漢字バイグラム（ホーナー法、計算量 等）も候補に含める。
+  // 品質フィルタで「早く知」「初めて使」のような verb 活用形断片を弾く。
   const textForCandidates = stripCodeBlocks(text);
   const contentWords = extractCandidateWords(textForCandidates);
-  const existingTagNames = new Set(existingTags.map((t) => t.name));
+  const existingTagNames = new Set(existingTags.map((t) => t.name.toLowerCase()));
 
   for (const word of contentWords) {
     if (existingTagNames.has(word.toLowerCase())) continue;
+    if (!isQualityCandidate(word)) continue;
     const embedding = await embeddingProvider.embedTag(word);
     candidates.push({ name: word, embedding, score: score(embedding) });
   }

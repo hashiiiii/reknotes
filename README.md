@@ -57,8 +57,8 @@ Open `http://localhost:3000` in your browser.
 | `bun run dev` | Starts the local server. |
 | `bun run check` | Runs lint, format, and type checks. |
 | `bun run test` | Runs tests. |
-| `bun run migrate -- <mode>` | Runs database migrations. See [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) for details. |
-| `bun run seed` | Inserts sample data. |
+| `bun run migrate <mode>` | Runs database migrations. See [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) for details. |
+| `bun run seed --count <N>` | Inserts N sample notes. |
 
 ## Project Structure
 

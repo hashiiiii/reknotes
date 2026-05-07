@@ -18,12 +18,15 @@ type MigrationDeps = {
   hooks: IHookProvider;
 };
 
-const HELP_TEXT = `Usage: bun run migrate -- <mode>
+const HELP_TEXT = `Usage: bun run migrate <mode>
 
 Modes (one required):
   --apply       Apply pending hooks and run drizzle-kit push
   --check       Detect destructive changes without writing to DB
   --bootstrap   Mark all existing hooks as applied without executing them
+
+Other:
+  --help, -h    Show this help
 
 Environment:
   DATABASE_URL  Required. Base connection URL.
@@ -36,9 +39,12 @@ For destructive-change handling and hook authoring, see scripts/migration/hooks/
 type Mode = "apply" | "check" | "bootstrap" | "help";
 
 function parseArgs(argv: string[]): Mode {
-  const args = argv.slice(2).filter((a) => a !== "--");
+  const args = argv.slice(2);
   if (args.length !== 1) return "help";
   switch (args[0]) {
+    case "--help":
+    case "-h":
+      return "help";
     case "--check":
       return "check";
     case "--bootstrap":

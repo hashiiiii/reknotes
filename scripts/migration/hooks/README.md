@@ -52,4 +52,4 @@ Place hook files in this directory (`scripts/migration/hooks/`).
 
 ## Bootstrap
 
-On a fresh database, run `bun run migrate -- --bootstrap` once. It runs `drizzle-kit push` to create all tables (including `_hooks_applied`) and then records every existing hook file as applied **without executing the SQL**. Future hooks are added on top as usual.
+On a fresh database, run `bun run migrate --bootstrap` once. It runs `drizzle-kit push` to create all tables (including `_hooks_applied`) and then records every existing hook file as applied **without executing the SQL**. Future hooks are added on top as usual.

@@ -57,8 +57,8 @@ bun run dev
 | `bun run dev` | ローカルでサーバーを起動します。 |
 | `bun run check` | Lint・format・型チェックをまとめて実行します。 |
 | `bun run test` | テストを実行します。 |
-| `bun run migrate -- <mode>` | DB マイグレーションを実行します。詳細は [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) を参照してください。 |
-| `bun run seed` | サンプルデータを投入します。 |
+| `bun run migrate <mode>` | DB マイグレーションを実行します。詳細は [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) を参照してください。 |
+| `bun run seed --count <N>` | N 件のサンプルノートを投入します。 |
 
 ## Project Structure
 
