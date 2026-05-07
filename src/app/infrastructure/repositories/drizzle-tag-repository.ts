@@ -26,7 +26,7 @@ export class DrizzleTagRepository implements ITagRepository {
     await this.db.insert(noteTags).values({ noteId, tagId }).onConflictDoNothing();
   }
 
-  async clearByNoteId(noteId: number): Promise<void> {
+  async unlinkAllByNoteId(noteId: number): Promise<void> {
     await this.db.delete(noteTags).where(eq(noteTags.noteId, noteId));
   }
 
@@ -34,7 +34,7 @@ export class DrizzleTagRepository implements ITagRepository {
     return this.db.select().from(tags);
   }
 
-  async removeOrphanTag(tagId: number): Promise<void> {
+  async deleteIfOrphan(tagId: number): Promise<void> {
     await this.db.transaction(async (tx) => {
       const [exists] = await tx.select().from(noteTags).where(eq(noteTags.tagId, tagId)).limit(1);
       if (!exists) {

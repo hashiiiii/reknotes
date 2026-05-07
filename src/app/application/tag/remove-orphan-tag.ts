@@ -5,6 +5,6 @@ export async function removeOrphanTag(tagRepo: ITagRepository, tagName: string) 
   const name = normalizeTagName(tagName);
   const tag = await tagRepo.findByName(name);
   if (tag) {
-    await tagRepo.removeOrphanTag(tag.id);
+    await tagRepo.deleteIfOrphan(tag.id);
   }
 }

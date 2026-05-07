@@ -29,7 +29,7 @@ export class DrizzleNoteRepository implements INoteRepository {
     return note ?? null;
   }
 
-  async remove(id: number): Promise<boolean> {
+  async delete(id: number): Promise<boolean> {
     const [result] = await this.db.delete(notes).where(eq(notes.id, id)).returning();
     return result != null;
   }
@@ -78,7 +78,8 @@ export class DrizzleNoteRepository implements INoteRepository {
     return map;
   }
 
-  async search(pattern: string): Promise<Note[]> {
+  async searchByQuery(query: string): Promise<Note[]> {
+    const pattern = `%${query}%`;
     return this.db
       .select()
       .from(notes)

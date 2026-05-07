@@ -67,7 +67,7 @@ describe("tag use cases", () => {
       const tagName = `orphan-${Date.now()}`;
       await addTagToNote(tagRepository, note.id, tagName);
       // タグとノートの紐付けを解除して孤立させる
-      await tagRepository.clearByNoteId(note.id);
+      await tagRepository.unlinkAllByNoteId(note.id);
       await removeOrphanTag(tagRepository, tagName);
 
       const found = await tagRepository.findByName(tagName);
