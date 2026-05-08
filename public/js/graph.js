@@ -16,7 +16,7 @@ var CAMERA = {
   DISTANCE:          300,   // ノードへのカメラ距離（共通）
   MINI_PADDING:      10,    // ミニグラフの zoomToFit パディング (px)
   DURATION:          4000,  // カメラアニメーション時間（共通, ms）
-  DELAY:             100,   // カメラ移動開始までの待機（共通, ms）
+  DELAY:             2000,  // カメラ移動開始までの待機（共通, ms）— COOLDOWN 終了後に発火させる
   INIT_FAR_Z_FACTOR: 400,   // 初期俯瞰カメラ Z 距離の係数 (cbrt(nodes) * factor)
 };
 
@@ -25,7 +25,7 @@ var FORCE = {
   ALPHA_DECAY:     0.02,   // シミュレーション冷却速度
   VELOCITY_DECAY:  0.3,    // 速度減衰（摩擦）
   WARMUP_TICKS:    100,    // 初回描画前の物理演算回数
-  COOLDOWN_TICKS:  200,    // レンダリング開始後のシミュレーション上限（0 は避ける）
+  COOLDOWN_TICKS:  110,    // レンダリング開始後のシミュレーション上限（≒1.8s @60fps、CAMERA.DELAY より短く保つ）
   CHARGE_STRENGTH: -60,    // ノード間の反発力
   LINK_DISTANCE:   50,     // リンクの自然長
 };
