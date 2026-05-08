@@ -4,7 +4,7 @@ import type { INoteRepository } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 const SEARCH_LIMIT = 50;
 
 export class DrizzleNoteRepository implements INoteRepository {
