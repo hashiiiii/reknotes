@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../../config";
 import { createNoteRepository, createTagRepository } from "../../infrastructure/container";
 import { createNote } from "../note/create-note";
-import { addTagToNote } from "./add-tag-to-note";
 import { addTagsToNote } from "./add-tags-to-note";
 import { removeOrphanTag } from "./remove-orphan-tag";
 
@@ -11,30 +10,34 @@ const noteRepository = createNoteRepository(config);
 const tagRepository = createTagRepository(config);
 
 describe("tag use cases", () => {
-  describe("addTagToNote", () => {
+  describe("addTagsToNote", () => {
     test("ノートにタグを追加できる", async () => {
       const note = await createNote(noteRepository, "タグ追加テスト", "本文");
-      const tag = await addTagToNote(tagRepository, note.id, "JavaScript");
-      expect(tag.id).toBeGreaterThan(0);
-      expect(tag.name).toBe("javascript");
+      await addTagsToNote(tagRepository, note.id, ["JavaScript"]);
+      const tags = await noteRepository.findTagsByNoteId(note.id);
+      expect(tags).toContain("javascript");
     });
 
     test("タグ名が正規化される（大文字→小文字、前後空白除去）", async () => {
       const note = await createNote(noteRepository, "正規化テスト", "本文");
-      const tag = await addTagToNote(tagRepository, note.id, "  TypeScript  ");
-      expect(tag.name).toBe("typescript");
+      await addTagsToNote(tagRepository, note.id, ["  TypeScript  "]);
+      const tags = await noteRepository.findTagsByNoteId(note.id);
+      expect(tags).toContain("typescript");
     });
 
-    test("同じタグ名で findOrCreate すると同一タグが返る", async () => {
+    test("同じタグ名は別ノートで再利用される（findOrCreateMany）", async () => {
       const note1 = await createNote(noteRepository, "重複テスト1", "本文");
       const note2 = await createNote(noteRepository, "重複テスト2", "本文");
-      const tag1 = await addTagToNote(tagRepository, note1.id, "rust");
-      const tag2 = await addTagToNote(tagRepository, note2.id, "rust");
-      expect(tag1.id).toBe(tag2.id);
+      await addTagsToNote(tagRepository, note1.id, ["rust"]);
+      await addTagsToNote(tagRepository, note2.id, ["rust"]);
+      const tag1 = await tagRepository.findByName("rust");
+      expect(tag1).not.toBeNull();
+      const tags1 = await noteRepository.findTagsByNoteId(note1.id);
+      const tags2 = await noteRepository.findTagsByNoteId(note2.id);
+      expect(tags1).toContain("rust");
+      expect(tags2).toContain("rust");
     });
-  });
 
-  describe("addTagsToNote", () => {
     test("複数タグを一括追加できる", async () => {
       const note = await createNote(noteRepository, "一括追加テスト", "本文");
       await addTagsToNote(tagRepository, note.id, ["Go", "Docker", "K8s"]);
@@ -65,7 +68,7 @@ describe("tag use cases", () => {
     test("ノートに紐づかない孤立タグが削除される", async () => {
       const note = await createNote(noteRepository, "孤立タグテスト", "本文");
       const tagName = `orphan-${Date.now()}`;
-      await addTagToNote(tagRepository, note.id, tagName);
+      await addTagsToNote(tagRepository, note.id, [tagName]);
       // タグとノートの紐付けを解除して孤立させる
       await tagRepository.unlinkAllByNoteId(note.id);
       await removeOrphanTag(tagRepository, tagName);
@@ -77,7 +80,7 @@ describe("tag use cases", () => {
     test("ノートに紐づいているタグは削除されない", async () => {
       const note = await createNote(noteRepository, "非孤立タグテスト", "本文");
       const tagName = `not-orphan-${Date.now()}`;
-      await addTagToNote(tagRepository, note.id, tagName);
+      await addTagsToNote(tagRepository, note.id, [tagName]);
       await removeOrphanTag(tagRepository, tagName);
 
       const found = await tagRepository.findByName(tagName);
