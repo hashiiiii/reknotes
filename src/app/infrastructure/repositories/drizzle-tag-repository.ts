@@ -8,15 +8,19 @@ export class DrizzleTagRepository implements ITagRepository {
   constructor(private db: DrizzleDb) {}
 
   async findOrCreateMany(names: string[]): Promise<Tag[]> {
-    if (names.length === 0) return [];
-    // ON CONFLICT DO NOTHING + SELECT の2クエリ構成。
-    // DO NOTHING は RETURNING で衝突行を返さないため、1クエリ化するには
-    // DO UPDATE SET name = EXCLUDED.name（no-op update）が必要になるが、可読性を優先して2クエリを許容する。
-    await this.db
-      .insert(tags)
-      .values(names.map((name) => ({ name })))
-      .onConflictDoNothing();
-    return this.db.select().from(tags).where(inArray(tags.name, names));
+    const unique = Array.from(new Set(names));
+    if (unique.length === 0) return [];
+    // INSERT (ON CONFLICT DO NOTHING) と SELECT の2クエリ構成。
+    // DO NOTHING は RETURNING で衝突行を返さないため、SELECT で再取得する必要がある。
+    // 2クエリの間に他プロセスから DELETE されると SELECT が空になり呼び出し側のリンク漏れに繋がるため、
+    // transaction で原子性を保証する。
+    return this.db.transaction(async (tx) => {
+      await tx
+        .insert(tags)
+        .values(unique.map((name) => ({ name })))
+        .onConflictDoNothing();
+      return tx.select().from(tags).where(inArray(tags.name, unique));
+    });
   }
 
   async findByName(name: string): Promise<Tag | null> {

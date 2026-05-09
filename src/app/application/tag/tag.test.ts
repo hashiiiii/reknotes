@@ -30,12 +30,14 @@ describe("tag use cases", () => {
       const note2 = await createNote(noteRepository, "重複テスト2", "本文");
       await addTagsToNote(tagRepository, note1.id, ["rust"]);
       await addTagsToNote(tagRepository, note2.id, ["rust"]);
-      const tag1 = await tagRepository.findByName("rust");
-      expect(tag1).not.toBeNull();
       const tags1 = await noteRepository.findTagsByNoteId(note1.id);
       const tags2 = await noteRepository.findTagsByNoteId(note2.id);
       expect(tags1).toContain("rust");
       expect(tags2).toContain("rust");
+      // tags テーブルに "rust" 行が1つしか存在しないことを確認（重複行が挿入されていないこと）
+      const allTags = await tagRepository.findAll();
+      const rustRows = allTags.filter((t) => t.name === "rust");
+      expect(rustRows.length).toBe(1);
     });
 
     test("複数タグを一括追加できる", async () => {
