@@ -1,9 +1,9 @@
 import type { Tag } from "./tag";
 
 export interface ITagRepository {
-  findOrCreate(name: string): Promise<Tag>;
+  findOrCreateMany(names: string[]): Promise<Tag[]>;
   findByName(name: string): Promise<Tag | null>;
-  linkToNote(noteId: number, tagId: number): Promise<void>;
+  linkManyToNote(noteId: number, tagIds: number[]): Promise<void>;
   unlinkAllByNoteId(noteId: number): Promise<void>;
   findAll(): Promise<Tag[]>;
   deleteIfOrphan(tagId: number): Promise<void>;
