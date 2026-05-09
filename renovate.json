@@ -10,7 +10,7 @@
   "rangeStrategy": "bump",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 0,
-  "minimumReleaseAge": "3 days",
+  "minimumReleaseAge": "7 days",
   "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,
