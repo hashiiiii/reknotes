@@ -13,7 +13,7 @@ const pageRoutes = new Hono<AppEnv>();
 pageRoutes.get("/", async (c) => {
   const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository);
   const html = await c.var.render("home", {
-    title: "Home",
+    title: "home",
     notes,
     hasMore,
     nextCursor,
@@ -46,13 +46,13 @@ pageRoutes.get("/notes/:id", async (c) => {
 pageRoutes.get("/search", async (c) => {
   const query = c.req.query("q") ?? "";
   const results = query ? await searchNotes(c.var.noteRepository, query) : [];
-  const html = await c.var.render("search", { title: "検索", query, results });
+  const html = await c.var.render("search", { title: "search", query, results });
   return c.html(html);
 });
 
 // グラフページ
 pageRoutes.get("/graph", async (c) => {
-  const html = await c.var.render("graph", { title: "Graph", containerClass: "container-full" });
+  const html = await c.var.render("graph", { title: "graph", containerClass: "container-full" });
   return c.html(html);
 });
 

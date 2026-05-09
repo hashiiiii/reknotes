@@ -42,4 +42,7 @@ for (const file of appScripts) {
 cpSync("node_modules/zenn-content-css/lib/index.css", join(DIST, "css", "zenn.css"));
 cpSync("public/css/style.css", join(DIST, "css", "style.css"));
 
+// ── 4. Favicon コピー ──
+cpSync("public/favicon.svg", join(DIST, "favicon.svg"));
+
 console.log("✓ Build complete → dist/");
