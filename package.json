@@ -20,7 +20,7 @@
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.18",
     "htmx.org": "^2.0.8",
-    "liquidjs": "^10.21.0",
+    "liquidjs": "^10.25.7",
     "postgres": "^3.4.8",
     "zenn-content-css": "^0.4.6",
     "zenn-markdown-html": "^0.1.162"
