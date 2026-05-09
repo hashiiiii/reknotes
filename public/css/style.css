@@ -163,10 +163,6 @@ body {
 .search-count { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; }
 .no-results { color: var(--muted); text-align: center; padding: 2rem; }
 
-/* Search */
-.input-search { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.6rem 1rem; font-size: 1rem; font-family: inherit; background: var(--bg-secondary); color: var(--fg); }
-.input-search:focus { outline: 2px solid var(--accent); border-color: transparent; }
-
 /* Graph */
 .graph-layout { display: flex; width: 100%; height: calc(100vh - 60px); position: relative; background: #08080f; }
 .graph-main { flex: 1; min-width: 0; overflow: hidden; }
@@ -283,5 +279,4 @@ mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; bord
 
   /* Search input */
   .nav-search-input { padding: 0.55rem 0.9rem; font-size: 0.9rem; min-height: 44px; }
-  .input-search { min-height: 44px; }
 }

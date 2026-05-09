@@ -5,7 +5,6 @@ import { getNoteSubgraph } from "../../application/graph/get-note-subgraph";
 import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
-import { searchNotes } from "../../application/search/search-notes";
 
 const pageRoutes = new Hono<AppEnv>();
 
@@ -39,14 +38,6 @@ pageRoutes.get("/notes/:id", async (c) => {
     tags,
     graphData,
   });
-  return c.html(html);
-});
-
-// 検索ページ
-pageRoutes.get("/search", async (c) => {
-  const query = c.req.query("q") ?? "";
-  const results = query ? await searchNotes(c.var.noteRepository, query) : [];
-  const html = await c.var.render("search", { title: "search", query, results });
   return c.html(html);
 });
 
