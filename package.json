@@ -18,7 +18,7 @@
     "@huggingface/transformers": "^3.8.1",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.7.0",
+    "hono": "^4.12.18",
     "htmx.org": "^2.0.8",
     "liquidjs": "^10.21.0",
     "postgres": "^3.4.8",
