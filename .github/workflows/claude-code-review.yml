@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: React to trigger comment
         if: github.event_name == 'issue_comment'
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             await github.rest.reactions.createForIssueComment({
@@ -53,7 +53,7 @@ jobs:
 
       - name: Get PR info
         id: pr-info
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             let pr;
@@ -76,7 +76,7 @@ jobs:
           fetch-depth: 1
 
       - name: Delete previous bot comments
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const owner = context.repo.owner;
@@ -125,7 +125,7 @@ jobs:
 
       # Requires: Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"
       - name: Post approval if no inline comments
-        uses: actions/github-script@v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const owner = context.repo.owner;
