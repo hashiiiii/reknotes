@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17.9
+    image: postgres:18.2@sha256:a688ae5c99f86c1424e046ace0de890608cc0ddb5ec8ef72a6ff8305fdc8f4d2
     environment:
       POSTGRES_USER: reknotes
       POSTGRES_PASSWORD: reknotes
