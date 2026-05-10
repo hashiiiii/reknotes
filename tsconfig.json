@@ -1,4 +1,9 @@
 {
+  // reknotes では実行時のトランスパイルを Bun が担当し、tsc は bun run check の型チェック （tsc --noEmit） 専用として使う。
+  // そのため tsconfig の target は実行ファイルの出力には効かず、型チェック時に許容する構文に影響する。
+  // Bun の組み込みトランスパイラは JavaScriptCore が解釈できる最新の JS をほぼそのまま通す。
+  // reknotes では renovate で Bun を最新に追従させる運用を想定しているため
+  // 型チェック側も ESNext にしておかないと、ランタイムでは動く構文が型チェックで弾かれてしまう。
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -8,5 +13,6 @@
     "outDir": "dist",
     "types": ["bun"]
   },
+  // ルートの drizzle.config.ts を拾うために *.ts を書いておく
   "include": ["*.ts", "src/**/*", "scripts/**/*"],
 }
