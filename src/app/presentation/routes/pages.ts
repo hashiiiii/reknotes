@@ -26,7 +26,7 @@ pageRoutes.get("/notes/:id", async (c) => {
   const note = await getNote(c.var.noteRepository, id);
   if (!note) return c.notFound();
 
-  const bodyHtml = markdownToHtml(note.body);
+  const bodyHtml = await markdownToHtml(note.body);
   const tags = await getNoteTags(c.var.noteRepository, id);
   const subgraph = await getNoteSubgraph(c.var.graphRepository, id);
   const graphData = subgraph.nodes.length > 0 ? JSON.stringify(subgraph) : null;

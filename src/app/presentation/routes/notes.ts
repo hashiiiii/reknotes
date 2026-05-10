@@ -26,7 +26,7 @@ noteRoutes.post("/preview", async (c) => {
   const body = String(form.body ?? "");
   if (body.length > MAX_BODY_LENGTH) return c.text("本文が長すぎます", 400);
   if (!body.trim()) return c.html('<p style="color:var(--muted)">本文を入力してください</p>');
-  const html = markdownToHtml(body);
+  const html = await markdownToHtml(body);
   return c.html(`<div class="znc">${html}</div>`);
 });
 
