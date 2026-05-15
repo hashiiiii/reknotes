@@ -45,4 +45,27 @@ describe("search use cases", () => {
     const results = await searchNotes(noteRepository, "zzz-nonexistent-xyz-99999");
     expect(results).toEqual([]);
   });
+
+  // GHSA-f36f-v24r-855m
+  test("ハイライト対象のタイトルに含まれる < > は HTML エスケープされる", async () => {
+    const marker = `xss-title-${Date.now()}`;
+    const title = `${marker}<script>alert(1)</script>`;
+    await createNote(noteRepository, title, "本文");
+    const results = await searchNotes(noteRepository, marker);
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    const out = results[0].highlightedTitle;
+    expect(out).not.toContain("<script>");
+    expect(out).toContain("&lt;script&gt;");
+  });
+
+  test("ハイライト対象の本文に含まれる < > は HTML エスケープされる", async () => {
+    const marker = `xss-body-${Date.now()}`;
+    const body = `prefix ${marker} <img src=x onerror=alert(1)> suffix`;
+    await createNote(noteRepository, "タイトル", body);
+    const results = await searchNotes(noteRepository, marker);
+    expect(results.length).toBeGreaterThanOrEqual(1);
+    const out = results[0].highlightedBody;
+    expect(out).not.toContain("<img");
+    expect(out).toContain("&lt;img");
+  });
 });
