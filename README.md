@@ -43,7 +43,7 @@ Open `http://localhost:3000` in your browser.
 
 - **Runtime** — [Bun](https://bun.sh/) >= 1.3, TypeScript (strict)
 - **Web** — [Hono](https://hono.dev/) + [LiquidJS](https://liquidjs.com/) + [htmx](https://htmx.org/)
-- **Database** — [PostgreSQL](https://www.postgresql.org/) 17 + [Drizzle ORM](https://orm.drizzle.team/)
+- **Database** — [PostgreSQL](https://www.postgresql.org/) 18 + [Drizzle ORM](https://orm.drizzle.team/)
 - **Embeddings** — [HuggingFace Transformers.js](https://huggingface.co/docs/transformers.js) (local) / e.g. [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) (remote)
 - **Visualization** — [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/)
 - **Storage** — S3-compatible: [MinIO](https://min.io/) (local) / e.g. [Cloudflare R2](https://developers.cloudflare.com/r2/) (remote)
@@ -59,11 +59,13 @@ Open `http://localhost:3000` in your browser.
 | `bun run test` | Runs tests. |
 | `bun run migrate <mode>` | Runs database migrations. See [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) for details. |
 | `bun run seed --count <N>` | Inserts N sample notes. |
+| `bun run dump` | Backs up a snapshot of the DB and object storage to a backup bucket. See [`docs/BACKUP.md`](./docs/BACKUP.md) for details. |
+| `bun run restore --date <YYYY-MM-DD>` | Restores a backup into the DB / S3 pointed to by the current env. |
 
 ## Project Structure
 
 ```
-├── scripts/                # CLI (build, setup, seed, migration)
+├── scripts/                # CLI (build, setup, seed, migration, backup)
 ├── public/                 # Static assets (CSS, JS)
 ├── dist/                   # Built assets
 ├── docs/                   # Documentation

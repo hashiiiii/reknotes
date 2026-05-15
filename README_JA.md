@@ -43,7 +43,7 @@ bun run dev
 
 - **Runtime** — [Bun](https://bun.sh/) >= 1.3、TypeScript (strict)
 - **Web** — [Hono](https://hono.dev/) + [LiquidJS](https://liquidjs.com/) + [htmx](https://htmx.org/)
-- **Database** — [PostgreSQL](https://www.postgresql.org/) 17 + [Drizzle ORM](https://orm.drizzle.team/)
+- **Database** — [PostgreSQL](https://www.postgresql.org/) 18 + [Drizzle ORM](https://orm.drizzle.team/)
 - **Embeddings** — [HuggingFace Transformers.js](https://huggingface.co/docs/transformers.js) (local) / e.g. [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) (remote)
 - **Visualization** — [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/)
 - **Storage** — S3 互換: [MinIO](https://min.io/) (local) / e.g. [Cloudflare R2](https://developers.cloudflare.com/r2/) (remote)
@@ -59,11 +59,13 @@ bun run dev
 | `bun run test` | テストを実行します。 |
 | `bun run migrate <mode>` | DB マイグレーションを実行します。詳細は [`docs/MIGRATIONS.md`](./docs/MIGRATIONS.md) を参照してください。 |
 | `bun run seed --count <N>` | N 件のサンプルノートを投入します。 |
+| `bun run dump` | DB とオブジェクトストレージのスナップショットを backup bucket にバックアップします。詳細は [`docs/BACKUP.md`](./docs/BACKUP.md) を参照してください。 |
+| `bun run restore --date <YYYY-MM-DD>` | 現在の env (`DATABASE_URL` / `S3_*`) が指す DB / S3 にバックアップを復元します。 |
 
 ## Project Structure
 
 ```
-├── scripts/                # CLI (build, setup, seed, migration)
+├── scripts/                # CLI (build, setup, seed, migration, backup)
 ├── public/                 # 静的アセット (CSS, JS)
 ├── dist/                   # ビルド成果物
 ├── docs/                   # ドキュメント

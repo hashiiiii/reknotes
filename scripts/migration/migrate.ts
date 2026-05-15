@@ -1,4 +1,4 @@
-import type { Result } from "../../src/app/application/migration/_result";
+import type { Result } from "../../src/app/application/_result";
 import { applyMigration } from "../../src/app/application/migration/apply-migration";
 import { bootstrapMigration } from "../../src/app/application/migration/bootstrap-migration";
 import { checkMigration } from "../../src/app/application/migration/check-migration";

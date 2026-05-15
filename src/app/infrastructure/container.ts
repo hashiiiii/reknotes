@@ -1,4 +1,5 @@
 import { S3Client } from "@aws-sdk/client-s3";
+import type { IDatabaseBackupProvider } from "../application/port/database-backup-provider";
 import type { IEmbeddingProvider } from "../application/port/embedding-provider";
 import type { IHookProvider } from "../application/port/hook-provider";
 import type { IMigrationProvider } from "../application/port/migration-provider";
@@ -13,6 +14,7 @@ import { CloudflareEmbeddingProvider } from "./providers/cloudflare-embedding-pr
 import { DrizzleKitSchemaSyncProvider } from "./providers/drizzle-kit-schema-sync-provider";
 import { FsHookProvider } from "./providers/fs-hook-provider";
 import { LocalEmbeddingProvider } from "./providers/local-embedding-provider";
+import { PgDatabaseBackupProvider } from "./providers/pg-database-backup-provider";
 import { PostgresMigrationProvider } from "./providers/postgres-migration-provider";
 import { S3StorageProvider } from "./providers/s3-storage-provider";
 import { DrizzleGraphRepository } from "./repositories/drizzle-graph-repository";
@@ -21,6 +23,15 @@ import { DrizzleTagRepository } from "./repositories/drizzle-tag-repository";
 
 const HOOKS_DIR = "scripts/migration/hooks";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
+
+// pg_dump は postgres の docker image に内包されています。
+// また pg_dump は自分よりバージョンの高い postgres から dump できないという制約があります。
+// そのため、常に local の image を watch して、バージョンが勝手に揃うように対応する。
+// remote に関しては Neon は free tier だと postgres アップデートできないようなので問題にならない。
+///////// 下記の文言は renovate で regexp しているので消さないこと /////////
+// renovate: datasource=docker depName=postgres
+///////////////////////////////////////////////////////////////////
+const PG_IMAGE = "postgres:18.2@sha256:a688ae5c99f86c1424e046ace0de890608cc0ddb5ec8ef72a6ff8305fdc8f4d2";
 
 ///////////////
 // Singleton
@@ -86,4 +97,19 @@ export function createSchemaSyncProvider(config: Config): ISchemaSyncProvider {
 
 export function createHookProvider(): IHookProvider {
   return new FsHookProvider(HOOKS_DIR);
+}
+
+// Primary 側はシングルトンで持つが、Backup 側は参照頻度が低いため毎回 new する。
+export function createBackupStorageProvider(config: Config): IStorageProvider {
+  const s3 = new S3Client({
+    region: "auto",
+    endpoint: config.backupS3Endpoint,
+    credentials: { accessKeyId: config.backupS3AccessKeyId, secretAccessKey: config.backupS3SecretAccessKey },
+    forcePathStyle: true,
+  });
+  return new S3StorageProvider(s3, config.backupS3BucketName);
+}
+
+export function createDatabaseBackupProvider(config: Config): IDatabaseBackupProvider {
+  return new PgDatabaseBackupProvider(config.databaseUrl, PG_IMAGE, config.deployment);
 }

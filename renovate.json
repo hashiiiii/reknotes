@@ -17,6 +17,15 @@
     "enabled": true,
     "schedule": ["before 9am on monday"]
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["src/app/infrastructure/container.ts"],
+      "matchStrings": [
+        "// renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)\\s+const \\w+ = \"[^:\"]+:(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\""
+      ]
+    }
+  ],
   "packageRules": [
     {
       "matchManagers": ["bun"],
@@ -41,7 +50,7 @@
       "addLabels": ["github-actions"]
     },
     {
-      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchManagers": ["dockerfile", "docker-compose", "custom.regex"],
       "groupName": "docker images",
       "addLabels": ["docker"]
     }

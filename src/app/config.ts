@@ -11,6 +11,10 @@ export type Config = {
   s3AccessKeyId: string;
   s3SecretAccessKey: string;
   s3BucketName: string;
+  backupS3Endpoint: string;
+  backupS3AccessKeyId: string;
+  backupS3SecretAccessKey: string;
+  backupS3BucketName: string;
 };
 
 function requireEnv(name: string): string {
@@ -40,14 +44,18 @@ export function loadConfig(): Config {
   const databaseUrl = deployment === "remote" ? baseUrl : `${baseUrl}/reknotes_${environment}`;
 
   return {
-    deployment: deployment,
-    environment: environment,
-    databaseUrl: databaseUrl,
+    deployment,
+    environment,
+    databaseUrl,
     cloudflareAccountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
     cloudflareApiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
     s3Endpoint: requireEnv("S3_ENDPOINT"),
     s3AccessKeyId: requireEnv("S3_ACCESS_KEY_ID"),
     s3SecretAccessKey: requireEnv("S3_SECRET_ACCESS_KEY"),
     s3BucketName: requireEnv("S3_BUCKET_NAME"),
+    backupS3Endpoint: requireEnv("BACKUP_S3_ENDPOINT"),
+    backupS3AccessKeyId: requireEnv("BACKUP_S3_ACCESS_KEY_ID"),
+    backupS3SecretAccessKey: requireEnv("BACKUP_S3_SECRET_ACCESS_KEY"),
+    backupS3BucketName: requireEnv("BACKUP_S3_BUCKET_NAME"),
   };
 }

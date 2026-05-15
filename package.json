@@ -9,12 +9,15 @@
     "dev": "bun run build && bun run --watch src/index.ts",
     "migrate": "bun run scripts/migration/migrate.ts",
     "seed": "bun run scripts/seed/seed.ts",
+    "dump": "bun run scripts/backup/dump.ts",
+    "restore": "bun run scripts/backup/restore.ts",
     "check": "bunx biome check --write && bunx tsc --noEmit",
     "test": "ENVIRONMENT=test bun test"
   },
   "dependencies": {
     "3d-force-graph": "^1.80.0",
-    "@aws-sdk/client-s3": "^3.1045.0",
+    "@aws-sdk/client-s3": "^3.1047.0",
+    "@aws-sdk/lib-storage": "^3.1047.0",
     "@huggingface/transformers": "^4.2.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
