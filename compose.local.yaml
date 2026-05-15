@@ -10,7 +10,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   minio:
-    image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z
+    image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z@sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98
     ports:
       - "9000:9000"
       - "9001:9001"
