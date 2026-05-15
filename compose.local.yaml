@@ -5,9 +5,9 @@ services:
       POSTGRES_USER: reknotes
       POSTGRES_PASSWORD: reknotes
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
 
   minio:
     image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z@sha256:a72bf37c235a83a73890d2a46c5b36801fed61c335175e0396070bf84a8bbb98

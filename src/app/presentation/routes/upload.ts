@@ -1,10 +1,11 @@
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import type { AppEnv } from "../..";
 import { uploadFile } from "../../application/file/upload-file";
 
 const uploadRoutes = new Hono<AppEnv>();
 
-uploadRoutes.post("/", async (c) => {
+uploadRoutes.post("/", bodyLimit({ maxSize: 50 * 1024 * 1024 }), async (c) => {
   const body = await c.req.parseBody();
   const file = body.file;
 

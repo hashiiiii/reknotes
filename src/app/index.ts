@@ -70,12 +70,11 @@ export function createApp(
   app.use(compress());
   app.use(timeout(30_000));
   app.use(etag());
-  app.use(bodyLimit({ maxSize: 256 * 1024 }));
+  // /api/upload は upload route 側で 50MB の bodyLimit を bind しているので、
+  // こちらは除外する (グローバル制限を先に評価すると小さい上限で 413 になる)
+  const globalBodyLimit = bodyLimit({ maxSize: 1 * 1024 * 1024 });
+  app.use((c, next) => (c.req.path.startsWith("/api/upload") ? next() : globalBodyLimit(c, next)));
   app.use(secureHeaders());
-
-  // アップロード用
-  // 50MB まで許可する
-  app.use("/api/upload/*", bodyLimit({ maxSize: 50 * 1024 * 1024 }));
 
   // ルーティングで利用するリポジトリやプロバイダをコンテキストに登録するミドルウェア
   app.use("*", async (c, next) => {
