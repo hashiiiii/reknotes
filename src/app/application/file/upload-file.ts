@@ -1,15 +1,7 @@
 import type { IStorageProvider } from "../port/storage-provider";
+import { isAllowedContentType } from "./_allowed-types";
 import { buildFileMarkdown, buildFileUrl } from "./_file-url";
 
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "image/svg+xml",
-  "video/mp4",
-  "video/webm",
-];
 const MAX_SIZE = 50 * 1024 * 1024;
 
 export interface UploadResult {
@@ -21,7 +13,7 @@ export interface UploadResult {
 export type UploadOutcome = { ok: true; result: UploadResult } | { ok: false; error: string };
 
 export async function uploadFile(storageProvider: IStorageProvider, file: File): Promise<UploadOutcome> {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isAllowedContentType(file.type)) {
     return { ok: false, error: "対応していないファイル形式です" };
   }
   if (file.size > MAX_SIZE) {
