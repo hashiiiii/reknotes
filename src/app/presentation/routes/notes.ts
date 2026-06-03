@@ -9,6 +9,7 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
+import { parseId } from "./_parse-id";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -75,7 +76,14 @@ noteRoutes.post("/", writeLimiter, async (c) => {
 
 // ノート一覧（無限スクロール用）
 noteRoutes.get("/", async (c) => {
-  const cursor = c.req.query("cursor") ? Number(c.req.query("cursor")) : undefined;
+  // cursor が指定されている場合のみ検証する。未指定なら従来どおり undefined。
+  const cursorRaw = c.req.query("cursor");
+  let cursor: number | undefined;
+  if (cursorRaw) {
+    const parsed = parseId(cursorRaw);
+    if (parsed === null) return c.text("cursor が不正です", 400);
+    cursor = parsed;
+  }
   const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository, cursor);
 
   let html = "";
@@ -90,7 +98,8 @@ noteRoutes.get("/", async (c) => {
 
 // ノートカード単体の再描画（AI処理後のUI更新用）
 noteRoutes.get("/:id/card", async (c) => {
-  const id = Number(c.req.param("id"));
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("ID が不正です", 400);
   const note = await getNote(c.var.noteRepository, id);
   if (!note) return c.notFound();
 
@@ -104,7 +113,8 @@ noteRoutes.get("/:id/card", async (c) => {
 
 // ノート更新
 noteRoutes.put("/:id", writeLimiter, async (c) => {
-  const id = Number(c.req.param("id"));
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("ID が不正です", 400);
   const form = await c.req.parseBody();
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
@@ -127,7 +137,8 @@ noteRoutes.put("/:id", writeLimiter, async (c) => {
 
 // ノート削除
 noteRoutes.delete("/:id", async (c) => {
-  const id = Number(c.req.param("id"));
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("ID が不正です", 400);
   const deleted = await deleteNote(c.var.noteRepository, c.var.tagRepository, c.var.storageProvider, id);
 
   if (!deleted) return c.notFound();

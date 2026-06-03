@@ -5,6 +5,7 @@ import { getNoteSubgraph } from "../../application/graph/get-note-subgraph";
 import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
+import { parseId } from "./_parse-id";
 
 const pageRoutes = new Hono<AppEnv>();
 
@@ -22,7 +23,8 @@ pageRoutes.get("/", async (c) => {
 
 // ノート詳細
 pageRoutes.get("/notes/:id", async (c) => {
-  const id = Number(c.req.param("id"));
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("Invalid ID", 400);
   const note = await getNote(c.var.noteRepository, id);
   if (!note) return c.notFound();
 
