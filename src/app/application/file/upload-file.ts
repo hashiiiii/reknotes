@@ -1,9 +1,7 @@
 import type { IStorageProvider } from "../port/storage-provider";
+import { isAllowedContentType } from "./_allowed-types";
 import { buildFileMarkdown, buildFileUrl } from "./_file-url";
 
-// SVG は同一オリジンの /api/files から配信した瞬間にスクリプトが実行されうるため
-// 許可しない (GHSA-j2m9-c6gf-6vfx)。
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "video/mp4", "video/webm"];
 const MAX_SIZE = 50 * 1024 * 1024;
 
 export interface UploadResult {
@@ -15,7 +13,7 @@ export interface UploadResult {
 export type UploadOutcome = { ok: true; result: UploadResult } | { ok: false; error: string };
 
 export async function uploadFile(storageProvider: IStorageProvider, file: File): Promise<UploadOutcome> {
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isAllowedContentType(file.type)) {
     return { ok: false, error: "対応していないファイル形式です" };
   }
   if (file.size > MAX_SIZE) {
