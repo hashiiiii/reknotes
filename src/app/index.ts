@@ -24,12 +24,15 @@ import { uploadRoutes } from "./presentation/routes/upload";
 
 // LiquidJS エンジン初期化
 const viewsDir = join(import.meta.dir, "presentation/views");
+// outputEscape: 'escape' を有効化してテンプレ全体をデフォルト HTML エスケープ。
+// 意図的に HTML を出力したい変数は `| raw` を明示する。
 const engine = new Liquid({
   root: viewsDir,
   layouts: join(viewsDir, "layouts"),
   partials: join(viewsDir, "partials"),
   extname: ".liquid",
   cache: true,
+  outputEscape: "escape",
 });
 
 // LiquidJS のカスタムフィルター

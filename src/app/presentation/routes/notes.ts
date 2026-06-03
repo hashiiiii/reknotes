@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { rateLimiter } from "hono-rate-limiter";
 import markdownToHtml from "zenn-markdown-html";
 import type { AppEnv } from "../..";
 import { engine } from "../..";
@@ -20,8 +21,24 @@ function validateNoteInput(title: string, body: string): string | null {
   return null;
 }
 
+// GHSA-72qg-2xg9-547p: embedding 呼び出しや markdown 変換が走る書き込み系を route 単位で絞る。
+// 値は advisory の例 (write 30 / preview 60 req/min) をそのまま採用。
+const writeLimiter = rateLimiter({
+  windowMs: 60_000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  keyGenerator: (c) => c.req.header("x-forwarded-for") ?? "anonymous",
+});
+
+const previewLimiter = rateLimiter({
+  windowMs: 60_000,
+  limit: 60,
+  standardHeaders: "draft-7",
+  keyGenerator: (c) => c.req.header("x-forwarded-for") ?? "anonymous",
+});
+
 // マークダウンプレビュー
-noteRoutes.post("/preview", async (c) => {
+noteRoutes.post("/preview", previewLimiter, async (c) => {
   const form = await c.req.parseBody();
   const body = String(form.body ?? "");
   if (body.length > MAX_BODY_LENGTH) return c.text("本文が長すぎます", 400);
@@ -31,7 +48,7 @@ noteRoutes.post("/preview", async (c) => {
 });
 
 // ノート作成
-noteRoutes.post("/", async (c) => {
+noteRoutes.post("/", writeLimiter, async (c) => {
   const form = await c.req.parseBody();
   const title = String(form.title ?? "");
   const body = String(form.body ?? "");
@@ -86,7 +103,7 @@ noteRoutes.get("/:id/card", async (c) => {
 });
 
 // ノート更新
-noteRoutes.put("/:id", async (c) => {
+noteRoutes.put("/:id", writeLimiter, async (c) => {
   const id = Number(c.req.param("id"));
   const form = await c.req.parseBody();
   const title = String(form.title ?? "");

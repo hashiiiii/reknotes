@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     services: &postgres-service
       postgres:
-        image: postgres:17@sha256:2a0d0fe14825b0939f78a8cad5cd4e6aa68bf94d0e5dd96e24b6d23af4315545
+        image: postgres:18@sha256:8ff36f3c66371cba71d20ceedccfc3de9669a68737607888c4ef0af93abe8e39
         env:
           POSTGRES_USER: reknotes
           POSTGRES_PASSWORD: reknotes
