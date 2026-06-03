@@ -126,6 +126,7 @@ noteRoutes.put("/:id", writeLimiter, async (c) => {
     c.var.noteRepository,
     c.var.tagRepository,
     c.var.embeddingProvider,
+    c.var.storageProvider,
     id,
     title,
     body,
