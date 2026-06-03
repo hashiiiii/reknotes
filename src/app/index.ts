@@ -5,11 +5,14 @@ import { serveStatic } from "hono/bun";
 import { compress } from "hono/compress";
 import { csrf } from "hono/csrf";
 import { etag } from "hono/etag";
+import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { timeout } from "hono/timeout";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { Liquid } from "liquidjs";
+import { buildErrorResponse } from "./_error-handler";
 import type { IEmbeddingProvider } from "./application/port/embedding-provider";
 import type { IStorageProvider } from "./application/port/storage-provider";
 import type { IGraphRepository } from "./domain/graph/graph-repository";
@@ -110,6 +113,27 @@ export function createApp(
   app.route("/api/graph", graphRoutes);
   app.route("/api/upload", uploadRoutes);
   app.route("/api/files", fileRoutes);
+
+  // グローバルエラーハンドラ。
+  // 未設定だと Hono のデフォルトハンドラが例外メッセージ/スタックをクライアントに
+  // 漏らし得るため、ここで一括して握り潰し、汎用 500 のみを返す。
+  app.onError((err, c) => {
+    // HTTPException は意図的に投げられたステータスを尊重してそのまま返す。
+    if (err instanceof HTTPException) {
+      return err.getResponse();
+    }
+
+    // 想定外の例外はサーバ側に requestId とフルスタックを構造化ログとして残す。
+    const requestId = c.get("requestId");
+    console.error(JSON.stringify({ level: "error", requestId, msg: err.message, stack: err.stack }));
+
+    // クライアントにはスタックや元メッセージを含まない汎用 500 を返す。
+    const { status, contentType, body } = buildErrorResponse(err, {
+      requestId,
+      isApi: c.req.path.startsWith("/api"),
+    });
+    return c.body(body, status as ContentfulStatusCode, { "Content-Type": contentType });
+  });
 
   return app;
 }
