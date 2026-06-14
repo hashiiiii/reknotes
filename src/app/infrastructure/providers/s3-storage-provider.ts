@@ -1,12 +1,22 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  type GetObjectCommandOutput,
   PutObjectCommand,
   paginateListObjectsV2,
   type S3Client,
 } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import type { IStorageProvider } from "../../application/port/storage-provider";
+
+// S3/R2/MinIO でキーが存在しないときの GetObject は例外として返る。
+// 「存在しない」は port 契約上 null で表現するため、この種の例外だけを null に変換し、
+// それ以外の障害 (権限・ネットワーク等) は握り潰さず伝播させる (silent fallback を避ける)。
+export function isObjectNotFoundError(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
+  return e.name === "NoSuchKey" || e.name === "NotFound" || e.$metadata?.httpStatusCode === 404;
+}
 
 export class S3StorageProvider implements IStorageProvider {
   constructor(
@@ -48,12 +58,20 @@ export class S3StorageProvider implements IStorageProvider {
   }
 
   async get(key: string): Promise<{ body: ReadableStream; contentType: string } | null> {
-    const object = await this.s3.send(
-      new GetObjectCommand({
-        Bucket: this.bucket,
-        Key: key,
-      }),
-    );
+    let object: GetObjectCommandOutput;
+    try {
+      object = await this.s3.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        }),
+      );
+    } catch (err) {
+      // キー不在は 500 ではなく「無い (null)」として返す。呼び出し側 (files route) は
+      // null を 404 に変換する。それ以外の例外はそのまま投げて 500 にする。
+      if (isObjectNotFoundError(err)) return null;
+      throw err;
+    }
     if (!object.Body) return null;
     return {
       body: object.Body.transformToWebStream(),
