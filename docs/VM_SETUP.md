@@ -2,19 +2,21 @@
 
 ## このドキュメントについて
 
-`DEPLOYMENT=remote` 用の VM を Oracle Cloud Infrastructure (以下 OCI) の Always Free 枠で調達し、`.github/workflows/deploy.yml` から `ssh ubuntu@${VM_HOST}` で `~/reknotes/` 配下の `docker compose -f compose.remote.yaml` が起動できる状態まで持っていく手順をまとめたもの。
+`DEPLOYMENT=remote` 用の VM を用意し、`.github/workflows/deploy.yml` から `ssh ubuntu@${VM_HOST}` で `~/reknotes/` 配下の `docker compose -f compose.remote.yaml` が起動できる状態まで持っていく手順をまとめたもの。
 
-`production` と `development` で VM が 1 台ずつ要るが、手順は同じ。差分 (DOMAIN、GitHub Secrets の登録先 environment、SSH 鍵) は最後にまとめる。設計の背景は `docs/INFRASTRUCTURE.md` を参照。
+要件は **Docker が動く任意の Linux ホスト + 公開 IP + 任意のドメイン 1 つ** だけ。ここでは無料で始められる例として Oracle Cloud Infrastructure (以下 OCI) の Always Free 枠を使うが、`ubuntu` ユーザーで SSH でき 80/443 を公開できる環境なら他の VPS / クラウドでも読み替えられる (ユーザー名が異なる場合は `deploy.yml` の `ssh ubuntu@${VM_HOST}` も合わせて変更すること)。
+
+本ドキュメントは単一環境 (`production` のみ) の構築を基本とする。`development` など複数環境を分けたい場合は VM を環境ごとに用意して同じ手順を繰り返す (差分は最後のセクション参照)。設計の背景は `docs/INFRASTRUCTURE.md` を参照。
 
 ## 前提
 
-- Cloudflare R2 と Neon のアカウントは別途用意済みであること (本ドキュメントは扱わない)
+- S3 互換ストレージ (例: Cloudflare R2) と PostgreSQL (例: Neon) を用意済みであること (本ドキュメントは扱わない)
 - 公開ドメインを取得済みで、A レコードを編集できる DNS provider を持っていること
-- リポジトリの GitHub Settings に `production` と `development` の environment が作成されていること
+- リポジトリの GitHub Settings に、運用する environment (最低 `production`) が作成されていること
 
-## なぜ OCI Free Tier か
+## なぜ例として OCI Free Tier か
 
-- Always Free 枠で AMD shape (`VM.Standard.E2.1.Micro`) が 2 台まで完全無料で立てられる。production と development を 1 台ずつ立てても枠内に収まる。
+- Always Free 枠で AMD shape (`VM.Standard.E2.1.Micro`) が 2 台まで完全無料で立てられる。`production` だけなら 1 台、`development` も分けるなら 2 台で枠内に収まる。
 - 東京リージョンと大阪リージョンがあるので、日本からの遅延が小さい。
 
 ARM Ampere shape (`VM.Standard.A1.Flex`) も Always Free だが、現在の `deploy.yml` は GitHub Actions の `ubuntu-latest` runner (linux/amd64) で build した image を GHCR に push しているため、ARM VM では pull した image が動かない。ARM を使いたい場合は `deploy.yml` の `docker/build-push-action` に `platforms: linux/amd64,linux/arm64` を追加して multi-arch build に切り替えてから本手順に戻ってくる必要がある。本手順は AMD shape 前提で書く。
@@ -221,7 +223,9 @@ docker compose -f compose.remote.yaml logs oauth2-proxy | tail -50
 docker compose -f compose.remote.yaml logs app | tail -50
 ```
 
-## development VM
+## development VM (任意)
+
+複数環境を運用する場合のみ必要。単一環境 (`production` だけ) なら読み飛ばしてよい。
 
 同じ手順をもう一度繰り返す。production と異なるのは次の 4 点だけ。
 
@@ -229,7 +233,7 @@ docker compose -f compose.remote.yaml logs app | tail -50
 |---|---|
 | Compute インスタンス名 | `reknotes-development` (任意) |
 | SSH 鍵ペア | `~/.ssh/reknotes_development` を新規に生成する (production と分ける) |
-| `DOMAIN` | development 用の秘匿サブドメイン (`docs/INFRASTRUCTURE.md` 参照) |
+| `DOMAIN` | development 用の別サブドメイン (`docs/INFRASTRUCTURE.md` 参照) |
 | GitHub Secrets の登録先 | `Settings > Environments > development` |
 
-development では Compute インスタンス作成時の Networking で `Select existing virtual cloud network` を選び、production で作った VCN と subnet を再利用する (Security List も共通で OK)。Always Free 枠の AMD shape は 2 台まで無料なので、これでちょうど枠を使い切る形になる。
+OCI を使う場合、Compute インスタンス作成時の Networking で `Select existing virtual cloud network` を選び、production で作った VCN と subnet を再利用できる (Security List も共通で OK)。OCI Always Free の AMD shape は 2 台まで無料なので、production / development を 1 台ずつでも枠内に収まる。
