@@ -3,26 +3,16 @@ name: CI
 on:
   pull_request:
 
+# test / migrate は DEPLOYMENT=local。Cloudflare / backup / oauth / domain は
+# local では不要なので列挙しない (src/app/config.ts の loadConfig が要求する分だけ)。
 env:
   ENVIRONMENT: test
   DEPLOYMENT: local
-  DOMAIN: localhost
-  GITHUB_REPOSITORY: dummy/reknotes
   DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
   S3_ENDPOINT: dummy
   S3_ACCESS_KEY_ID: dummy
   S3_SECRET_ACCESS_KEY: dummy
   S3_BUCKET_NAME: reknotes-test
-  BACKUP_S3_ENDPOINT: dummy
-  BACKUP_S3_ACCESS_KEY_ID: dummy
-  BACKUP_S3_SECRET_ACCESS_KEY: dummy
-  BACKUP_S3_BUCKET_NAME: reknotes-backup-test
-  CLOUDFLARE_ACCOUNT_ID: dummy
-  CLOUDFLARE_API_TOKEN: dummy
-  OAUTH2_PROXY_CLIENT_ID: dummy
-  OAUTH2_PROXY_CLIENT_SECRET: dummy
-  OAUTH2_PROXY_COOKIE_SECRET: dummy
-  OAUTH2_PROXY_GITHUB_USER: dummy
 
 jobs:
   test:

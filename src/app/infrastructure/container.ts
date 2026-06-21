@@ -5,7 +5,7 @@ import type { IHookProvider } from "../application/port/hook-provider";
 import type { IMigrationProvider } from "../application/port/migration-provider";
 import type { ISchemaSyncProvider } from "../application/port/schema-sync-provider";
 import type { IStorageProvider } from "../application/port/storage-provider";
-import type { Config } from "../config";
+import { type BackupConfig, type Config, requireEnv } from "../config";
 import type { IGraphRepository } from "../domain/graph/graph-repository";
 import type { INoteRepository } from "../domain/note/note-repository";
 import type { ITagRepository } from "../domain/tag/tag-repository";
@@ -49,7 +49,12 @@ export function createEmbeddingProvider(config: Config): IEmbeddingProvider {
   if (embeddingInstance) return embeddingInstance;
 
   if (config.deployment === "remote") {
-    embeddingInstance = new CloudflareEmbeddingProvider(config.cloudflareAccountId, config.cloudflareApiToken);
+    // Cloudflare 認証は remote embedding でのみ使う。ここで初めて要求することで
+    // local / CI / migrate は CLOUDFLARE_* を必要としない。
+    embeddingInstance = new CloudflareEmbeddingProvider(
+      requireEnv("CLOUDFLARE_ACCOUNT_ID"),
+      requireEnv("CLOUDFLARE_API_TOKEN"),
+    );
   } else {
     embeddingInstance = new LocalEmbeddingProvider();
   }
@@ -100,7 +105,7 @@ export function createHookProvider(): IHookProvider {
 }
 
 // Primary 側はシングルトンで持つが、Backup 側は参照頻度が低いため毎回 new する。
-export function createBackupStorageProvider(config: Config): IStorageProvider {
+export function createBackupStorageProvider(config: BackupConfig): IStorageProvider {
   const s3 = new S3Client({
     region: "auto",
     endpoint: config.backupS3Endpoint,
