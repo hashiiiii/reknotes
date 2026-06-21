@@ -4,7 +4,7 @@
 
 `DEPLOYMENT=remote` 用の VM を用意し、`.github/workflows/deploy.yml` から `ssh ubuntu@${VM_HOST}` で `~/reknotes/` 配下の `docker compose -f compose.remote.yaml` が起動できる状態まで持っていく手順をまとめたもの。
 
-要件は **Docker が動く任意の Linux ホスト + 公開 IP + 任意のドメイン 1 つ** だけ。ここでは無料で始められる例として Oracle Cloud Infrastructure (以下 OCI) の Always Free 枠を使うが、`ubuntu` ユーザーで SSH でき 80/443 を公開できる環境なら他の VPS / クラウドでも読み替えられる。
+要件は **Docker が動く任意の Linux ホスト + 公開 IP + 任意のドメイン 1 つ** だけ。ここでは無料で始められる例として Oracle Cloud Infrastructure (以下 OCI) の Always Free 枠を使うが、`ubuntu` ユーザーで SSH でき 80/443 を公開できる環境なら他の VPS / クラウドでも読み替えられる (ユーザー名が異なる場合は `deploy.yml` の `ssh ubuntu@${VM_HOST}` も合わせて変更すること)。
 
 本ドキュメントは単一環境 (`production` のみ) の構築を基本とする。`development` など複数環境を分けたい場合は VM を環境ごとに用意して同じ手順を繰り返す (差分は最後のセクション参照)。設計の背景は `docs/INFRASTRUCTURE.md` を参照。
 
