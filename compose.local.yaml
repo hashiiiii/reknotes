@@ -21,7 +21,10 @@ services:
     volumes:
       - minio-data:/data
 
+  # backup は任意機能。既定の `docker compose up` では起動しない。
+  # `bun run dump` / `restore` をローカルで試すときだけ `--profile backup` を付ける。
   minio-backup:
+    profiles: ["backup"]
     image: pgsty/minio:RELEASE.2026-03-25T00-00-00Z
     ports:
       - "9002:9000"

@@ -1,5 +1,5 @@
 import { dumpBackup } from "../../src/app/application/backup/dump-backup";
-import { loadConfig } from "../../src/app/config";
+import { loadBackupConfig } from "../../src/app/config";
 import {
   createBackupStorageProvider,
   createDatabaseBackupProvider,
@@ -20,7 +20,7 @@ async function run(): Promise<number> {
 
   console.log("Running dump...");
   try {
-    const config = loadConfig();
+    const config = loadBackupConfig();
     if (config.backupS3BucketName === config.s3BucketName) {
       console.error(
         JSON.stringify({ kind: "error", message: "BACKUP_S3_BUCKET_NAME must differ from S3_BUCKET_NAME" }),
