@@ -16,18 +16,18 @@
   },
   "dependencies": {
     "3d-force-graph": "^1.80.0",
-    "@aws-sdk/client-s3": "^3.1072.0",
-    "@aws-sdk/lib-storage": "^3.1072.0",
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/lib-storage": "^3.1075.0",
     "@huggingface/transformers": "^4.2.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.26",
+    "hono": "^4.12.27",
     "hono-rate-limiter": "^0.5.3",
     "htmx.org": "^2.0.10",
-    "liquidjs": "^10.27.0",
+    "liquidjs": "^10.27.1",
     "postgres": "^3.4.9",
-    "zenn-content-css": "^0.5.1",
-    "zenn-markdown-html": "^0.5.1"
+    "zenn-content-css": "^0.5.2",
+    "zenn-markdown-html": "^0.5.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.0",
