@@ -4,8 +4,6 @@
 
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-English | [日本語](README_JA.md)
-
 ## What is reknotes?
 
 reknotes is a self-hostable personal knowledge management tool built around making you want to revisit notes you wrote in the past. Every time you open the 3D knowledge graph, it recommends past notes for you, naturally sparking the feeling of "what did I write about that? let me take a look." ML-powered auto-tagging clusters related notes on the graph, so opening one note quietly pulls you into related ones before you realize it. Run it offline on your own machine, or online with services like Cloudflare + Neon.
