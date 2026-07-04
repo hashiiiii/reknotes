@@ -46,7 +46,6 @@ reknotes は **単一ユーザーの個人用ツール** であり、複数人�
 
 - **Local は認証を持たない**。したがって **localhost 以外に bind しない**こと。LAN や `0.0.0.0` に公開すると、同一ネットワークの第三者が無認証でアクセスできてしまう。LAN を信頼するのではなく、そもそも公開しない。
 - **secret は `.env` (Local) / GitHub Secrets (Remote) で管理する**。コードにハードコードしない。どの変数がどこで管理されるかは `docs/INFRASTRUCTURE.md` の「環境変数の管理」を参照。
-- **Remote の development サブドメインは秘匿だが秘密ではない**。Let's Encrypt の証明書は Certificate Transparency log に記録されるため、サブドメイン名は第三者から discover 可能。秘匿サブドメインは軽い隔離にすぎず、真の境界は oauth2-proxy。
 - ここで挙げた防御は **多層 (defense in depth)** であり、いずれか単独で完全な保証を与えるものではない。新しい route や入力経路を追加するときは、上記の In-scope な脅威が再導入されていないかを確認すること。
 
 ## 脆弱性報告手順

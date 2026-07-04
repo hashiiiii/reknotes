@@ -46,29 +46,20 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 
 | 値 | DB 接続先 (`local`) | DB 接続先 (`remote`) | 主な用途 |
 |---|---|---|---|
-| `development` | `reknotes_development` | `DATABASE_URL` をそのまま | 開発 |
+| `development` | `reknotes_development` | — (リモートでは使わない) | ローカル開発 (`bun run dev`) |
 | `test` | `reknotes_test` | `DATABASE_URL` をそのまま | `bun run test` および CI |
 | `production` | `reknotes_production` | `DATABASE_URL` をそのまま | 本番 |
 
 `local` モードでは `DATABASE_URL` のベース URL に `/reknotes_<environment>` を付与する。`remote` モードでは `DATABASE_URL` をそのまま使う (Neon 側の DB はあらかじめ作成しておく)。実装は `src/app/config.ts` の `loadConfig()`。
 
-複数環境を運用する場合、公開ドメインは環境ごとに分ける (例)。
-
-| 環境 | 公開ドメイン (例) |
-|---|---|
-| `production` | `reknotes.example.com` |
-| `development` | `dev.reknotes.example.com` |
-
-`production` だけを運用するなら development VM / サブドメインは不要で、単一環境で完結する。
-
-(任意) development をさらに隠したい場合は推測しづらいサブドメインに置く運用もある。ただしこれは「URL バー直打ちで偶然到達されないようにする」程度の軽い隔離で、真のセキュリティ境界は oauth2-proxy + 許可 GitHub ユーザーのホワイトリスト。Let's Encrypt が発行する証明書は Certificate Transparency log に記録されるため、サブドメイン名そのものは第三者から discover 可能である点に注意。
+リモート運用は `production` 環境 1 つだけを想定する。公開ドメインも 1 つ (例: `reknotes.example.com`)。
 
 ## サービス構成
 
 ### Application
 
 - 単一の Hono サーバー。エントリーポイントは `src/index.ts`。
-- リモート: `Dockerfile` (2-stage Bun build) で image を作って GHCR に push する。VM 側が `compose.remote.yaml` の `app` 定義に従って GHCR から pull して起動する。VM は環境ごとに別 (production 用と development 用で 1 台ずつ)。
+- リモート: `Dockerfile` (2-stage Bun build) で image を作って GHCR に push する。VM 側が `compose.remote.yaml` の `app` 定義に従って GHCR から pull して起動する。
 - ローカル: `bun run dev` でホスト上に直接起動する。コンテナ化しない。
 
 ### PostgreSQL
@@ -120,7 +111,7 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
   - `GITHUB_REPOSITORY`: `github.repository` コンテキスト
   - `OAUTH2_PROXY_GITHUB_USER`: `github.repository_owner` コンテキスト
 
-GitHub Secrets は **environment-level に分離**されている (`development` / `production`)。`deploy.yml` の `environment: ${{ inputs.environment }}` 指定によって、同じ secret 名でも環境ごとに異なる値が引かれる。VM 接続情報・DB 接続文字列・R2 bucket 名・OAuth App credentials などは環境ごとに別。Cloudflare account 自体は両環境で共有する想定なので `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` のみ repository-level に置いてよい。
+GitHub Secrets は **environment-level** で `production` Environment に格納されている。VM 接続情報・DB 接続文字列・R2 bucket 名・OAuth App credentials などはここに置く。`CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` のみ repository-level に置いてよい。
 
 具体的にどの変数がどちら経由かは `deploy.yml` の `cat > /tmp/.env` ヒアドキュメントが一次資料。
 

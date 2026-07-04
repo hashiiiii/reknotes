@@ -4,13 +4,6 @@ on:
   schedule:
     - cron: "0 18 * * *" # 18:00 UTC = 03:00 JST
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "ENVIRONMENT"
-        type: choice
-        options:
-          - development
-          - production
 
 env:
   TZ: Asia/Tokyo
@@ -18,10 +11,9 @@ env:
 jobs:
   dump:
     runs-on: ubuntu-latest
-    # backup 用の secret は production / development の GitHub Environment に格納されている。
+    # backup 用の secret は production の GitHub Environment に格納されている。
     # environment を宣言しないと secrets.* が空文字に解決され dump が DATABASE_URL is required で落ちる。
-    # schedule (cron) 起動時は inputs.environment が空なので production にフォールバックする。
-    environment: ${{ inputs.environment || 'production' }}
+    environment: production
     permissions:
       contents: read
     steps:
@@ -35,7 +27,7 @@ jobs:
 
       - name: Run dump
         env:
-          ENVIRONMENT: ${{ inputs.environment || 'production' }}
+          ENVIRONMENT: production
           DEPLOYMENT: remote
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
