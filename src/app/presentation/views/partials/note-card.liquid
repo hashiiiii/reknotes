@@ -12,6 +12,8 @@
     <div class="kebab-menu">
       <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
       <div class="kebab-dropdown">
+        <a href="/api/notes/{{ note.id }}/download"
+          onclick="event.stopPropagation(); this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
         <button class="danger"
           hx-delete="/api/notes/{{ note.id }}"
           hx-target="#note-{{ note.id }}"

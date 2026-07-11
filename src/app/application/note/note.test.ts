@@ -4,6 +4,7 @@ import { createNoteRepository, createStorageProvider, createTagRepository } from
 import { addTagsToNote } from "../tag/add-tags-to-note";
 import { createNote } from "./create-note";
 import { deleteNote } from "./delete-note";
+import { downloadNote } from "./download-note";
 import { getNote } from "./get-note";
 import { getNoteTags } from "./get-note-tags";
 import { updateNote } from "./update-note";
@@ -63,6 +64,19 @@ describe("note use cases", () => {
     const result = await noteRepository.list();
     expect(result.notes.length).toBeGreaterThan(0);
     expect(typeof result.hasMore).toBe("boolean");
+  });
+
+  test("downloadNote で本文とサニタイズ済みファイル名が返る", async () => {
+    const note = await createNote(noteRepository, "設計/実装メモ", "# 本文\n\nそのまま返ること。");
+    const result = await downloadNote(noteRepository, note.id);
+    expect(result).not.toBeNull();
+    // ファイル名の "/" はファイルシステムで使えないので "-" に置換される
+    expect(result?.filename).toBe("設計-実装メモ.md");
+    expect(result?.body).toBe("# 本文\n\nそのまま返ること。");
+  });
+
+  test("downloadNote で存在しないIDはnullを返す", async () => {
+    expect(await downloadNote(noteRepository, 99999)).toBeNull();
   });
 
   test("タグの追加と取得ができる", async () => {

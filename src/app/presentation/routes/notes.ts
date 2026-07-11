@@ -5,6 +5,7 @@ import type { AppEnv } from "../..";
 import { engine } from "../..";
 import { createNoteWithTags } from "../../application/note/create-note-with-tags";
 import { deleteNote } from "../../application/note/delete-note";
+import { downloadNote } from "../../application/note/download-note";
 import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { listNotesWithTags } from "../../application/note/list-notes";
@@ -109,6 +110,23 @@ noteRoutes.get("/:id/card", async (c) => {
     showMenu: true,
   });
   return c.html(html);
+});
+
+// ノートの Markdown ダウンロード
+noteRoutes.get("/:id/download", async (c) => {
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("ID が不正です", 400);
+  const download = await downloadNote(c.var.noteRepository, id);
+  if (!download) return c.notFound();
+
+  // 非 ASCII のファイル名は RFC 5987 の filename* で渡し、filename は ASCII フォールバックにする
+  const encoded = encodeURIComponent(download.filename).replace(
+    /['()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  c.header("Content-Type", "text/markdown; charset=utf-8");
+  c.header("Content-Disposition", `attachment; filename="note-${id}.md"; filename*=UTF-8''${encoded}`);
+  return c.body(download.body);
 });
 
 // ノート更新

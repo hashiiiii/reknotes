@@ -152,11 +152,12 @@ body {
   overflow: hidden;
 }
 .kebab-menu.open .kebab-dropdown { display: block; }
-.kebab-dropdown button {
+.kebab-dropdown button, .kebab-dropdown a {
   display: block; width: 100%; text-align: left; background: none; border: none;
   padding: 0.5rem 0.75rem; font-size: 0.9rem; cursor: pointer; font-family: inherit; color: var(--fg);
+  text-decoration: none; box-sizing: border-box;
 }
-.kebab-dropdown button:hover { background: var(--bg-secondary); }
+.kebab-dropdown button:hover, .kebab-dropdown a:hover { background: var(--bg-secondary); }
 .kebab-dropdown button.danger { color: var(--danger); }
 .kebab-dropdown button.danger:hover { background: rgba(224,82,82,0.1); }
 
