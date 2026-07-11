@@ -100,6 +100,8 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 
 完全な変数リストとローカル用デフォルトは `.env.example` を参照。本ドキュメントは **どこで管理されるか** だけを扱う。
 
+必須検証は変数を実際に使う場所で行われる: 共通変数は `loadConfig()`、`CLOUDFLARE_*` は remote の embedding provider 構築時、`BACKUP_S3_*` は backup / restore コマンドの実行時のみ。ローカル開発でリモート専用変数のダミー値を設定する必要はない。
+
 ### ローカル
 
 `.env` (`.env.example` から `bun run setup` でコピーされる)。`compose.local.yaml` の MinIO サービスは Compose の `${VAR}` 展開で同じ `.env` から値を読む。
