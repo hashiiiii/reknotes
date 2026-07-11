@@ -40,4 +40,12 @@ describe("resolveDownloadFilename", () => {
     const filename = resolveDownloadFilename(makeNote({ title: "あ".repeat(150) }));
     expect(filename).toBe(`${"あ".repeat(100)}.md`);
   });
+
+  test("切り詰め位置がサロゲートペアをまたいでも孤立サロゲートを残さない", () => {
+    // UTF-16 単位の slice だと 100 文字目でペアが分断され、
+    // 孤立サロゲートを含むファイル名は encodeURIComponent が URIError を投げる
+    const filename = resolveDownloadFilename(makeNote({ title: `${"a".repeat(99)}😀x` }));
+    expect(filename).toBe(`${"a".repeat(99)}😀.md`);
+    expect(() => encodeURIComponent(filename)).not.toThrow();
+  });
 });
