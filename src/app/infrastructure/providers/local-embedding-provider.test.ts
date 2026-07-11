@@ -24,6 +24,15 @@ describe("LocalEmbeddingProvider (worker 失敗時)", () => {
     await expect(provider.embedNote("一度目")).rejects.toThrow();
     await expect(provider.embedNote("二度目")).rejects.toThrow();
   });
+
+  test("worker がクラッシュしても次の要求は新しい worker で成功する", async () => {
+    // 死んだ worker を掴み続けるとサーバー再起動まで auto-tagging が失敗し続けるため、
+    // クラッシュ時: in-flight の要求は loud に失敗し、次の要求からは worker を作り直す
+    const provider = new LocalEmbeddingProvider(new URL("./flaky-embedding-worker.fixture.ts", import.meta.url));
+    await expect(provider.embedNote("crash")).rejects.toThrow();
+    const embedding = await provider.embedNote("ok");
+    expect(Array.from(embedding)).toEqual([1, 2, 3]);
+  });
 });
 
 describe.skipIf(!MODEL_CACHED)("LocalEmbeddingProvider", () => {

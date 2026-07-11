@@ -33,7 +33,9 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
         entry.reject(error);
       }
       this.pending.clear();
-      worker.unref();
+      // 死んだ worker を掴み続けると以降の要求が全て失敗し続けるため、破棄して次の要求で作り直す
+      worker.terminate();
+      if (this.worker === worker) this.worker = null;
     };
     this.worker = worker;
     return worker;
