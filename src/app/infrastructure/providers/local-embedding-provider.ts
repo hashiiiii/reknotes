@@ -1,72 +1,71 @@
-import type { PreTrainedModel, PreTrainedTokenizer } from "@huggingface/transformers";
 import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
+import type { EmbeddingWorkerCommand, EmbeddingWorkerResponse } from "./local-embedding-worker";
 
-// モデルに与えるノートとタグにそれぞれ prefix をつける必要がある
-// これがついた状態でベクトル変換されることで、ノートとタグの類似度比較が正しく機能する
-const NOTE_PREFIX = "title: none | text: ";
-const TAG_PREFIX = "task: search result | query: ";
-
-const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
-
+// 推論はメインスレッドを飢餓させるため local-embedding-worker.ts に隔離し、
+// この class は postMessage の proxy に徹する (issue #178)。タグキャッシュも worker 側が持つ。
 export class LocalEmbeddingProvider implements IEmbeddingProvider {
-  private model: PreTrainedModel | null = null;
-  private tokenizer: PreTrainedTokenizer | null = null;
-  private loading: Promise<void> | null = null;
-  private tagCache = new Map<string, Float32Array>();
+  private worker: Worker | null = null;
+  private nextId = 0;
+  private pending = new Map<
+    number,
+    { resolve: (response: EmbeddingWorkerResponse) => void; reject: (error: Error) => void }
+  >();
 
-  private async ensureLoaded(): Promise<{ model: PreTrainedModel; tokenizer: PreTrainedTokenizer }> {
-    if (!this.loading) {
-      this.loading = (async () => {
-        const { AutoModel, AutoTokenizer, env } = await import("@huggingface/transformers");
-        // ローカルキャッシュがあればそれを使う
-        env.allowLocalModels = true;
-        this.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-        // reknotes ではタグの自動提案に embedding モデルを利用しており
-        // タグ候補とノート全体の類似度が高いものをいくつか採用するというプロトコル
-        // 量子化による細かい数値のズレが影響するほど厳密なものではないため 8 bit で十分
-        this.model = await AutoModel.from_pretrained(MODEL_ID, { dtype: "q8" });
-        console.log(`Embedding model loaded: ${MODEL_ID} (q8)`);
-      })().catch((err) => {
-        this.loading = null;
-        throw err;
-      });
-    }
+  private ensureWorker(): Worker {
+    if (this.worker) return this.worker;
 
-    await this.loading;
-
-    // type narrowing のため必要
-    if (!this.model || !this.tokenizer) throw new Error("Failed to load embedding model");
-    return { model: this.model, tokenizer: this.tokenizer };
+    const worker = new Worker(new URL("./local-embedding-worker.ts", import.meta.url));
+    worker.onmessage = (event: MessageEvent<EmbeddingWorkerResponse>) => {
+      const entry = this.pending.get(event.data.id);
+      if (!entry) return;
+      this.pending.delete(event.data.id);
+      // 要求が無い間は worker がプロセスの終了を妨げないようにする (CLI スクリプトが完走後に hang しないため)
+      if (this.pending.size === 0) worker.unref();
+      entry.resolve(event.data);
+    };
+    worker.onerror = (event) => {
+      // worker 自体が落ちたら全 pending を明示的に失敗させる (握りつぶして hang させない)
+      const error = new Error(`embedding worker error: ${event.message}`);
+      for (const entry of this.pending.values()) {
+        entry.reject(error);
+      }
+      this.pending.clear();
+      worker.unref();
+    };
+    this.worker = worker;
+    return worker;
   }
 
-  // 入力をベクトル変換する
-  private async embed(text: string): Promise<Float32Array> {
-    const { model, tokenizer } = await this.ensureLoaded();
-    const inputs = await tokenizer(text);
-    const output = await model(inputs);
-    return Float32Array.from(output.sentence_embedding.data as ArrayLike<number>);
+  private async request(command: EmbeddingWorkerCommand): Promise<Float32Array | undefined> {
+    const worker = this.ensureWorker();
+    const id = this.nextId++;
+    const response = await new Promise<EmbeddingWorkerResponse>((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      // リクエスト実行中はプロセスを維持する (unref した worker からの応答待ちで exit しないため)
+      if (this.pending.size === 1) worker.ref();
+      worker.postMessage({ ...command, id });
+    });
+    if (!response.ok) throw new Error(response.message);
+    return response.embedding;
   }
 
   async load(): Promise<void> {
-    await this.ensureLoaded();
+    await this.request({ kind: "load" });
   }
 
   async embedNote(text: string): Promise<Float32Array> {
-    return this.embed(`${NOTE_PREFIX}${text}`);
+    const embedding = await this.request({ kind: "embedNote", text });
+    if (!embedding) throw new Error("embedding worker returned no embedding");
+    return embedding;
   }
 
   async embedTag(tagName: string): Promise<Float32Array> {
-    const cached = this.tagCache.get(tagName);
-    if (cached) return cached;
-
-    const emb = await this.embed(`${TAG_PREFIX}${tagName}`);
-    this.tagCache.set(tagName, emb);
-    return emb;
+    const embedding = await this.request({ kind: "embedTag", tagName });
+    if (!embedding) throw new Error("embedding worker returned no embedding");
+    return embedding;
   }
 
   async buildTagCache(tagNames: string[]): Promise<void> {
-    for (const name of tagNames) {
-      await this.embedTag(name);
-    }
+    await this.request({ kind: "buildTagCache", tagNames });
   }
 }
