@@ -68,6 +68,16 @@ jobs:
   destructive-check:
     runs-on: ubuntu-latest
     services: *postgres-service
+    # この job は base ブランチのコードでも migrate を実行する。base がこの refactor より
+    # 古い間は旧 loadConfig が CLOUDFLARE_* / BACKUP_S3_* を無条件に要求するので、
+    # ダミー値を job スコープで残す。base が追いついたら削除してよい。
+    env:
+      CLOUDFLARE_ACCOUNT_ID: dummy
+      CLOUDFLARE_API_TOKEN: dummy
+      BACKUP_S3_ENDPOINT: dummy
+      BACKUP_S3_ACCESS_KEY_ID: dummy
+      BACKUP_S3_SECRET_ACCESS_KEY: dummy
+      BACKUP_S3_BUCKET_NAME: reknotes-backup-test
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
