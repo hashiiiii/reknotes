@@ -11,10 +11,13 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     { resolve: (response: EmbeddingWorkerResponse) => void; reject: (error: Error) => void }
   >();
 
+  // テストから壊れた worker を注入して失敗経路を検証できるよう、URL を差し替え可能にする
+  constructor(private workerUrl: URL = new URL("./local-embedding-worker.ts", import.meta.url)) {}
+
   private ensureWorker(): Worker {
     if (this.worker) return this.worker;
 
-    const worker = new Worker(new URL("./local-embedding-worker.ts", import.meta.url));
+    const worker = new Worker(this.workerUrl);
     worker.onmessage = (event: MessageEvent<EmbeddingWorkerResponse>) => {
       const entry = this.pending.get(event.data.id);
       if (!entry) return;

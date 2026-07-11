@@ -9,6 +9,23 @@ const MODEL_CACHED = existsSync("node_modules/@huggingface/transformers/.cache/o
 // モデルロードを含むため各テストのタイムアウトを長めに取る
 const TEST_TIMEOUT = 120_000;
 
+// worker の失敗経路はモデル不要なので CI でも実行される
+describe("LocalEmbeddingProvider (worker 失敗時)", () => {
+  const brokenUrl = new URL("./does-not-exist-worker.ts", import.meta.url);
+
+  test("worker が起動に失敗したら要求は hang せず reject される", async () => {
+    const provider = new LocalEmbeddingProvider(brokenUrl);
+    await expect(provider.embedNote("テキスト")).rejects.toThrow();
+  });
+
+  test("worker 失敗後の再要求も hang せず reject される", async () => {
+    // 失敗した worker を掴んだままだと 2 回目の要求が永久に応答待ちになる回帰の検証
+    const provider = new LocalEmbeddingProvider(brokenUrl);
+    await expect(provider.embedNote("一度目")).rejects.toThrow();
+    await expect(provider.embedNote("二度目")).rejects.toThrow();
+  });
+});
+
 describe.skipIf(!MODEL_CACHED)("LocalEmbeddingProvider", () => {
   const provider = new LocalEmbeddingProvider();
 
