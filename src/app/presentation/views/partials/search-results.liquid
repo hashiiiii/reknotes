@@ -1,7 +1,7 @@
 {% if results.size > 0 %}
   <p class="search-count">{{ results.size }}件の結果</p>
   {% for result in results %}
-    {% render 'note-card', note: result %}
+    {% render 'note-card', note: result, processing: result.processing %}
   {% endfor %}
 {% else %}
   <p class="no-results">「{{ query }}」に一致するナレッジが見つかりませんでした。</p>

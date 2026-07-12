@@ -1,26 +1,41 @@
-<article class="note-card" {% if note.id %}id="note-{{ note.id }}"{% endif %}>
+<article class="note-card{% if processing %} processing{% endif %}" {% if note.id %}id="note-{{ note.id }}"{% endif %}
+  {% if processing %}hx-get="/api/notes/{{ note.id }}/card" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if processing %}
+  {%- comment -%} 処理中は詳細ページを開けない。完了すると上のポーリングが通常カードに置き換える {%- endcomment -%}
+  <div class="note-card-link">
+    <h3>{{ note.title | default: "無題" }}</h3>
+    <p class="note-snippet">{{ note.body | truncate: 500 }}</p>
+  </div>
+  {% else %}
   <a href="/notes/{{ note.id }}" class="note-card-link">
     <h3>{% if note.highlightedTitle %}{{ note.highlightedTitle | raw }}{% else %}{{ note.title | default: "無題" }}{% endif %}</h3>
     <p class="note-snippet">{% if note.highlightedBody %}{{ note.highlightedBody | raw }}{% else %}{{ note.body | truncate: 500 }}{% endif %}</p>
   </a>
+  {% endif %}
 
   <div class="note-card-footer">
     <time class="note-card-time" {% if note.createdAt %}datetime="{{ note.createdAt }}"{% endif %}>
       {% if note.createdAt %}{{ note.createdAt | formatDate }}{% else %}{{ note.created_at }}{% endif %}
     </time>
-    {% if showMenu %}
-    <div class="kebab-menu">
-      <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
-      <div class="kebab-dropdown">
-        <a href="/api/notes/{{ note.id }}/download"
-          onclick="event.stopPropagation(); this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
-        <button class="danger"
-          hx-delete="/api/notes/{{ note.id }}"
-          hx-target="#note-{{ note.id }}"
-          hx-swap="delete"
-          onclick="event.stopPropagation()">削除</button>
+    <div class="note-card-footer-actions">
+      {% if processing %}
+      <span class="note-card-processing-label">処理中</span>
+      {% endif %}
+      {%- comment -%} 処理中でもメニューは残す。タグ付けがハングしてもノートを削除・ダウンロードできるように {%- endcomment -%}
+      {% if showMenu %}
+      <div class="kebab-menu">
+        <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
+        <div class="kebab-dropdown">
+          <a href="/api/notes/{{ note.id }}/download"
+            onclick="event.stopPropagation(); this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
+          <button class="danger"
+            hx-delete="/api/notes/{{ note.id }}"
+            hx-target="#note-{{ note.id }}"
+            hx-swap="delete"
+            onclick="event.stopPropagation()">削除</button>
+        </div>
       </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
 </article>

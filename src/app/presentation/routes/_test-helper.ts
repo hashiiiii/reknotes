@@ -45,13 +45,17 @@ export interface TestAppOptions {
 export function createTestApp(options: TestAppOptions = {}) {
   const notes = options.notes ?? [];
   const searchResults = options.searchResults ?? [];
+  // create で採番する id。既存 notes と衝突しないよう大きめから始める
+  let nextId = 1000;
 
   const noteRepository: INoteRepository = {
     list: async () => ({ notes, hasMore: false }),
     findTagsByNoteIds: async () => new Map<number, string[]>(),
     searchByQuery: async () => searchResults,
-    create: async () => {
-      throw new Error("create はこのテストで未対応");
+    create: async (title, body) => {
+      const note = makeNote({ id: nextId++, title, body });
+      notes.unshift(note);
+      return note;
     },
     findById: async (id) => notes.find((note) => note.id === id) ?? null,
     update: async () => null,

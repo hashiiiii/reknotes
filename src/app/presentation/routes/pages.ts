@@ -4,6 +4,7 @@ import type { AppEnv } from "../..";
 import { getNoteSubgraph } from "../../application/graph/get-note-subgraph";
 import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
+import { isNoteProcessing } from "../../application/note/is-note-processing";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { parseId } from "./_parse-id";
 
@@ -14,7 +15,8 @@ pageRoutes.get("/", async (c) => {
   const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository);
   const html = await c.var.render("home", {
     title: "home",
-    notes,
+    // 処理中フラグを付けておかないと、処理中にリロードしたとき通常カード (開ける状態) で出てしまう
+    notes: notes.map((note) => ({ ...note, processing: isNoteProcessing(note.id) })),
     hasMore,
     nextCursor,
   });

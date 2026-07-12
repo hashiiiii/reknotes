@@ -3,6 +3,7 @@ import type { ITagRepository } from "../../domain/tag/tag-repository";
 import { suggestTags } from "../embedding/suggest-tags";
 import type { IEmbeddingProvider } from "../port/embedding-provider";
 import { addTagsToNote } from "../tag/add-tags-to-note";
+import { finishNoteProcessing, markNoteProcessing } from "./_processing-notes";
 import { createNote } from "./create-note";
 
 export async function createNoteWithTags(
@@ -28,11 +29,16 @@ function autoTagInBackground(
   title: string,
   body: string,
 ) {
+  // 処理中の間はカードが processing 表示になる (issue #162)。成否に関わらず必ず解除する
+  markNoteProcessing(noteId);
   suggestTags(embeddingProvider, tagRepo, title, body)
     .then((generatedTags) => {
       if (generatedTags.length > 0) return addTagsToNote(tagRepo, noteId, generatedTags);
     })
     .catch((e) => {
       console.error("Auto-tagging failed (note was created successfully):", e);
+    })
+    .finally(() => {
+      finishNoteProcessing(noteId);
     });
 }

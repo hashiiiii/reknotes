@@ -8,6 +8,7 @@ import { deleteNote } from "../../application/note/delete-note";
 import { downloadNote } from "../../application/note/download-note";
 import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
+import { isNoteProcessing } from "../../application/note/is-note-processing";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
 import { parseId } from "./_parse-id";
@@ -68,9 +69,12 @@ noteRoutes.post("/", writeLimiter, async (c) => {
     body,
   );
 
+  // 作成直後はバックグラウンドのタグ付けが走っているため、常に処理中カードとして返す。
+  // 完了はカード自身が GET /api/notes/:id/card をポーリングして検知する (issue #162)
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
     showMenu: true,
+    processing: true,
   });
   return c.html(html);
 });
@@ -89,7 +93,11 @@ noteRoutes.get("/", async (c) => {
 
   let html = "";
   for (const note of notes) {
-    html += await engine.renderFile("partials/note-card", { note, showMenu: true });
+    html += await engine.renderFile("partials/note-card", {
+      note,
+      showMenu: true,
+      processing: isNoteProcessing(note.id),
+    });
   }
   if (hasMore) {
     html += `<div class="note-grid-sentinel" hx-get="/api/notes?cursor=${nextCursor}" hx-trigger="revealed" hx-swap="outerHTML"></div>`;
@@ -108,6 +116,7 @@ noteRoutes.get("/:id/card", async (c) => {
   const html = await engine.renderFile("partials/note-card", {
     note: { ...note, tags },
     showMenu: true,
+    processing: isNoteProcessing(id),
   });
   return c.html(html);
 });
