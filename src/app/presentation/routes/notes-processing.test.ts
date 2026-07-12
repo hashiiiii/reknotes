@@ -21,6 +21,8 @@ describe("処理中ステートのノートカード", () => {
     expect(html).toContain('hx-get="/api/notes/1000/card"');
     expect(html).toContain('hx-trigger="every 2s"');
     expect(html).not.toContain('href="/notes/1000"');
+    // 処理中でも kebab メニューは残す。タグ付けがハングしてもノートを削除・ダウンロードできるように
+    expect(html).toContain('href="/api/notes/1000/download"');
   });
 
   test("処理中のノートの GET /api/notes/:id/card は処理中カードを返す", async () => {
@@ -51,7 +53,6 @@ describe("処理中ステートのノートカード", () => {
   });
 
   test("一覧 (GET /api/notes) でも処理中のノートは処理中カードになる", async () => {
-    // ホームを再読み込みしたときに処理中ノートが通常カードで出ない (開けてしまう) ことの検証
     const note = makeNote({ id: 1, title: "処理中ノート" });
     const { app } = createTestApp({ notes: [note] });
     markNoteProcessing(1);
@@ -60,6 +61,37 @@ describe("処理中ステートのノートカード", () => {
       const html = await res.text();
       expect(html).toContain("note-card processing");
       expect(html).toContain('hx-get="/api/notes/1/card"');
+    } finally {
+      finishNoteProcessing(1);
+    }
+  });
+
+  test("ホームのフルロードでも処理中のノートは処理中カードになる", async () => {
+    // 処理中にページを再読み込みしても、通常カード (開ける状態) で出ないことの検証
+    const note = makeNote({ id: 1, title: "処理中ノート" });
+    const { app } = createTestApp({ notes: [note] });
+    markNoteProcessing(1);
+    try {
+      const res = await app.request("/");
+      expect(res.status).toBe(200);
+      const html = await res.text();
+      expect(html).toContain("note-card processing");
+      expect(html).toContain('hx-get="/api/notes/1/card"');
+    } finally {
+      finishNoteProcessing(1);
+    }
+  });
+
+  test("検索結果でも処理中のノートは処理中カードになる", async () => {
+    // 検索は本文の全文検索なので、タグ付け未完了のノートも結果に出てくる
+    const note = makeNote({ id: 1, title: "処理中ノート" });
+    const { app } = createTestApp({ notes: [note], searchResults: [note] });
+    markNoteProcessing(1);
+    try {
+      const res = await app.request("/api/search?q=%E5%87%A6%E7%90%86");
+      expect(res.status).toBe(200);
+      const html = await res.text();
+      expect(html).toContain("note-card processing");
     } finally {
       finishNoteProcessing(1);
     }

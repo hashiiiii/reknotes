@@ -117,6 +117,7 @@ body {
 .note-card.processing { opacity: 0.55; }
 .note-card.processing:hover { box-shadow: none; border-color: var(--border); }
 .note-card.processing .note-card-link { cursor: default; }
+.note-card-footer-actions { display: flex; align-items: center; gap: 0.5rem; }
 .note-card-processing-label { font-size: 0.75rem; color: var(--muted); }
 
 /* Note detail */

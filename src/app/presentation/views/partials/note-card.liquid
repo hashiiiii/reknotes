@@ -17,21 +17,25 @@
     <time class="note-card-time" {% if note.createdAt %}datetime="{{ note.createdAt }}"{% endif %}>
       {% if note.createdAt %}{{ note.createdAt | formatDate }}{% else %}{{ note.created_at }}{% endif %}
     </time>
-    {% if processing %}
-    <span class="note-card-processing-label">処理中</span>
-    {% elsif showMenu %}
-    <div class="kebab-menu">
-      <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
-      <div class="kebab-dropdown">
-        <a href="/api/notes/{{ note.id }}/download"
-          onclick="event.stopPropagation(); this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
-        <button class="danger"
-          hx-delete="/api/notes/{{ note.id }}"
-          hx-target="#note-{{ note.id }}"
-          hx-swap="delete"
-          onclick="event.stopPropagation()">削除</button>
+    <div class="note-card-footer-actions">
+      {% if processing %}
+      <span class="note-card-processing-label">処理中</span>
+      {% endif %}
+      {%- comment -%} 処理中でもメニューは残す。タグ付けがハングしてもノートを削除・ダウンロードできるように {%- endcomment -%}
+      {% if showMenu %}
+      <div class="kebab-menu">
+        <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
+        <div class="kebab-dropdown">
+          <a href="/api/notes/{{ note.id }}/download"
+            onclick="event.stopPropagation(); this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
+          <button class="danger"
+            hx-delete="/api/notes/{{ note.id }}"
+            hx-target="#note-{{ note.id }}"
+            hx-swap="delete"
+            onclick="event.stopPropagation()">削除</button>
+        </div>
       </div>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
 </article>

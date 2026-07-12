@@ -20,7 +20,7 @@
 
 <section id="note-grid" class="note-grid">
   {% for note in notes %}
-    {% render 'note-card', note: note, showMenu: true %}
+    {% render 'note-card', note: note, showMenu: true, processing: note.processing %}
   {% endfor %}
   {% if hasMore %}
     <div class="note-grid-sentinel" hx-get="/api/notes?cursor={{ nextCursor }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
