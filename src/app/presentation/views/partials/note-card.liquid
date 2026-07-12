@@ -1,14 +1,25 @@
-<article class="note-card" {% if note.id %}id="note-{{ note.id }}"{% endif %}>
+<article class="note-card{% if processing %} processing{% endif %}" {% if note.id %}id="note-{{ note.id }}"{% endif %}
+  {% if processing %}hx-get="/api/notes/{{ note.id }}/card" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if processing %}
+  {%- comment -%} 処理中は詳細ページを開けない。完了すると上のポーリングが通常カードに置き換える {%- endcomment -%}
+  <div class="note-card-link">
+    <h3>{{ note.title | default: "無題" }}</h3>
+    <p class="note-snippet">{{ note.body | truncate: 500 }}</p>
+  </div>
+  {% else %}
   <a href="/notes/{{ note.id }}" class="note-card-link">
     <h3>{% if note.highlightedTitle %}{{ note.highlightedTitle | raw }}{% else %}{{ note.title | default: "無題" }}{% endif %}</h3>
     <p class="note-snippet">{% if note.highlightedBody %}{{ note.highlightedBody | raw }}{% else %}{{ note.body | truncate: 500 }}{% endif %}</p>
   </a>
+  {% endif %}
 
   <div class="note-card-footer">
     <time class="note-card-time" {% if note.createdAt %}datetime="{{ note.createdAt }}"{% endif %}>
       {% if note.createdAt %}{{ note.createdAt | formatDate }}{% else %}{{ note.created_at }}{% endif %}
     </time>
-    {% if showMenu %}
+    {% if processing %}
+    <span class="note-card-processing-label">処理中</span>
+    {% elsif showMenu %}
     <div class="kebab-menu">
       <button class="kebab-btn" aria-label="メニュー" onclick="event.stopPropagation(); toggleKebab(this)">&#x22EE;</button>
       <div class="kebab-dropdown">

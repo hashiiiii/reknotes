@@ -2,11 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../../config";
 import { createNoteRepository, createStorageProvider, createTagRepository } from "../../infrastructure/container";
 import { addTagsToNote } from "../tag/add-tags-to-note";
+import { finishNoteProcessing, markNoteProcessing } from "./_processing-notes";
 import { createNote } from "./create-note";
 import { deleteNote } from "./delete-note";
 import { downloadNote } from "./download-note";
 import { getNote } from "./get-note";
 import { getNoteTags } from "./get-note-tags";
+import { isNoteProcessing } from "./is-note-processing";
 import { updateNote } from "./update-note";
 
 const config = loadConfig();
@@ -77,6 +79,15 @@ describe("note use cases", () => {
 
   test("downloadNote で存在しないIDはnullを返す", async () => {
     expect(await downloadNote(noteRepository, 99999)).toBeNull();
+  });
+
+  test("processing レジストリで処理中のノートを追跡できる", () => {
+    // バックグラウンドのタグ付けが走っている間だけ true になる in-memory の印
+    expect(isNoteProcessing(123)).toBe(false);
+    markNoteProcessing(123);
+    expect(isNoteProcessing(123)).toBe(true);
+    finishNoteProcessing(123);
+    expect(isNoteProcessing(123)).toBe(false);
   });
 
   test("タグの追加と取得ができる", async () => {

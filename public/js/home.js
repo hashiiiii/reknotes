@@ -111,13 +111,33 @@ function togglePreview() {
     window.scrollTo(0, scrollY);
   });
 
+  // 処理中カードのポーリング (outerHTML swap) で入れ替わった新要素に旧要素の座標を引き継ぐ。
+  // 引き継がないと placeNew が「新規カード」として最短カラムに置いてしまい、カードが飛ぶ。
+  var swapGeometries = {};
+
   document.body.addEventListener('htmx:beforeSwap', function(e) {
     if (e.detail.requestConfig && e.detail.requestConfig.verb === 'delete') {
       requestAnimationFrame(fullLayout);
     }
+    var old = e.detail.target;
+    if (old && old.classList && old.classList.contains('note-card') && placed.has(old) && old.id) {
+      swapGeometries[old.id] = { left: old.style.left, top: old.style.top, width: old.style.width };
+    }
   });
 
   document.body.addEventListener('htmx:afterSettle', function(e) {
+    Object.keys(swapGeometries).forEach(function(id) {
+      var next = document.getElementById(id);
+      if (next && !placed.has(next)) {
+        next.style.width = swapGeometries[id].width;
+        next.style.left = swapGeometries[id].left;
+        next.style.top = swapGeometries[id].top;
+        next.style.visibility = 'visible';
+        placed.add(next);
+      }
+      delete swapGeometries[id];
+    });
+
     var hasUnplaced = false;
     grid.querySelectorAll('.note-card').forEach(function(card) {
       if (!placed.has(card)) hasUnplaced = true;
