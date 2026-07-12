@@ -38,6 +38,8 @@ export interface TestAppOptions {
   notes?: Note[];
   // searchByQuery が返す行 (検索ハイライトの素材)
   searchResults?: Note[];
+  // ノート詳細ページの描画に使う。省略時は未スタブ (呼ばれたら例外)。
+  graphRepository?: IGraphRepository;
 }
 
 export function createTestApp(options: TestAppOptions = {}) {
@@ -51,7 +53,7 @@ export function createTestApp(options: TestAppOptions = {}) {
     create: async () => {
       throw new Error("create はこのテストで未対応");
     },
-    findById: async () => null,
+    findById: async (id) => notes.find((note) => note.id === id) ?? null,
     update: async () => null,
     delete: async () => false,
     deleteAll: async () => {},
@@ -71,7 +73,7 @@ export function createTestApp(options: TestAppOptions = {}) {
   const app = createApp(
     noteRepository,
     notStubbed<ITagRepository>("tagRepository"),
-    notStubbed<IGraphRepository>("graphRepository"),
+    options.graphRepository ?? notStubbed<IGraphRepository>("graphRepository"),
     storageProvider,
     notStubbed<IEmbeddingProvider>("embeddingProvider"),
   );
