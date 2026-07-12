@@ -6,6 +6,9 @@
   // 型チェック側も ESNext にしておかないと、ランタイムでは動く構文が型チェックで弾かれてしまう。
   "compilerOptions": {
     "target": "ESNext",
+    // lib を明示しないと TS が DOM を暗黙ロードし、Worker が ref/unref を持たない DOM 型になる。
+    // サーバーは Bun 専用なので DOM を外し、bun-types の Worker (ref/unref あり) を使う。
+    "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
