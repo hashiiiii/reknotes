@@ -1,5 +1,5 @@
 import { restoreBackup } from "../../src/app/application/backup/restore-backup";
-import { loadConfig } from "../../src/app/config";
+import { loadBackupStorageConfig, loadConfig } from "../../src/app/config";
 import {
   createBackupStorageProvider,
   createDatabaseBackupProvider,
@@ -29,7 +29,8 @@ async function run(): Promise<number> {
   console.log(`Restoring backup ${date} into the env-pointed DB / S3...`);
   try {
     const config = loadConfig();
-    if (config.s3BucketName === config.backupS3BucketName) {
+    const backupConfig = loadBackupStorageConfig();
+    if (config.s3BucketName === backupConfig.bucketName) {
       console.error(
         JSON.stringify({ kind: "error", message: "S3_BUCKET_NAME must differ from BACKUP_S3_BUCKET_NAME" }),
       );
@@ -37,7 +38,7 @@ async function run(): Promise<number> {
     }
 
     const result = await restoreBackup(
-      createBackupStorageProvider(config),
+      createBackupStorageProvider(backupConfig),
       createStorageProvider(config),
       createDatabaseBackupProvider(config),
       date,

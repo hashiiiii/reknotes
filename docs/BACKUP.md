@@ -52,7 +52,7 @@ B2 は AWS S3 互換 API を提供しているので、`@aws-sdk/client-s3` を�
 
 ## 環境変数
 
-`bun run dump` / `bun run restore` も他のスクリプトと同じ `loadConfig()` を使うので、`.env.example` に並ぶ primary 用の env (DATABASE_URL / S3_* / CLOUDFLARE_*) を一通り設定しておく必要がある。backup / restore で固有なのは下表の変数だけ。
+`bun run dump` / `bun run restore` も他のスクリプトと同じ `loadConfig()` を使うので、`.env.example` に並ぶ primary 用の env (DATABASE_URL / S3_*) を一通り設定しておく必要がある。backup / restore で固有なのは下表の変数で、`loadBackupStorageConfig()` が backup / restore の実行時にだけ必須として検証する (アプリ本体の起動では要求されない)。
 
 ### backup 固有 (dump / restore 共通)
 

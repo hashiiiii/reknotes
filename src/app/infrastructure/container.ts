@@ -5,7 +5,7 @@ import type { IHookProvider } from "../application/port/hook-provider";
 import type { IMigrationProvider } from "../application/port/migration-provider";
 import type { ISchemaSyncProvider } from "../application/port/schema-sync-provider";
 import type { IStorageProvider } from "../application/port/storage-provider";
-import type { Config } from "../config";
+import { type BackupStorageConfig, type Config, loadEmbeddingConfig } from "../config";
 import type { IGraphRepository } from "../domain/graph/graph-repository";
 import type { INoteRepository } from "../domain/note/note-repository";
 import type { ITagRepository } from "../domain/tag/tag-repository";
@@ -48,8 +48,10 @@ let embeddingInstance: IEmbeddingProvider | null = null;
 export function createEmbeddingProvider(config: Config): IEmbeddingProvider {
   if (embeddingInstance) return embeddingInstance;
 
-  if (config.deployment === "remote") {
-    embeddingInstance = new CloudflareEmbeddingProvider(config.cloudflareAccountId, config.cloudflareApiToken);
+  // Cloudflare の認証情報は remote でしか使わないので、provider を構築するここで初めて検証する
+  const embedding = loadEmbeddingConfig(config.deployment);
+  if (embedding.kind === "cloudflare") {
+    embeddingInstance = new CloudflareEmbeddingProvider(embedding.accountId, embedding.apiToken);
   } else {
     embeddingInstance = new LocalEmbeddingProvider();
   }
@@ -100,14 +102,15 @@ export function createHookProvider(): IHookProvider {
 }
 
 // Primary 側はシングルトンで持つが、Backup 側は参照頻度が低いため毎回 new する。
-export function createBackupStorageProvider(config: Config): IStorageProvider {
+// BACKUP_S3_* は backup / restore コマンドだけが使うので、呼び出し側が loadBackupStorageConfig で読み込む。
+export function createBackupStorageProvider(config: BackupStorageConfig): IStorageProvider {
   const s3 = new S3Client({
     region: "auto",
-    endpoint: config.backupS3Endpoint,
-    credentials: { accessKeyId: config.backupS3AccessKeyId, secretAccessKey: config.backupS3SecretAccessKey },
+    endpoint: config.endpoint,
+    credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
     forcePathStyle: true,
   });
-  return new S3StorageProvider(s3, config.backupS3BucketName);
+  return new S3StorageProvider(s3, config.bucketName);
 }
 
 export function createDatabaseBackupProvider(config: Config): IDatabaseBackupProvider {

@@ -1,20 +1,29 @@
 export type Environment = "development" | "test" | "production";
 export type Deployment = "local" | "remote";
 
+// すべてのエントリーポイントが必要とする共通設定。
+// 特定の deployment やコマンドでしか使わない変数はここに入れず、
+// 使う場所で loadEmbeddingConfig / loadBackupStorageConfig を呼んで検証する。
 export type Config = {
   deployment: Deployment;
   environment: Environment;
   databaseUrl: string;
-  cloudflareAccountId: string;
-  cloudflareApiToken: string;
   s3Endpoint: string;
   s3AccessKeyId: string;
   s3SecretAccessKey: string;
   s3BucketName: string;
-  backupS3Endpoint: string;
-  backupS3AccessKeyId: string;
-  backupS3SecretAccessKey: string;
-  backupS3BucketName: string;
+};
+
+// embedding provider の構築に必要な設定。Cloudflare の認証情報は remote でしか使わないので、
+// remote のときだけ必須にする (local はダミー値を要求しない)。
+export type EmbeddingConfig = { kind: "local" } | { kind: "cloudflare"; accountId: string; apiToken: string };
+
+// backup / restore コマンドだけが使う設定。アプリ本体の起動では要求しない。
+export type BackupStorageConfig = {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucketName: string;
 };
 
 function requireEnv(name: string): string {
@@ -47,15 +56,27 @@ export function loadConfig(): Config {
     deployment,
     environment,
     databaseUrl,
-    cloudflareAccountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
-    cloudflareApiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
     s3Endpoint: requireEnv("S3_ENDPOINT"),
     s3AccessKeyId: requireEnv("S3_ACCESS_KEY_ID"),
     s3SecretAccessKey: requireEnv("S3_SECRET_ACCESS_KEY"),
     s3BucketName: requireEnv("S3_BUCKET_NAME"),
-    backupS3Endpoint: requireEnv("BACKUP_S3_ENDPOINT"),
-    backupS3AccessKeyId: requireEnv("BACKUP_S3_ACCESS_KEY_ID"),
-    backupS3SecretAccessKey: requireEnv("BACKUP_S3_SECRET_ACCESS_KEY"),
-    backupS3BucketName: requireEnv("BACKUP_S3_BUCKET_NAME"),
+  };
+}
+
+export function loadEmbeddingConfig(deployment: Deployment): EmbeddingConfig {
+  if (deployment === "local") return { kind: "local" };
+  return {
+    kind: "cloudflare",
+    accountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
+    apiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
+  };
+}
+
+export function loadBackupStorageConfig(): BackupStorageConfig {
+  return {
+    endpoint: requireEnv("BACKUP_S3_ENDPOINT"),
+    accessKeyId: requireEnv("BACKUP_S3_ACCESS_KEY_ID"),
+    secretAccessKey: requireEnv("BACKUP_S3_SECRET_ACCESS_KEY"),
+    bucketName: requireEnv("BACKUP_S3_BUCKET_NAME"),
   };
 }
