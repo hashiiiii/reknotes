@@ -30,6 +30,8 @@ function makeNoteRepo(oldBody: string, newBody: string): INoteRepository {
   return {
     findById: async (id: number) => makeNote(id, oldBody),
     update: async (id: number) => makeNote(id, newBody),
+    // 旧タグなし = orphan 掃除の経路は走らない。掃除自体の検証は note.test.ts で行う
+    findTagsByNoteId: async () => [],
   } as unknown as INoteRepository;
 }
 

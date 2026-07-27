@@ -5,6 +5,7 @@ import { extractUploadedFileKeys } from "../file/_file-url";
 import type { IEmbeddingProvider } from "../port/embedding-provider";
 import type { IStorageProvider } from "../port/storage-provider";
 import { addTagsToNote } from "../tag/add-tags-to-note";
+import { removeOrphanTag } from "../tag/remove-orphan-tag";
 import { updateNote } from "./update-note";
 
 export async function updateNoteWithTags(
@@ -18,12 +19,20 @@ export async function updateNoteWithTags(
 ) {
   // 更新前の本文を先に押さえておき、編集で参照が外れた画像を S3 から消すための差分計算に使う。
   const existing = await noteRepo.findById(id);
+  // 更新前のタグも押さえておき、再生成後に外れたタグの orphan 掃除に使う。
+  const oldTagNames = await noteRepo.findTagsByNoteId(id);
 
   const note = await updateNote(noteRepo, id, title, body);
   if (!note) return null;
   await tagRepo.unlinkAllByNoteId(id);
   const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
   if (generatedTags.length > 0) await addTagsToNote(tagRepo, id, generatedTags);
+
+  // 編集で外れた旧タグはどのノートからも参照されなければ消す (delete-note.ts と同じ方式)。
+  // 再選択されたタグはリンクが残るので deleteIfOrphan が残す。
+  for (const tagName of oldTagNames) {
+    await removeOrphanTag(tagRepo, tagName);
+  }
 
   // 旧本文にあって新本文にないキーだけを削除する。新本文に残っているキーは消さない。
   // delete-note.ts と同様、削除失敗はそのまま伝播させる (try/catch で握り潰さない)。

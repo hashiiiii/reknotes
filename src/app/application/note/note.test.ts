@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { loadConfig } from "../../config";
 import { createNoteRepository, createStorageProvider, createTagRepository } from "../../infrastructure/container";
+import type { IEmbeddingProvider } from "../port/embedding-provider";
 import { addTagsToNote } from "../tag/add-tags-to-note";
 import { finishNoteProcessing, markNoteProcessing } from "./_processing-notes";
 import { createNote } from "./create-note";
@@ -10,6 +11,16 @@ import { getNote } from "./get-note";
 import { getNoteTags } from "./get-note-tags";
 import { isNoteProcessing } from "./is-note-processing";
 import { updateNote } from "./update-note";
+import { updateNoteWithTags } from "./update-note-with-tags";
+
+// embedNote と embedTag に逆向きベクトルを返させ、suggestTags の相対閾値で全候補を落とす。
+// これで更新後はタグが一つも付かず、「旧タグが全て外れた」状態を決定的に作れる。
+const noTagEmbeddingProvider: IEmbeddingProvider = {
+  load: async () => {},
+  embedNote: async () => new Float32Array([1, 0]),
+  embedTag: async () => new Float32Array([-1, 0]),
+  buildTagCache: async () => {},
+};
 
 const config = loadConfig();
 const noteRepository = createNoteRepository(config);
@@ -96,5 +107,44 @@ describe("note use cases", () => {
     const tags = await getNoteTags(noteRepository, note.id);
     expect(tags).toContain("typescript");
     expect(tags).toContain("テスト");
+  });
+
+  test("updateNoteWithTags で外れた旧タグはどのノートからも参照されなければ削除される", async () => {
+    // 削除時 (deleteNote) と同様に、更新で外れたタグも orphan なら tags テーブルから消えること
+    const note = await createNote(noteRepository, "orphan 掃除テスト", "本文");
+    await addTagsToNote(tagRepository, note.id, ["編集前だけのタグ"]);
+
+    await updateNoteWithTags(
+      noteRepository,
+      tagRepository,
+      noTagEmbeddingProvider,
+      storageProvider,
+      note.id,
+      "更新後",
+      "新しい本文",
+    );
+
+    expect(await getNoteTags(noteRepository, note.id)).toEqual([]);
+    expect(await tagRepository.findByName("編集前だけのタグ")).toBeNull();
+  });
+
+  test("updateNoteWithTags で外れた旧タグでも他ノートが使っていれば残る", async () => {
+    const edited = await createNote(noteRepository, "編集するノート", "本文");
+    const other = await createNote(noteRepository, "使い続けるノート", "本文");
+    await addTagsToNote(tagRepository, edited.id, ["共有中のタグ"]);
+    await addTagsToNote(tagRepository, other.id, ["共有中のタグ"]);
+
+    await updateNoteWithTags(
+      noteRepository,
+      tagRepository,
+      noTagEmbeddingProvider,
+      storageProvider,
+      edited.id,
+      "更新後",
+      "新しい本文",
+    );
+
+    expect(await getNoteTags(noteRepository, edited.id)).toEqual([]);
+    expect(await tagRepository.findByName("共有中のタグ")).not.toBeNull();
   });
 });
