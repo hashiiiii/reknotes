@@ -101,6 +101,8 @@ body {
 }
 /* masonry JS が配置するまで非表示（フラッシュ防止） */
 .note-grid .note-card { position: absolute; visibility: hidden; }
+/* 削除リクエスト中は先に表示から外す。失敗時は home.js がクラスを外して復元する */
+.note-grid .note-card.deleting { display: none; }
 .note-card:hover { box-shadow: 0 2px 12px var(--shadow-hover); border-color: var(--text-secondary); }
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }

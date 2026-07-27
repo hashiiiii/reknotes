@@ -64,7 +64,7 @@ function togglePreview() {
     var colW = (grid.clientWidth - GAP * (cols - 1)) / cols;
 
     var newCards = [];
-    grid.querySelectorAll('.note-card').forEach(function(card) {
+    grid.querySelectorAll('.note-card:not(.deleting)').forEach(function(card) {
       if (!placed.has(card)) newCards.push(card);
     });
     if (newCards.length === 0) return;
@@ -115,10 +115,26 @@ function togglePreview() {
   // 引き継がないと placeNew が「新規カード」として最短カラムに置いてしまい、カードが飛ぶ。
   var swapGeometries = {};
 
+  // 削除は楽観的に反映する: サーバー応答 (S3 削除等で数秒かかり得る) を待たずにカードを隠して詰め直す。
+  // 成功時は hx-swap="delete" が要素ごと取り除き、失敗時のみ afterRequest で復元してエラーを知らせる。
+  document.body.addEventListener('htmx:beforeRequest', function(e) {
+    if (!e.detail.requestConfig || e.detail.requestConfig.verb !== 'delete') return;
+    var card = e.detail.elt.closest('.note-card');
+    if (!card || !grid.contains(card)) return;
+    card.classList.add('deleting');
+    requestAnimationFrame(fullLayout);
+  });
+
+  document.body.addEventListener('htmx:afterRequest', function(e) {
+    if (!e.detail.requestConfig || e.detail.requestConfig.verb !== 'delete') return;
+    var card = e.detail.elt.closest('.note-card');
+    if (!card || !grid.contains(card) || e.detail.successful) return;
+    card.classList.remove('deleting');
+    requestAnimationFrame(fullLayout);
+    alert('削除に失敗しました');
+  });
+
   document.body.addEventListener('htmx:beforeSwap', function(e) {
-    if (e.detail.requestConfig && e.detail.requestConfig.verb === 'delete') {
-      requestAnimationFrame(fullLayout);
-    }
     var old = e.detail.target;
     if (old && old.classList && old.classList.contains('note-card') && placed.has(old) && old.id) {
       swapGeometries[old.id] = { left: old.style.left, top: old.style.top, width: old.style.width };
