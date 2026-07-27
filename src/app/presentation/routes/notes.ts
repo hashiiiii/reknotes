@@ -160,6 +160,13 @@ noteRoutes.put("/:id", writeLimiter, async (c) => {
   );
   if (!note) return c.notFound();
 
+  // htmx には HX-Redirect でフルページ遷移させる (delete と同じ方式)。
+  // 303 を返すと XHR がリダイレクトを追って全文書 HTML が body に swap され、
+  // 読み込み済みの外部 script が再実行されて redeclaration エラーになる。
+  if (c.req.header("HX-Request")) {
+    c.header("HX-Redirect", `/notes/${id}`);
+    return c.body(null, 200);
+  }
   return c.redirect(`/notes/${id}`, 303);
 });
 

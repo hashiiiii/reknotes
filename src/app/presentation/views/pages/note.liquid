@@ -23,7 +23,8 @@
   <header>
     <h1>編集</h1>
   </header>
-  <form hx-put="/api/notes/{{ note.id }}" hx-target="body">
+  {%- comment -%} 保存成功時はサーバーが HX-Redirect を返すので swap は発生しない {%- endcomment -%}
+  <form hx-put="/api/notes/{{ note.id }}">
     <input type="text" name="title" value="{{ note.title }}" placeholder="タイトル" class="input-title">
     <textarea name="body" rows="15" class="input-body">{{ note.body }}</textarea>
     <div class="form-actions">

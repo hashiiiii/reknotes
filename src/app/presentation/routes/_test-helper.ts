@@ -40,6 +40,9 @@ export interface TestAppOptions {
   searchResults?: Note[];
   // ノート詳細ページの描画に使う。省略時は未スタブ (呼ばれたら例外)。
   graphRepository?: IGraphRepository;
+  // PUT /api/notes/:id などタグ生成が絡む route の検証に使う。省略時は未スタブ (呼ばれたら例外)。
+  tagRepository?: ITagRepository;
+  embeddingProvider?: IEmbeddingProvider;
 }
 
 export function createTestApp(options: TestAppOptions = {}) {
@@ -58,7 +61,13 @@ export function createTestApp(options: TestAppOptions = {}) {
       return note;
     },
     findById: async (id) => notes.find((note) => note.id === id) ?? null,
-    update: async () => null,
+    update: async (id, title, body) => {
+      const note = notes.find((n) => n.id === id);
+      if (!note) return null;
+      note.title = title;
+      note.body = body;
+      return note;
+    },
     delete: async () => false,
     deleteAll: async () => {},
     findTagsByNoteId: async () => [],
@@ -76,10 +85,10 @@ export function createTestApp(options: TestAppOptions = {}) {
 
   const app = createApp(
     noteRepository,
-    notStubbed<ITagRepository>("tagRepository"),
+    options.tagRepository ?? notStubbed<ITagRepository>("tagRepository"),
     options.graphRepository ?? notStubbed<IGraphRepository>("graphRepository"),
     storageProvider,
-    notStubbed<IEmbeddingProvider>("embeddingProvider"),
+    options.embeddingProvider ?? notStubbed<IEmbeddingProvider>("embeddingProvider"),
   );
 
   return { app, storageUpload };
