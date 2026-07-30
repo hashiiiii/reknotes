@@ -6,3 +6,5 @@ node_modules/
 dist/
 memory/
 tmp/
+docs/superpowers/
+.superpowers/
