@@ -177,6 +177,7 @@ noteRoutes.delete("/:id", async (c) => {
   if (id === null) return c.text("ID が不正です", 400);
   const deleted = await deleteNote(c.var.noteRepository, c.var.tagRepository, c.var.storageProvider, id);
 
+  if (deleted === "processing") return c.text("タグ付け処理中です。完了までお待ちください", 409);
   if (!deleted) return c.notFound();
 
   if (c.req.header("HX-Request")) {

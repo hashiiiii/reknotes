@@ -96,4 +96,33 @@ describe("処理中ステートのノートカード", () => {
       finishNoteProcessing(1);
     }
   });
+
+  test("処理中のノートへの PUT は 409 を返す", async () => {
+    const { app } = createTestApp({ notes: [makeNote({ id: 1 })] });
+    markNoteProcessing(1);
+    try {
+      const res = await app.request("/api/notes/1", {
+        method: "PUT",
+        body: new URLSearchParams({ title: "更新", body: "本文" }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Origin: "http://localhost" },
+      });
+      expect(res.status).toBe(409);
+    } finally {
+      finishNoteProcessing(1);
+    }
+  });
+
+  test("処理中のノートへの DELETE は 409 を返す", async () => {
+    const { app } = createTestApp({ notes: [makeNote({ id: 1 })] });
+    markNoteProcessing(1);
+    try {
+      const res = await app.request("/api/notes/1", {
+        method: "DELETE",
+        headers: { Origin: "http://localhost" },
+      });
+      expect(res.status).toBe(409);
+    } finally {
+      finishNoteProcessing(1);
+    }
+  });
 });

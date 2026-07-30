@@ -101,6 +101,21 @@ describe("note use cases", () => {
     expect(isNoteProcessing(123)).toBe(false);
   });
 
+  test("処理中のノートは deleteNote が processing を返す", async () => {
+    // バックグラウンドのタグ再生成と削除が競合しないよう、処理中の削除は拒否される
+    const note = await createNote(noteRepository, "処理中削除ガード", "本文");
+    markNoteProcessing(note.id);
+    try {
+      expect(await deleteNote(noteRepository, tagRepository, storageProvider, note.id)).toBe("processing");
+      // 拒否された削除は DB に触れていない
+      expect(await getNote(noteRepository, note.id)).not.toBeNull();
+    } finally {
+      finishNoteProcessing(note.id);
+    }
+    // 解除後は通常どおり削除できる
+    expect(await deleteNote(noteRepository, tagRepository, storageProvider, note.id)).toBe(true);
+  });
+
   test("タグの追加と取得ができる", async () => {
     const note = await createNote(noteRepository, "タグテスト", "本文");
     await addTagsToNote(tagRepository, note.id, ["TypeScript", "テスト"]);
