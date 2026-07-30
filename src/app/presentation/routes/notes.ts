@@ -158,6 +158,7 @@ noteRoutes.put("/:id", writeLimiter, async (c) => {
     title,
     body,
   );
+  if (note === "processing") return c.text("タグ付け処理中です。完了までお待ちください", 409);
   if (!note) return c.notFound();
 
   // htmx には HX-Redirect でフルページ遷移させる (delete と同じ方式)。

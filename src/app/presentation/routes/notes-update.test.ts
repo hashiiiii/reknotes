@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { isNoteProcessing } from "../../application/note/is-note-processing";
 import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import { createTestApp, makeNote } from "./_test-helper";
@@ -46,6 +47,8 @@ describe("ノート更新の応答方式", () => {
     const res = await put(app, 1, { "HX-Request": "true" });
     expect(res.status).toBe(200);
     expect(res.headers.get("HX-Redirect")).toBe("/notes/1");
+    // バックグラウンドジョブの完了を待ち、processing 状態を他のテストに持ち越さない
+    while (isNoteProcessing(1)) await Bun.sleep(1);
   });
 
   test("htmx 以外からの保存は従来どおり 303 リダイレクトを返す", async () => {
@@ -57,6 +60,8 @@ describe("ノート更新の応答方式", () => {
     const res = await put(app, 1);
     expect(res.status).toBe(303);
     expect(res.headers.get("Location")).toBe("/notes/1");
+    // バックグラウンドジョブの完了を待ち、processing 状態を他のテストに持ち越さない
+    while (isNoteProcessing(1)) await Bun.sleep(1);
   });
 
   test("存在しないノートの保存は 404 を返す", async () => {

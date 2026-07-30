@@ -123,6 +123,8 @@ describe("note use cases", () => {
       "更新後",
       "新しい本文",
     );
+    // タグ再生成はバックグラウンドに移ったので、完了を待ってから最終状態を観測する
+    while (isNoteProcessing(note.id)) await Bun.sleep(1);
 
     expect(await getNoteTags(noteRepository, note.id)).toEqual([]);
     expect(await tagRepository.findByName("編集前だけのタグ")).toBeNull();
@@ -143,6 +145,8 @@ describe("note use cases", () => {
       "更新後",
       "新しい本文",
     );
+    // タグ再生成はバックグラウンドに移ったので、完了を待ってから最終状態を観測する
+    while (isNoteProcessing(edited.id)) await Bun.sleep(1);
 
     expect(await getNoteTags(noteRepository, edited.id)).toEqual([]);
     expect(await tagRepository.findByName("共有中のタグ")).not.toBeNull();
