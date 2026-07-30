@@ -35,6 +35,8 @@ describe("処理中ステートのノートカード", () => {
     expect(html).not.toContain('href="/notes/1000"');
     // 処理中でも kebab メニューは残す。タグ付けがハングしてもノートを削除・ダウンロードできるように
     expect(html).toContain('href="/api/notes/1000/download"');
+    // 処理中は削除を出さない。DELETE は 409 で拒否されるため、押せても失敗するだけのボタンになる
+    expect(html).not.toContain("hx-delete");
   });
 
   test("処理中のノートの GET /api/notes/:id/card は処理中カードを返す", async () => {
@@ -48,6 +50,8 @@ describe("処理中ステートのノートカード", () => {
       expect(html).toContain("note-card processing");
       expect(html).toContain('hx-trigger="every 2s"');
       expect(html).not.toContain('href="/notes/1"');
+      // 処理中は削除を出さない。DELETE は 409 で拒否されるため、押せても失敗するだけのボタンになる
+      expect(html).not.toContain("hx-delete");
     } finally {
       finishNoteProcessing(1);
     }
