@@ -121,6 +121,20 @@ noteRoutes.get("/:id/card", async (c) => {
   return c.html(html);
 });
 
+// detail 画面の kebab メニュー単体の再描画 (処理完了後にロックを解除するポーリング用)
+noteRoutes.get("/:id/actions", async (c) => {
+  const id = parseId(c.req.param("id"));
+  if (id === null) return c.text("ID が不正です", 400);
+  const note = await getNote(c.var.noteRepository, id);
+  if (!note) return c.notFound();
+
+  const html = await engine.renderFile("partials/note-actions", {
+    note,
+    processing: isNoteProcessing(id),
+  });
+  return c.html(html);
+});
+
 // ノートの Markdown ダウンロード
 noteRoutes.get("/:id/download", async (c) => {
   const id = parseId(c.req.param("id"));
@@ -158,6 +172,7 @@ noteRoutes.put("/:id", writeLimiter, async (c) => {
     title,
     body,
   );
+  if (note === "processing") return c.text("タグ付け処理中です。完了までお待ちください", 409);
   if (!note) return c.notFound();
 
   // htmx には HX-Redirect でフルページ遷移させる (delete と同じ方式)。
@@ -176,6 +191,7 @@ noteRoutes.delete("/:id", async (c) => {
   if (id === null) return c.text("ID が不正です", 400);
   const deleted = await deleteNote(c.var.noteRepository, c.var.tagRepository, c.var.storageProvider, id);
 
+  if (deleted === "processing") return c.text("タグ付け処理中です。完了までお待ちください", 409);
   if (!deleted) return c.notFound();
 
   if (c.req.header("HX-Request")) {

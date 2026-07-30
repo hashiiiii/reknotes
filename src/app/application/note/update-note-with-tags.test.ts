@@ -4,11 +4,12 @@ import type { INoteRepository } from "../../domain/note/note-repository";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import type { IEmbeddingProvider } from "../port/embedding-provider";
 import type { IStorageProvider } from "../port/storage-provider";
+import { isNoteProcessing } from "./is-note-processing";
 import { updateNoteWithTags } from "./update-note-with-tags";
 
-// 更新で参照が外れた画像 (orphan) を S3 から消すことだけを検証するテスト。
-// suggestTags / addTagsToNote の経路は負の類似度で抑止し (下記の embedding mock 参照)、
-// タグ生成のノイズを排除して storageProvider.delete の呼び出しだけを観測する。
+// updateNoteWithTags は DB 行更新だけを同期で行い、タグ再生成と掃除 (S3 の orphan 削除を含む)
+// はバックグラウンドに回す。ここでは「即返すこと」「再入を拒否すること」「バックグラウンドの
+// 掃除が最終的に走ること」を検証する。
 
 function makeNote(id: number, body: string): Note {
   return { id, title: "t", body, createdAt: 0, updatedAt: 0 };
@@ -42,6 +43,147 @@ function makeTagRepo(): ITagRepository {
   } as unknown as ITagRepository;
 }
 
+// バックグラウンドジョブの完了 (processing 解除) をポーリングで待つ。
+// ジョブがハングした場合は bun test のタイムアウトが検知する。
+async function waitForBackground(id: number) {
+  while (isNoteProcessing(id)) await Bun.sleep(1);
+}
+
+describe("updateNoteWithTags の非同期化", () => {
+  test("タグ付け完了を待たずに更新結果を返し、処理中フラグが立つ", async () => {
+    // embedNote を手動で解放するまでブロックさせ、「タグ付けが終わる前に返る」ことを決定的に検証する
+    let releaseEmbedding: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseEmbedding = resolve;
+    });
+    const embeddingProvider: IEmbeddingProvider = {
+      load: async () => {},
+      embedNote: async () => {
+        await gate;
+        return new Float32Array([1, 0]);
+      },
+      embedTag: async () => new Float32Array([-1, 0]),
+      buildTagCache: async () => {},
+    };
+    const unlinkSpy = mock((_id: number) => Promise.resolve());
+    const tagRepo = { unlinkAllByNoteId: unlinkSpy, findAll: async () => [] } as unknown as ITagRepository;
+    const storageProvider = { delete: async () => {} } as unknown as IStorageProvider;
+
+    const note = await updateNoteWithTags(
+      makeNoteRepo("旧本文", "新本文"),
+      tagRepo,
+      embeddingProvider,
+      storageProvider,
+      10,
+      "t",
+      "新本文",
+    );
+
+    // embedNote がブロックされたままでも更新結果が返り、処理中フラグが立っている
+    expect(note).not.toBe("processing");
+    expect((note as Note).body).toBe("新本文");
+    expect(isNoteProcessing(10)).toBe(true);
+
+    releaseEmbedding();
+    await waitForBackground(10);
+    expect(unlinkSpy).toHaveBeenCalledWith(10);
+  });
+
+  test("処理中の再入は processing を返す", async () => {
+    let releaseEmbedding: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseEmbedding = resolve;
+    });
+    const embeddingProvider: IEmbeddingProvider = {
+      load: async () => {},
+      embedNote: async () => {
+        await gate;
+        return new Float32Array([1, 0]);
+      },
+      embedTag: async () => new Float32Array([-1, 0]),
+      buildTagCache: async () => {},
+    };
+    const storageProvider = { delete: async () => {} } as unknown as IStorageProvider;
+    const noteRepo = makeNoteRepo("旧本文", "新本文");
+
+    const first = await updateNoteWithTags(
+      noteRepo,
+      makeTagRepo(),
+      embeddingProvider,
+      storageProvider,
+      11,
+      "t",
+      "新本文",
+    );
+    const second = await updateNoteWithTags(
+      noteRepo,
+      makeTagRepo(),
+      embeddingProvider,
+      storageProvider,
+      11,
+      "t",
+      "別の本文",
+    );
+
+    expect(first).not.toBe("processing");
+    expect(second).toBe("processing");
+
+    releaseEmbedding();
+    await waitForBackground(11);
+  });
+
+  test("存在しないノートは null を返しロックを解除する", async () => {
+    const noteRepo = {
+      findById: async () => null,
+      findTagsByNoteId: async () => [],
+      update: async () => null,
+    } as unknown as INoteRepository;
+    const storageProvider = { delete: async () => {} } as unknown as IStorageProvider;
+
+    const result = await updateNoteWithTags(
+      noteRepo,
+      makeTagRepo(),
+      makeEmbeddingProvider(),
+      storageProvider,
+      12,
+      "t",
+      "本文",
+    );
+
+    expect(result).toBeNull();
+    // ロックが解除されていれば、後続の更新は "processing" にならない
+    expect(isNoteProcessing(12)).toBe(false);
+  });
+
+  test("バックグラウンドジョブが失敗してもロックは解除される", async () => {
+    const embeddingProvider: IEmbeddingProvider = {
+      load: async () => {},
+      embedNote: async () => {
+        throw new Error("embedding backend down");
+      },
+      embedTag: async () => new Float32Array([-1, 0]),
+      buildTagCache: async () => {},
+    };
+    const storageProvider = { delete: async () => {} } as unknown as IStorageProvider;
+
+    const note = await updateNoteWithTags(
+      makeNoteRepo("旧本文", "新本文"),
+      makeTagRepo(),
+      embeddingProvider,
+      storageProvider,
+      13,
+      "t",
+      "新本文",
+    );
+
+    // 本文の更新は成功したまま返り、失敗はバックグラウンドでログされるだけ
+    expect(note).not.toBe("processing");
+    expect((note as Note).body).toBe("新本文");
+    await waitForBackground(13);
+    expect(isNoteProcessing(13)).toBe(false);
+  });
+});
+
 describe("updateNoteWithTags のファイルクリーンアップ", () => {
   test("旧本文にあって新本文にないキーは削除される", async () => {
     const noteRepo = makeNoteRepo("![](/api/files/old.png)", "![](/api/files/new.png)");
@@ -51,6 +193,8 @@ describe("updateNoteWithTags のファイルクリーンアップ", () => {
     const storageProvider = { delete: deleteSpy } as unknown as IStorageProvider;
 
     await updateNoteWithTags(noteRepo, tagRepo, embeddingProvider, storageProvider, 1, "t", "![](/api/files/new.png)");
+    // S3 掃除はバックグラウンドに移ったので、完了を待ってから観測する
+    await waitForBackground(1);
 
     expect(deleteSpy).toHaveBeenCalledWith("old.png");
     expect(deleteSpy).not.toHaveBeenCalledWith("new.png");
@@ -64,6 +208,7 @@ describe("updateNoteWithTags のファイルクリーンアップ", () => {
     const storageProvider = { delete: deleteSpy } as unknown as IStorageProvider;
 
     await updateNoteWithTags(noteRepo, tagRepo, embeddingProvider, storageProvider, 1, "t", "![](/api/files/keep.png)");
+    await waitForBackground(1);
 
     expect(deleteSpy).not.toHaveBeenCalled();
   });

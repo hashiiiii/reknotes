@@ -4,14 +4,7 @@
   <header>
     <div class="note-header-row">
       <h1>{{ note.title | default: "無題" }}</h1>
-      <div class="kebab-menu">
-        <button class="kebab-btn" aria-label="メニュー" onclick="toggleKebab(this)">&#x22EE;</button>
-        <div class="kebab-dropdown">
-          <button onclick="this.closest('.kebab-menu').classList.remove('open'); document.getElementById('note-view').hidden=true; document.getElementById('note-edit').hidden=false; var g=document.getElementById('note-graph'); if(g) g.hidden=true;">編集</button>
-          <a href="/api/notes/{{ note.id }}/download" onclick="this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
-          <button class="danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body">削除</button>
-        </div>
-      </div>
+      {% render 'note-actions', note: note, processing: processing %}
     </div>
     <time datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
   </header>
