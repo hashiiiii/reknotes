@@ -1,0 +1,22 @@
+{%- comment -%}
+detail 画面の kebab メニュー。処理中 (バックグラウンドのタグ再生成) は編集・削除を無効化し、
+2 秒ポーリングで完了を検知して通常メニューに戻る。完了後の描画にはポーリング属性が
+付かないので自然に停止する。ダウンロードは処理中も使える。
+{%- endcomment -%}
+<div class="kebab-menu"
+  {% if processing %}hx-get="/api/notes/{{ note.id }}/actions" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <button class="kebab-btn" aria-label="メニュー" onclick="toggleKebab(this)">&#x22EE;</button>
+  <div class="kebab-dropdown">
+    {% if processing %}
+    <button disabled>編集 (処理中)</button>
+    {% else %}
+    <button onclick="this.closest('.kebab-menu').classList.remove('open'); document.getElementById('note-view').hidden=true; document.getElementById('note-edit').hidden=false; var g=document.getElementById('note-graph'); if(g) g.hidden=true;">編集</button>
+    {% endif %}
+    <a href="/api/notes/{{ note.id }}/download" onclick="this.closest('.kebab-menu').classList.remove('open')">ダウンロード</a>
+    {% if processing %}
+    <button class="danger" disabled>削除 (処理中)</button>
+    {% else %}
+    <button class="danger" hx-delete="/api/notes/{{ note.id }}" hx-confirm="本当に削除しますか？" hx-target="body">削除</button>
+    {% endif %}
+  </div>
+</div>

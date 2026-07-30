@@ -41,6 +41,8 @@ pageRoutes.get("/notes/:id", async (c) => {
     bodyHtml,
     tags,
     graphData,
+    // 処理中は編集・削除メニューをロックする (note-actions partial が参照)
+    processing: isNoteProcessing(id),
   });
   return c.html(html);
 });

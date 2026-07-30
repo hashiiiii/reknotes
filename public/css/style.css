@@ -170,6 +170,8 @@ body {
 .kebab-dropdown button:hover, .kebab-dropdown a:hover { background: var(--bg-secondary); }
 .kebab-dropdown button.danger { color: var(--danger); }
 .kebab-dropdown button.danger:hover { background: rgba(224,82,82,0.1); }
+.kebab-dropdown button:disabled { color: var(--muted); cursor: not-allowed; }
+.kebab-dropdown button:disabled:hover { background: none; }
 
 .search-count { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.5rem; }
 .no-results { color: var(--muted); text-align: center; padding: 2rem; }
