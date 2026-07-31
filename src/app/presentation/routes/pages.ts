@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import markdownToHtml from "zenn-markdown-html";
 import type { AppEnv } from "../..";
 import { getNoteSubgraph } from "../../application/graph/get-note-subgraph";
 import { getNote } from "../../application/note/get-note";
@@ -7,6 +6,7 @@ import { getNoteTags } from "../../application/note/get-note-tags";
 import { isNoteProcessing } from "../../application/note/is-note-processing";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { parseId } from "./_parse-id";
+import { renderMarkdown } from "./_render-markdown";
 
 const pageRoutes = new Hono<AppEnv>();
 
@@ -30,7 +30,7 @@ pageRoutes.get("/notes/:id", async (c) => {
   const note = await getNote(c.var.noteRepository, id);
   if (!note) return c.notFound();
 
-  const bodyHtml = await markdownToHtml(note.body);
+  const bodyHtml = await renderMarkdown(note.body);
   const tags = await getNoteTags(c.var.noteRepository, id);
   const subgraph = await getNoteSubgraph(c.var.graphRepository, id);
   const graphData = subgraph.nodes.length > 0 ? JSON.stringify(subgraph) : null;

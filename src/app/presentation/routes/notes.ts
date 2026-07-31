@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
-import markdownToHtml from "zenn-markdown-html";
 import type { AppEnv } from "../..";
 import { engine } from "../..";
 import { createNoteWithTags } from "../../application/note/create-note-with-tags";
@@ -12,6 +11,7 @@ import { isNoteProcessing } from "../../application/note/is-note-processing";
 import { listNotesWithTags } from "../../application/note/list-notes";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
 import { parseId } from "./_parse-id";
+import { renderMarkdown } from "./_render-markdown";
 
 const noteRoutes = new Hono<AppEnv>();
 
@@ -46,7 +46,7 @@ noteRoutes.post("/preview", previewLimiter, async (c) => {
   const body = String(form.body ?? "");
   if (body.length > MAX_BODY_LENGTH) return c.text("本文が長すぎます", 400);
   if (!body.trim()) return c.html('<p style="color:var(--muted)">本文を入力してください</p>');
-  const html = await markdownToHtml(body);
+  const html = await renderMarkdown(body);
   return c.html(`<div class="znc">${html}</div>`);
 });
 
