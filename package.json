@@ -21,7 +21,7 @@
     "@huggingface/transformers": "^4.2.0",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.12.32",
+    "hono": "^4.12.34",
     "hono-rate-limiter": "^0.5.3",
     "htmx.org": "^2.0.10",
     "liquidjs": "^10.27.2",
