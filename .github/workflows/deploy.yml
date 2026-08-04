@@ -50,7 +50,7 @@ jobs:
           cache-to: type=gha,mode=max
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.3.13"
+          bun-version: "1.3.14"
 
       - name: Install packages
         run: bun install --frozen-lockfile
