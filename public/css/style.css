@@ -149,6 +149,18 @@ body {
 .note-detail .input-title:focus, .note-detail .input-body:focus { outline: 2px solid var(--accent); border-color: transparent; }
 .form-actions { display: flex; gap: 0.5rem; align-items: center; }
 
+/* Copy as Markdown button (note detail) */
+.copy-md-btn {
+  background: none; border: 1px solid transparent; border-radius: var(--radius-sm);
+  cursor: pointer; padding: 0.25rem 0.4rem; color: var(--muted); line-height: 1;
+  flex-shrink: 0;
+}
+.copy-md-btn:hover { background: var(--accent-light); color: var(--fg); }
+.copy-md-btn svg { width: 18px; height: 18px; display: block; }
+.copy-md-btn .icon-check { display: none; }
+.copy-md-btn.copied .icon-copy { display: none; }
+.copy-md-btn.copied .icon-check { display: block; color: var(--accent); }
+
 /* Kebab menu */
 .kebab-menu { position: relative; flex-shrink: 0; }
 .kebab-btn {
@@ -290,6 +302,7 @@ mark { background: rgba(107,184,115,0.3); color: var(--fg); padding: 0 2px; bord
   /* Tap targets: ensure minimum 44px */
   .btn { min-height: 44px; padding: 0.5rem 1rem; }
   .kebab-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  .copy-md-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
   .theme-toggle { width: 44px; height: 44px; }
 
   /* Search input */
