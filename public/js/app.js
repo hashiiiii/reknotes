@@ -15,6 +15,23 @@ document.addEventListener('click', function(e) {
   }
 });
 
+// Copy the saved note Markdown to the clipboard (note detail page).
+// The source is the defaultValue of the edit textarea, so unsaved edits are not copied.
+function copyNoteMarkdown(btn) {
+  if (!navigator.clipboard) {
+    alert('この環境ではクリップボードを使用できません');
+    return;
+  }
+  var source = document.getElementById('note-body-input');
+  navigator.clipboard.writeText(source.defaultValue).then(function() {
+    btn.classList.add('copied');
+    clearTimeout(btn._copyTimer);
+    btn._copyTimer = setTimeout(function() { btn.classList.remove('copied'); }, 2000);
+  }, function() {
+    alert('クリップボードへのコピーに失敗しました');
+  });
+}
+
 // File upload → Markdown insertion
 function uploadAndInsert(file, textarea) {
   var formData = new FormData();

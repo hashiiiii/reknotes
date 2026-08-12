@@ -4,6 +4,10 @@
   <header>
     <div class="note-header-row">
       <h1>{{ note.title | default: "無題" }}</h1>
+      <button class="copy-md-btn" aria-label="Markdown をコピー" title="Markdown をコピー" onclick="copyNoteMarkdown(this)">
+        <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
       {% render 'note-actions', note: note, processing: processing %}
     </div>
     <time datetime="{{ note.createdAt }}">{{ note.createdAt | formatDate }}</time>
@@ -19,7 +23,8 @@
   {%- comment -%} 保存成功時はサーバーが HX-Redirect を返すので swap は発生しない {%- endcomment -%}
   <form hx-put="/api/notes/{{ note.id }}">
     <input type="text" name="title" value="{{ note.title }}" placeholder="タイトル" class="input-title">
-    <textarea name="body" rows="15" class="input-body">{{ note.body }}</textarea>
+    {%- comment -%} copyNoteMarkdown reads the defaultValue, so unsaved edits are not copied {%- endcomment -%}
+    <textarea name="body" id="note-body-input" rows="15" class="input-body">{{ note.body }}</textarea>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">保存</button>
       <button type="button" class="btn" onclick="document.getElementById('note-view').hidden=false; document.getElementById('note-edit').hidden=true; var g=document.getElementById('note-graph'); if(g) g.hidden=false;">キャンセル</button>
