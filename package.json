@@ -30,7 +30,7 @@
     "zenn-markdown-html": "^0.5.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.13",
+    "@biomejs/biome": "2.5.14",
     "@types/bun": "latest",
     "typescript": "7.0.2"
   },
