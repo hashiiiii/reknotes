@@ -6,14 +6,14 @@
       "name": "reknotes",
       "dependencies": {
         "3d-force-graph": "^1.80.0",
-        "@aws-sdk/client-s3": "^3.1137.0",
-        "@aws-sdk/lib-storage": "^3.1137.0",
+        "@aws-sdk/client-s3": "^3.1138.0",
+        "@aws-sdk/lib-storage": "^3.1138.0",
         "@huggingface/transformers": "^4.3.0",
         "drizzle-kit": "^0.31.11",
         "drizzle-orm": "^0.45.3",
         "hono": "^4.13.8",
         "hono-rate-limiter": "^0.5.4",
-        "htmx.org": "^2.0.10",
+        "htmx.org": "^2.0.11",
         "liquidjs": "^10.29.0",
         "postgres": "^3.4.9",
         "zenn-content-css": "^0.5.4",
@@ -454,7 +454,7 @@
 
     "htmlparser2": ["htmlparser2@10.1.0", "", { "dependencies": { "domelementtype": "^2.3.0", "domhandler": "^5.0.3", "domutils": "^3.2.2", "entities": "^7.0.1" } }, "sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ=="],
 
-    "htmx.org": ["htmx.org@2.0.10", "", {}, "sha512-kdeJe7ZVwaS6QMz/ebBIVtZdpwen6L0OQ5GOhPV9MKBb196TCZeZu4yA7ZIQsaLKv7EpXz+So7KSXNuHXhj7Cw=="],
+    "htmx.org": ["htmx.org@2.0.11", "", {}, "sha512-Thx/WtpeOQqSrqBCw/A1cwGJGg4UrVa3+sW0GmrM3p4gJgO89ecH4qtbnyzDDWFvBTqjnIMCgELTNt636dtamA=="],
 
     "iconv-lite": ["iconv-lite@0.6.3", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, "sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw=="],
 
