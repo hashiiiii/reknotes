@@ -1,4 +1,4 @@
-FROM oven/bun:1-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61 AS build
+FROM oven/bun:1-slim@sha256:14a223fa35747ec728bce300ef85888bc5f7958164d15bbba6a54b22b52a3288 AS build
 WORKDIR /app
 
 # Docker は各行ごとにキャッシュを持っているため、コピー元のファイルに変更がなければそのレイヤーは実行されない。
@@ -15,7 +15,7 @@ RUN bun run build
 
 # ステージを分けることで、build にしか必要ない dev dependencies を最終 image から除外する。
 # production stage では --production オプション付きで再 install する。
-FROM oven/bun:1-slim@sha256:cb3bbbb08e13a4a2ff400f24c7a2a1d5efa83f6ef8544d52d95a519631e2fc61
+FROM oven/bun:1-slim@sha256:14a223fa35747ec728bce300ef85888bc5f7958164d15bbba6a54b22b52a3288
 WORKDIR /app
 
 COPY package.json bun.lock ./
