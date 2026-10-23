@@ -132,11 +132,11 @@ GitHub Secrets は **environment-level に分離**されている (`development`
 
 ### 1. イメージビルド
 
-GitHub Actions runner 上で `Dockerfile` から 2-stage build する。
+GitHub Actions runner 上で `Dockerfile` からアプリを build する。`Dockerfile.oauth2-proxy` は OAuth2 Proxy に更新済みの CA バンドルを組み込む。CA バンドルは、`compose.remote.yaml` と同じ Caddy image からコピーする。
 
 ### 2. GHCR push
 
-workflow を dispatch した git ref 名 (`github.ref_name`、OCI tag に許されない `/` は `-` に置換) をそのまま image tag として GHCR に push する。
+workflow を dispatch した git ref 名 (`github.ref_name`、OCI tag に許されない `/` は `-` に置換) をアプリの image tag として GHCR に push する。OAuth2 Proxy は同じ GHCR package に `oauth2-proxy-` を付けた tag で push する。
 
 image tag を git ref に 1:1 で揃えることで、main 系の可変な ref は可変 image、release tag のような不変な ref は不変 image、という性質がそのまま GHCR 側に投影される。
 
@@ -148,7 +148,7 @@ runner は破壊的変更 (`DROP TABLE` / `DROP COLUMN` / `SET DATA TYPE` / RENA
 
 ### 4. `.env` 配置
 
-runner 上で組み立てた `.env` を SCP で VM の作業ディレクトリ (`~/reknotes/.env`) に配置する。`IMAGE_TAG` もここに含まれ、`compose.remote.yaml` の `app` 定義 (`image: ghcr.io/.../${IMAGE_TAG}`) が dispatch された ref に対応する image を pull するための入力になる。
+runner 上で組み立てた `.env` を SCP で VM の作業ディレクトリ (`~/reknotes/.env`) に配置する。`IMAGE_TAG` もここに含まれ、`compose.remote.yaml` がアプリと OAuth2 Proxy の image を選ぶ入力になる。Caddy は Compose に記載された公式 image を使う。
 
 VM に転送するのはこの `.env` だけで、Docker image は VM に直接送らない。
 

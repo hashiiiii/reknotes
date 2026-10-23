@@ -105,7 +105,7 @@ bucket 名は機密ではないがハードコードもしていない (= 別名
 
 ### VM (本番) の事前準備
 
-本番障害時の restore は VM host で `bun run restore` を叩く運用 ([restore (本番障害時)](#restore-本番障害時))。app container (`oven/bun:1-slim`) には docker CLI が無く、`pg_dump` / `psql` を `docker run` で呼ぶ実装上、container 内では走らない。よって VM host 側に bun と node_modules を 1 回だけ揃えておく:
+本番障害時の restore は VM host で `bun run restore` を叩く運用 ([restore (本番障害時)](#restore-本番障害時))。app container (`oven/bun:1.4.4-slim`) には docker CLI が無く、`pg_dump` / `psql` を `docker run` で呼ぶ実装上、container 内では走らない。よって VM host 側に bun と node_modules を 1 回だけ揃えておく:
 
 ```bash
 # VM に SSH した上で 1 回だけ
