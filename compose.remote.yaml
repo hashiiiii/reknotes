@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy:2.11.6
+    image: caddy:2.11.7@sha256:504a44d7d74bd2bc28a66afc4774912fc21223ca8a67734af1c54ab2f999b489
     ports:
       - "80:80"
       - "443:443"
@@ -12,7 +12,7 @@ services:
     restart: unless-stopped
 
   oauth2-proxy:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.7.1
+    image: ghcr.io/${GITHUB_REPOSITORY}:oauth2-proxy-${IMAGE_TAG}
     environment:
       OAUTH2_PROXY_PROVIDER: github
       OAUTH2_PROXY_CLIENT_ID: ${OAUTH2_PROXY_CLIENT_ID}

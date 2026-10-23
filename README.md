@@ -18,7 +18,7 @@ reknotes is a self-hostable personal knowledge management tool built around maki
 
 ## Quick Start
 
-Install [Bun](https://bun.sh/) (>= 1.3) and [Docker](https://www.docker.com/). Make sure Docker is running.
+Install [Bun](https://bun.sh/) (>= 1.4.4) and [Docker](https://www.docker.com/). Make sure Docker is running.
 
 ```bash
 # clone
@@ -39,7 +39,7 @@ Open `http://localhost:3000` in your browser.
 
 ## Tech Stack
 
-- **Runtime** — [Bun](https://bun.sh/) >= 1.3, TypeScript (strict)
+- **Runtime** — [Bun](https://bun.sh/) >= 1.4.4, TypeScript (strict)
 - **Web** — [Hono](https://hono.dev/) + [LiquidJS](https://liquidjs.com/) + [htmx](https://htmx.org/)
 - **Database** — [PostgreSQL](https://www.postgresql.org/) 18 + [Drizzle ORM](https://orm.drizzle.team/)
 - **Embeddings** — [HuggingFace Transformers.js](https://huggingface.co/docs/transformers.js) (local) / e.g. [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) (remote)
