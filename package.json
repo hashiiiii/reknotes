@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "3d-force-graph": "^1.80.1",
-    "@aws-sdk/client-s3": "^3.1152.0",
-    "@aws-sdk/lib-storage": "^3.1152.0",
+    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/lib-storage": "^3.1156.0",
     "@huggingface/transformers": "^4.3.1",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.4",
@@ -26,8 +26,8 @@
     "htmx.org": "^2.0.11",
     "liquidjs": "^10.30.0",
     "postgres": "^3.4.9",
-    "zenn-content-css": "^0.5.6",
-    "zenn-markdown-html": "^0.5.6"
+    "zenn-content-css": "^0.5.8",
+    "zenn-markdown-html": "^0.5.8"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
