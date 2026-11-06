@@ -25,7 +25,7 @@
     "hono-rate-limiter": "^0.5.4",
     "htmx.org": "^2.0.11",
     "liquidjs": "^10.30.1",
-    "postgres": "^3.4.9",
+    "postgres": "^4.0.0",
     "zenn-content-css": "^0.5.11",
     "zenn-markdown-html": "^0.5.13"
   },
