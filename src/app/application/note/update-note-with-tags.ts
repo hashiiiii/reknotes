@@ -88,8 +88,10 @@ async function runRetagAndCleanup(
   oldBody: string | null,
   oldTagNames: string[],
 ): Promise<void> {
-  await tagRepo.unlinkAllByNoteId(noteId);
+  // API エラーやキャッシュ構築失敗時にも既存タグを残すため、生成が完了するまでは
+  // リンクを変更しない。正常に空配列が返った場合は従来どおり旧タグを外す。
   const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
+  await tagRepo.unlinkAllByNoteId(noteId);
   if (generatedTags.length > 0) await addTagsToNote(tagRepo, noteId, generatedTags);
 
   // 編集で外れた旧タグはどのノートからも参照されなければ消す (delete-note.ts と同じ方式)。
