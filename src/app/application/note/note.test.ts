@@ -166,4 +166,45 @@ describe("note use cases", () => {
     expect(await getNoteTags(noteRepository, edited.id)).toEqual([]);
     expect(await tagRepository.findByName("共有中のタグ")).not.toBeNull();
   });
+
+  test("embedding 失敗後も本文更新と既存タグが残り、再保存でタグを更新できる", async () => {
+    const note = await createNote(noteRepository, "障害時のタグ保持", "本文");
+    await addTagsToNote(tagRepository, note.id, ["障害時に残すタグ"]);
+    const unavailableEmbeddingProvider: IEmbeddingProvider = {
+      ...noTagEmbeddingProvider,
+      embedNote: async () => {
+        throw new Error("embedding backend unavailable");
+      },
+    };
+
+    await updateNoteWithTags(
+      noteRepository,
+      tagRepository,
+      unavailableEmbeddingProvider,
+      storageProvider,
+      note.id,
+      "保存済み",
+      "更新された本文",
+    );
+    while (isNoteProcessing(note.id)) await Bun.sleep(1);
+
+    expect((await getNote(noteRepository, note.id))?.body).toBe("更新された本文");
+    expect(await getNoteTags(noteRepository, note.id)).toEqual(["障害時に残すタグ"]);
+    expect(await tagRepository.findByName("障害時に残すタグ")).not.toBeNull();
+
+    // 正常にタグが0件になった場合は既存の置き換え・orphan 掃除が引き続き動く。
+    const retry = await updateNoteWithTags(
+      noteRepository,
+      tagRepository,
+      noTagEmbeddingProvider,
+      storageProvider,
+      note.id,
+      "再保存",
+      "更新された本文",
+    );
+    expect(retry).not.toBe("processing");
+    while (isNoteProcessing(note.id)) await Bun.sleep(1);
+    expect(await getNoteTags(noteRepository, note.id)).toEqual([]);
+    expect(await tagRepository.findByName("障害時に残すタグ")).toBeNull();
+  });
 });
