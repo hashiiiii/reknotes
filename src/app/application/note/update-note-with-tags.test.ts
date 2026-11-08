@@ -83,6 +83,7 @@ describe("updateNoteWithTags の非同期化", () => {
     expect(note).not.toBe("processing");
     expect((note as Note).body).toBe("新本文");
     expect(isNoteProcessing(10)).toBe(true);
+    expect(unlinkSpy).not.toHaveBeenCalled();
 
     releaseEmbedding();
     await waitForBackground(10);
@@ -182,6 +183,55 @@ describe("updateNoteWithTags の非同期化", () => {
     await waitForBackground(13);
     expect(isNoteProcessing(13)).toBe(false);
   });
+});
+
+describe("updateNoteWithTags のタグ保持", () => {
+  test.each(["note", "title", "cache", "tag"] as const)(
+    "%s の embedding 失敗時は既存タグを変更・掃除しない",
+    async (failure) => {
+      let noteCalls = 0;
+      const embeddingProvider: IEmbeddingProvider = {
+        load: async () => {},
+        embedNote: async () => {
+          noteCalls++;
+          if (failure === "note" || (failure === "title" && noteCalls === 2)) {
+            throw new Error("embedding backend down");
+          }
+          return new Float32Array([1, 0]);
+        },
+        buildTagCache: async () => {
+          if (failure === "cache") throw new Error("tag cache failed");
+        },
+        embedTag: async () => {
+          if (failure === "tag") throw new Error("tag embedding failed");
+          return new Float32Array([1, 0]);
+        },
+      };
+      const unlinkSpy = mock(async () => {});
+      const orphanSpy = mock(async () => {});
+      const linkSpy = mock(async () => {});
+      const tagRepo = {
+        findAll: async () => [{ id: 1, name: "typescript" }],
+        unlinkAllByNoteId: unlinkSpy,
+        linkManyToNote: linkSpy,
+        findByName: async () => ({ id: 1, name: "typescript" }),
+        deleteIfOrphan: orphanSpy,
+      } as unknown as ITagRepository;
+      const noteRepo = {
+        ...makeNoteRepo("旧本文", "新本文"),
+        findTagsByNoteId: async () => ["typescript"],
+      };
+      const storageProvider = { delete: async () => {} } as unknown as IStorageProvider;
+
+      const note = await updateNoteWithTags(noteRepo, tagRepo, embeddingProvider, storageProvider, 14, "t", "新本文");
+      expect((note as Note).body).toBe("新本文");
+      await waitForBackground(14);
+      expect(unlinkSpy).not.toHaveBeenCalled();
+      expect(linkSpy).not.toHaveBeenCalled();
+      expect(orphanSpy).not.toHaveBeenCalled();
+      expect(isNoteProcessing(14)).toBe(false);
+    },
+  );
 });
 
 describe("updateNoteWithTags のファイルクリーンアップ", () => {

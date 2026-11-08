@@ -88,6 +88,7 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 - ローカル: HuggingFace Transformers.js による ONNX 推論。モデルはアプリプロセス内に load される。
 - リモート: Cloudflare Workers AI。`CLOUDFLARE_*` で認証。
 - どちらを使うかは `DEPLOYMENT` の値に応じて `infrastructure/container.ts` が分岐する。
+- リモートモデルの移行・キャッシュ・障害時の動作は [Embedding モデルの移行](./EMBEDDINGS.md) を参照。
 
 ### Reverse Proxy + 認証 (リモートのみ)
 
