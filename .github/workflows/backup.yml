@@ -31,6 +31,8 @@ jobs:
           bun-version-file: .bun-version
 
       - name: Install packages
+        env:
+          ONNXRUNTIME_NODE_INSTALL: skip
         run: bun install --frozen-lockfile
 
       - name: Run dump

@@ -6,6 +6,10 @@ on:
 permissions:
   contents: read
 
+# The CPU runtime ships in the package. CI does not need the optional CUDA download.
+env:
+  ONNXRUNTIME_NODE_INSTALL: skip
+
 jobs:
   test:
     runs-on: ubuntu-latest
