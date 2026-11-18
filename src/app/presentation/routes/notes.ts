@@ -75,6 +75,8 @@ export function createNoteRoutes() {
     );
 
     if (c.req.header("HX-Target") === "note-grid") {
+      // Home pages opened before the pinning update still ask to prepend a single card.
+      c.header("HX-Reswap", "innerHTML");
       const query = String(form.q ?? "").trim();
       if (query) return c.redirect(`/api/search?q=${encodeURIComponent(query)}`, 303);
       // A new note can belong on a later page when the first page is full of pins.

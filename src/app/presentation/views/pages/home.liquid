@@ -1,7 +1,7 @@
 {% layout 'base' %}
 {% block content %}
 <section class="compose-bar" id="compose">
-  <form hx-post="/api/notes" hx-target="#note-grid" hx-swap="innerHTML" hx-include=".nav-search-input" hx-on::after-request="if (event.detail.successful) collapseCompose(this)">
+  <form hx-post="/api/notes" hx-target="#note-grid" hx-swap="innerHTML" hx-include=".nav-search-input" hx-on::after-request="if (event.detail.successful) collapseCompose(this, true)">
     <div class="compose-collapsed" id="compose-trigger" onclick="expandCompose()">
       ノートを入力...
     </div>
@@ -16,6 +16,7 @@
       </div>
     </div>
   </form>
+  <p id="compose-status" role="status"></p>
 </section>
 
 <section id="note-grid" class="note-grid">

@@ -14,7 +14,10 @@ export const notes = pgTable(
       .notNull()
       .$defaultFn(() => Date.now()),
   },
-  (table) => [index("idx_notes_created_at").on(table.createdAt)],
+  (table) => [
+    index("idx_notes_created_at").on(table.createdAt),
+    index("idx_notes_pinned_id").on(table.pinned, table.id),
+  ],
 );
 
 export const tags = pgTable("tags", {

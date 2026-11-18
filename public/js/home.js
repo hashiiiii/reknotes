@@ -1,4 +1,5 @@
 function expandCompose() {
+  document.getElementById('compose-status').textContent = '';
   document.getElementById('compose-trigger').hidden = true;
   document.getElementById('compose-body').hidden = false;
   document.querySelector('.compose-title').focus();
@@ -8,7 +9,8 @@ function expandCompose() {
   });
 }
 
-function collapseCompose(form) {
+function collapseCompose(form, posted) {
+  document.getElementById('compose-status').textContent = posted ? '投稿しました' : '';
   form.reset();
   document.getElementById('compose-trigger').hidden = false;
   document.getElementById('compose-body').hidden = true;
