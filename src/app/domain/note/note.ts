@@ -1,5 +1,6 @@
 export interface Note {
   id: number;
+  pinned: boolean;
   title: string;
   body: string;
   createdAt: number;

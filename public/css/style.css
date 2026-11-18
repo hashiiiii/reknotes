@@ -107,14 +107,16 @@ body {
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }
 .note-card .kebab-menu { opacity: 0; transition: opacity 0.15s; }
-.note-card:hover .kebab-menu, .note-card .kebab-menu.open { opacity: 1; }
+.note-card:hover .kebab-menu, .note-card:focus-within .kebab-menu, .note-card .kebab-menu.open { opacity: 1; }
+@media (hover: none) { .note-card .kebab-menu { opacity: 1; } }
 .note-card .kebab-dropdown { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 4px; }
+.note-card-pin { display: inline-block; margin-bottom: 0.35rem; padding: 0 0.5rem; border-radius: var(--radius-pill); background: var(--accent-light); color: var(--fg); font-size: 0.75rem; font-weight: 700; }
 .note-card-link { text-decoration: none; color: inherit; display: block; }
 .note-card h3 { font-size: 0.95rem; margin-bottom: 0.35rem; line-height: 1.4; color: var(--fg); overflow-wrap: anywhere; }
 /* Plain-text bodies need pre-line to preserve their line breaks. */
 .note-snippet { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
 .note-card-time { display: block; margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted); }
-.note-grid-sentinel { position: absolute; left: 0; width: 100%; height: 1px; }
+.note-grid-sentinel { position: absolute; top: 100%; left: 0; width: 100%; height: 1px; }
 
 /* Muted cards signal that background tagging still prevents opening the note. */
 .note-card.processing { opacity: 0.55; }

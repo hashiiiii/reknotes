@@ -1,9 +1,10 @@
-import { bigint, index, integer, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, index, integer, pgTable, primaryKey, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const notes = pgTable(
   "notes",
   {
     id: serial("id").primaryKey(),
+    pinned: boolean("pinned").notNull().default(false),
     title: text("title").notNull().default(""),
     body: text("body").notNull(),
     createdAt: bigint("created_at", { mode: "number" })

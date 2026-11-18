@@ -11,14 +11,8 @@ import { renderMarkdown } from "./_render-markdown";
 const pageRoutes = new Hono<AppEnv>();
 
 pageRoutes.get("/", async (c) => {
-  const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository);
-  const html = await c.var.render("home", {
-    title: "home",
-    // Reloading must not make a note openable while background tagging is running.
-    notes: notes.map((note) => ({ ...note, processing: isNoteProcessing(note.id) })),
-    hasMore,
-    nextCursor,
-  });
+  const page = await listNotesWithTags(c.var.noteRepository);
+  const html = await c.var.render("home", { title: "home", ...page });
   return c.html(html);
 });
 

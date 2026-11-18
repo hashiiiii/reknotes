@@ -11,7 +11,7 @@ import { updateNoteWithTags } from "./update-note-with-tags";
 // also guard against overlapping saves and cleanup that never runs.
 
 function makeNote(id: number, body: string): Note {
-  return { id, title: "t", body, createdAt: 0, updatedAt: 0 };
+  return { id, pinned: false, title: "t", body, createdAt: 0, updatedAt: 0 };
 }
 
 // Opposite vectors make every score negative. The cutoff score >= maxScore * 0.5
