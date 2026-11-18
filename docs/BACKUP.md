@@ -132,7 +132,7 @@ primary が膨らんで free tier を超えそうになったら、B2 ダッシ�
 
 ### ローカル
 
-`compose.local.yaml` は primary 用 (`minio`) と backup 用 (`minio-backup`) の 2 つの MinIO を立ち上げる。本番の "primary と backup は別環境" の構造をローカルでも再現するため。
+`compose.local.yaml` は primary 用 (`minio`) と backup 用 (`minio-backup`) の 2 つの PGSTY SILO サービスを起動する。本番の "primary と backup は別環境" の構造をローカルでも再現するため。
 
 | サービス | API ポート | console ポート | 認証 (`.env.example` 既定) |
 |---|---|---|---|
@@ -141,11 +141,7 @@ primary が膨らんで free tier を超えそうになったら、B2 ダッシ�
 
 #### 前提
 
-`bun run setup` は `.env` 作成と git hooks 設定のみで bucket は自動作成しない。事前に手作業で:
-
-1. `docker compose -f compose.local.yaml up -d` で primary / backup の MinIO と Postgres を起動。
-2. primary MinIO の console (<http://localhost:9001>) にログインして `reknotes` bucket を作成。
-3. backup MinIO の console (<http://localhost:9003>) にログインして `reknotes-backup` bucket を作成。
+`bun run setup` を実行すると、PostgreSQL と両方のストレージが起動し、`.env` で指定したバケットが作成される。既存のバケットとオブジェクトは再実行後も利用できる。
 
 #### dump
 

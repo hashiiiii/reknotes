@@ -2,6 +2,9 @@ FROM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3
 # The pinned Bun image predates available Debian security fixes for apt and zlib.
 RUN apt-get update && apt-get upgrade --yes && rm -rf /var/lib/apt/lists/*
 
+# The remote app uses Cloudflare for embeddings. The CPU runtime is included in the ONNX package.
+ARG ONNXRUNTIME_NODE_INSTALL=skip
+
 FROM base AS build
 WORKDIR /app
 

@@ -21,21 +21,15 @@ reknotes is a self-hostable personal knowledge management tool built around maki
 Install [Bun](https://bun.sh/) (>= 1.4.4) and [Docker](https://www.docker.com/). Make sure Docker is running.
 
 ```bash
-# clone
 git clone https://github.com/hashiiiii/reknotes.git
 cd reknotes
-
-# Start PostgreSQL and MinIO in containers
-docker compose -f compose.local.yaml up -d
-
-# Install dependencies, build assets, generate .env, run migrations
 bun run setup
-
-# Start the local server
 bun run dev
 ```
 
-Open `http://localhost:3000` in your browser.
+`bun run setup` creates `.env` from `.env.example` on the first run. It starts PostgreSQL and both local S3 services, creates the upload and backup buckets, and migrates the development and test databases. You can run it again with existing data.
+
+Open `http://localhost:3000` in your browser. To stop the containers and keep your data, run `docker compose -f compose.local.yaml down`.
 
 ## Tech Stack
 

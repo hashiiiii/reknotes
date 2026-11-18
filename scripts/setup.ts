@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 if (existsSync(".env")) {
@@ -6,6 +6,7 @@ if (existsSync(".env")) {
 } else {
   const content = readFileSync(".env.example", "utf-8");
   writeFileSync(".env", content);
+  process.loadEnvFile(".env");
   console.log("Created .env");
 }
 
@@ -14,4 +15,8 @@ try {
   console.log("Configured git hooks path to .githooks");
 } catch {
   console.log("Not a git repository, skipping hook setup");
+}
+
+if (process.env.DEPLOYMENT === "local") {
+  execFileSync("docker", ["compose", "-f", "compose.local.yaml", "run", "--rm", "-T", "setup"], { stdio: "inherit" });
 }
