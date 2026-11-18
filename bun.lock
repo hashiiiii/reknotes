@@ -6,8 +6,8 @@
       "name": "reknotes",
       "dependencies": {
         "3d-force-graph": "^1.80.2",
-        "@aws-sdk/client-s3": "^3.1165.0",
-        "@aws-sdk/lib-storage": "^3.1165.0",
+        "@aws-sdk/client-s3": "^3.1166.0",
+        "@aws-sdk/lib-storage": "^3.1166.0",
         "@huggingface/transformers": "^4.3.2",
         "drizzle-kit": "^0.31.11",
         "drizzle-orm": "^0.45.4",
