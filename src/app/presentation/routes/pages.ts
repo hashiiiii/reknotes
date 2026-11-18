@@ -10,12 +10,11 @@ import { renderMarkdown } from "./_render-markdown";
 
 const pageRoutes = new Hono<AppEnv>();
 
-// ホーム
 pageRoutes.get("/", async (c) => {
   const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository);
   const html = await c.var.render("home", {
     title: "home",
-    // 処理中フラグを付けておかないと、処理中にリロードしたとき通常カード (開ける状態) で出てしまう
+    // Reloading must not make a note openable while background tagging is running.
     notes: notes.map((note) => ({ ...note, processing: isNoteProcessing(note.id) })),
     hasMore,
     nextCursor,
@@ -23,7 +22,6 @@ pageRoutes.get("/", async (c) => {
   return c.html(html);
 });
 
-// ノート詳細
 pageRoutes.get("/notes/:id", async (c) => {
   const id = parseId(c.req.param("id"));
   if (id === null) return c.text("Invalid ID", 400);
@@ -41,13 +39,12 @@ pageRoutes.get("/notes/:id", async (c) => {
     bodyHtml,
     tags,
     graphData,
-    // 処理中は編集・削除メニューをロックする (note-actions partial が参照)
+    // The actions partial disables edits and deletion during background processing.
     processing: isNoteProcessing(id),
   });
   return c.html(html);
 });
 
-// グラフページ
 pageRoutes.get("/graph", async (c) => {
   const html = await c.var.render("graph", { title: "graph", containerClass: "container-full" });
   return c.html(html);

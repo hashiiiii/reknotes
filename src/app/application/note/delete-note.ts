@@ -11,8 +11,8 @@ export async function deleteNote(
   storageProvider: IStorageProvider,
   id: number,
 ): Promise<boolean | "processing"> {
-  // バックグラウンドのタグ再生成・掃除と競合しないよう、処理中の削除は拒否する。
-  // ハングしてもプロセス再起動でレジストリごと解除されるので脱出路は要らない。
+  // Deletion must not race with background tagging and cleanup.
+  // Restarting clears the processing registry if a job gets stuck.
   if (isProcessing(id)) return "processing";
 
   const note = await noteRepo.findById(id);

@@ -3,8 +3,7 @@ export interface IStorageProvider {
   uploadStream(key: string, body: ReadableStream, contentType: string): Promise<void>;
   get(key: string): Promise<{ body: ReadableStream; contentType: string } | null>;
   delete(key: string): Promise<void>;
-  // backup / restore で bucket 全体を列挙するために使用する。
-  // ページングを呼び出し側に意識させない AsyncIterable で公開する。
-  // 返るキーは bucket 直下からの絶対パス (prefix を渡しても剥がさない)。
+  // Backup callers must not need pagination logic. Keys remain relative to the
+  // bucket root, including any requested prefix, so callers can read them directly.
   list(prefix?: string): AsyncIterable<string>;
 }

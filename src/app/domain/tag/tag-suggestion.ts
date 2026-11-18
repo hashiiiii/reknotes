@@ -1,4 +1,4 @@
-// 正規化済みベクトル同士の cosine similarity = 内積
+// Normalized vectors make the dot product equal to cosine similarity.
 export function dotProduct(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) {
     throw new Error(`dotProduct: dimension mismatch (${a.length} vs ${b.length})`);

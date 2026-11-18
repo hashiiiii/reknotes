@@ -8,7 +8,8 @@ function vector(): number[] {
   return values;
 }
 
-// 外部の有料 API は呼ばず、Cloudflare の REST envelope と Qwen schema を検証する。
+// These contract tests cover the Cloudflare response envelope and Qwen schema
+// without invoking the paid external API.
 const fetchSpy = spyOn(globalThis, "fetch");
 afterEach(() => fetchSpy.mockReset());
 afterAll(() => fetchSpy.mockRestore());
@@ -22,7 +23,7 @@ function requestBody(index = 0): Record<string, unknown> {
 }
 
 describe("CloudflareEmbeddingProvider", () => {
-  test("ノートは Qwen documents として送り、返却値を正規化する", async () => {
+  test("sends notes as Qwen documents and normalizes the result", async () => {
     respond([vector()]);
     const provider = new CloudflareEmbeddingProvider("account", "token");
     const embedding = await provider.embedNote("日本語のノート");
@@ -43,7 +44,7 @@ describe("CloudflareEmbeddingProvider", () => {
     expect(Math.hypot(...embedding)).toBeCloseTo(1);
   });
 
-  test("タグは instruction 付き queries として送り、キャッシュを再利用する", async () => {
+  test("sends tags as instructed queries and reuses cached embeddings", async () => {
     respond([vector()]);
     const provider = new CloudflareEmbeddingProvider("account", "token");
     const first = await provider.embedTag("計算量");
@@ -57,7 +58,7 @@ describe("CloudflareEmbeddingProvider", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("キャッシュ構築は最大32件ずつ queries を送る", async () => {
+  test("warms the cache in batches of at most 32 queries", async () => {
     respond(Array.from({ length: 32 }, vector));
     respond(Array.from({ length: 32 }, vector));
     respond([vector()]);
@@ -75,20 +76,20 @@ describe("CloudflareEmbeddingProvider", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(3);
   });
 
-  test("load と空のキャッシュ構築は API を呼ばない", async () => {
+  test("does not call the API when loading or warming an empty cache", async () => {
     const provider = new CloudflareEmbeddingProvider("account", "token");
     await provider.load();
     await provider.buildTagCache([]);
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  test("HTTP エラーを伝播する", async () => {
+  test("propagates HTTP errors", async () => {
     fetchSpy.mockResolvedValueOnce(new Response("model unavailable", { status: 410 }));
     const provider = new CloudflareEmbeddingProvider("account", "token");
     await expect(provider.embedNote("本文")).rejects.toThrow("Cloudflare Workers AI error: 410");
   });
 
-  test("Cloudflare が success: false を返した場合は失敗する", async () => {
+  test("rejects responses with success: false", async () => {
     respond([vector()], false);
     const provider = new CloudflareEmbeddingProvider("account", "token");
     await expect(provider.embedNote("本文")).rejects.toThrow("inference failed");
@@ -99,7 +100,7 @@ describe("CloudflareEmbeddingProvider", () => {
     { name: "null", data: null },
     { name: "empty", data: [] },
     { name: "too many", data: [vector(), vector()] },
-  ])("返却件数の不一致は失敗する: $name", async ({ data }) => {
+  ])("rejects mismatched result counts: $name", async ({ data }) => {
     respond(data);
     const provider = new CloudflareEmbeddingProvider("account", "token");
     await expect(provider.embedNote("本文")).rejects.toThrow("expected 1 embeddings");
@@ -111,7 +112,7 @@ describe("CloudflareEmbeddingProvider", () => {
     { name: "wrong dimensions", invalid: [1, 2] },
     { name: "strings", invalid: Array(1024).fill("1") },
     { name: "null values", invalid: Array(1024).fill(null) },
-  ])("不正なベクトルはキャッシュせず、次の要求で回復できる: $name", async ({ invalid }) => {
+  ])("rejects invalid vectors without poisoning the cache: $name", async ({ invalid }) => {
     respond([invalid]);
     respond([vector()]);
     const provider = new CloudflareEmbeddingProvider("account", "token");
@@ -120,7 +121,7 @@ describe("CloudflareEmbeddingProvider", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("ゼロベクトルは拒否する", async () => {
+  test("rejects zero vectors", async () => {
     respond([Array(1024).fill(0)]);
     const provider = new CloudflareEmbeddingProvider("account", "token");
     await expect(provider.embedNote("本文")).rejects.toThrow("invalid embedding norm");

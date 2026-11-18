@@ -22,7 +22,8 @@ DROP TABLE "note_tags" CASCADE;--> statement-breakpoint
 ALTER TABLE "notes" ALTER COLUMN "created_at" SET DATA TYPE integer;--> statement-breakpoint
 ALTER TABLE "notes" ALTER COLUMN "updated_at" SET DATA TYPE integer;--> statement-breakpoint
 ALTER TABLE "notes" DROP COLUMN "title";`;
-    // DROP TABLE + 2 SET DATA TYPE + DROP COLUMN = 4 destructive (DISABLE ROW LEVEL SECURITY は通過)
+    // Four statements match: DROP TABLE, two SET DATA TYPE statements, and DROP COLUMN.
+    // DISABLE ROW LEVEL SECURITY remains outside this data-loss check.
     expect(findDestructive(sql)).toHaveLength(4);
   });
 

@@ -1,8 +1,8 @@
 import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
 import type { EmbeddingWorkerCommand, EmbeddingWorkerResponse } from "./local-embedding-worker";
 
-// 推論はメインスレッドを飢餓させるため local-embedding-worker.ts に隔離し、
-// この class は postMessage の proxy に徹する (issue #178)。タグキャッシュも worker 側が持つ。
+// Inference blocks the main thread, so a worker owns both the model and tag cache
+// while this provider forwards requests (issue #178).
 export class LocalEmbeddingProvider implements IEmbeddingProvider {
   private worker: Worker | null = null;
   private nextId = 0;
@@ -11,7 +11,7 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     { resolve: (response: EmbeddingWorkerResponse) => void; reject: (error: Error) => void }
   >();
 
-  // テストから壊れた worker を注入して失敗経路を検証できるよう、URL を差し替え可能にする
+  // A configurable URL lets tests exercise real worker startup and failure paths.
   constructor(private workerUrl: URL = new URL("./local-embedding-worker.ts", import.meta.url)) {}
 
   private ensureWorker(): Worker {
@@ -22,18 +22,18 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
       const entry = this.pending.get(event.data.id);
       if (!entry) return;
       this.pending.delete(event.data.id);
-      // 要求が無い間は worker がプロセスの終了を妨げないようにする (CLI スクリプトが完走後に hang しないため)
+      // An idle worker must not keep a completed CLI process alive.
       if (this.pending.size === 0) worker.unref();
       entry.resolve(event.data);
     };
     worker.onerror = (event) => {
-      // worker 自体が落ちたら全 pending を明示的に失敗させる (握りつぶして hang させない)
+      // A failed worker cannot answer pending requests; reject them instead of hanging.
       const error = new Error(`embedding worker error: ${event.message}`);
       for (const entry of this.pending.values()) {
         entry.reject(error);
       }
       this.pending.clear();
-      // 死んだ worker を掴み続けると以降の要求が全て失敗し続けるため、破棄して次の要求で作り直す
+      // Recreate the worker on the next request so one crash does not disable all future inference.
       worker.terminate();
       if (this.worker === worker) this.worker = null;
     };
@@ -46,7 +46,7 @@ export class LocalEmbeddingProvider implements IEmbeddingProvider {
     const id = this.nextId++;
     const response = await new Promise<EmbeddingWorkerResponse>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });
-      // リクエスト実行中はプロセスを維持する (unref した worker からの応答待ちで exit しないため)
+      // Pending requests must keep the process alive until the worker responds.
       if (this.pending.size === 1) worker.ref();
       worker.postMessage({ ...command, id });
     });

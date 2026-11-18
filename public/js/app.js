@@ -1,6 +1,3 @@
-// reknotes - app-wide utilities
-
-// Kebab menu toggle (unified for note-card and note-detail)
 function toggleKebab(btn) {
   var menu = btn.parentElement;
   var wasOpen = menu.classList.contains('open');
@@ -8,15 +5,13 @@ function toggleKebab(btn) {
   if (!wasOpen) menu.classList.add('open');
 }
 
-// Close kebab menus on outside click
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.kebab-menu')) {
     document.querySelectorAll('.kebab-menu.open').forEach(function(m) { m.classList.remove('open'); });
   }
 });
 
-// Copy the saved note Markdown to the clipboard (note detail page).
-// The source is the defaultValue of the edit textarea, so unsaved edits are not copied.
+// The textarea's defaultValue preserves saved Markdown rather than copying unsaved edits.
 function copyNoteMarkdown(btn) {
   if (!navigator.clipboard) {
     alert('この環境ではクリップボードを使用できません');
@@ -32,7 +27,6 @@ function copyNoteMarkdown(btn) {
   });
 }
 
-// File upload → Markdown insertion
 function uploadAndInsert(file, textarea) {
   var formData = new FormData();
   formData.append('file', file);
@@ -65,7 +59,6 @@ function uploadAndInsert(file, textarea) {
     });
 }
 
-// Drag & drop file upload for textareas
 document.addEventListener('dragover', function(e) {
   if (e.target.closest('textarea')) e.preventDefault();
 });
@@ -97,7 +90,6 @@ document.addEventListener('drop', function(e) {
   }
 });
 
-// Theme toggle
 (function() {
   var root = document.documentElement;
   var btn = document.getElementById('theme-toggle');
@@ -125,7 +117,7 @@ document.addEventListener('drop', function(e) {
   btn.addEventListener('click', function() {
     if (animating) return;
     animating = true;
-    // テーマ切替中は transition を無効化
+    // Theme changes should not animate every color transition on the page.
     root.classList.add('no-transition');
     if (isDark()) {
       root.setAttribute('data-theme', 'light');

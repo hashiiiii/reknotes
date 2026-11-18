@@ -1,4 +1,5 @@
-// データ消失系 SQL のパターン。制約強化系 (SET NOT NULL / ADD UNIQUE) は意図的に含めない
+// Constraint strengthening, including SET NOT NULL and ADD UNIQUE, is deliberately
+// excluded from these patterns for potential data loss.
 const DESTRUCTIVE_PATTERNS = [/\bDROP\s+TABLE\b/i, /\bDROP\s+COLUMN\b/i, /\bSET\s+DATA\s+TYPE\b/i];
 
 export function findDestructive(sql: string): string[] {

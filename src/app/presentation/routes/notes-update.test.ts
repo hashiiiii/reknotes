@@ -4,13 +4,10 @@ import type { IEmbeddingProvider } from "../../application/port/embedding-provid
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 import { createTestApp, makeNote } from "./_test-helper";
 
-// 編集保存 (PUT /api/notes/:id) の応答方式を検証する。
-// htmx リクエストに 303 を返すと XHR がリダイレクトを追い、全文書 HTML が body に swap されて
-// 読み込み済みの外部 script が再実行される (redeclaration エラー)。そのため htmx には
-// HX-Redirect ヘッダでフルページ遷移させる (DELETE /api/notes/:id の detail 経路と同じ方式)。
+// A 303 makes htmx swap the entire redirected document and rerun scripts, causing
+// redeclaration errors. Saves must use HX-Redirect for full-page navigation instead.
 
-// タグ生成経路は「負の類似度で全候補を落とす」embedding にして素通しする
-// (update-note-with-tags.test.ts と同じ手法)。
+// Negative similarities reject all tag candidates, as in the application update tests.
 const noTagEmbeddingProvider: IEmbeddingProvider = {
   load: async () => {},
   embedNote: async () => new Float32Array([1, 0]),
@@ -18,7 +15,7 @@ const noTagEmbeddingProvider: IEmbeddingProvider = {
   buildTagCache: async () => {},
 };
 
-// 更新経路が触るメソッドだけ持つ tagRepository。タグは生成されないので link 系は呼ばれない。
+// No generated tags means this path never needs tag-link creation.
 const tagRepository = {
   unlinkAllByNoteId: async () => {},
   findAll: async () => [],
@@ -30,15 +27,15 @@ function put(app: ReturnType<typeof createTestApp>["app"], id: number, headers: 
     body: new URLSearchParams({ title: "更新後", body: "新しい本文" }),
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      // Origin は CSRF ミドルウェアを通すために必要
+      // The request must pass CSRF protection before its redirect can be checked.
       Origin: "http://localhost",
       ...headers,
     },
   });
 }
 
-describe("ノート更新の応答方式", () => {
-  test("htmx からの保存は 200 + HX-Redirect でフルページ遷移させる", async () => {
+describe("note update responses", () => {
+  test("returns 200 with HX-Redirect for htmx saves", async () => {
     const { app } = createTestApp({
       notes: [makeNote({ id: 1 })],
       tagRepository,
@@ -47,11 +44,11 @@ describe("ノート更新の応答方式", () => {
     const res = await put(app, 1, { "HX-Request": "true" });
     expect(res.status).toBe(200);
     expect(res.headers.get("HX-Redirect")).toBe("/notes/1");
-    // バックグラウンドジョブの完了を待ち、processing 状態を他のテストに持ち越さない
+    // Background processing must finish so its lock does not leak into later tests.
     while (isNoteProcessing(1)) await Bun.sleep(1);
   });
 
-  test("htmx 以外からの保存は従来どおり 303 リダイレクトを返す", async () => {
+  test("returns a 303 redirect for other saves", async () => {
     const { app } = createTestApp({
       notes: [makeNote({ id: 1 })],
       tagRepository,
@@ -60,11 +57,11 @@ describe("ノート更新の応答方式", () => {
     const res = await put(app, 1);
     expect(res.status).toBe(303);
     expect(res.headers.get("Location")).toBe("/notes/1");
-    // バックグラウンドジョブの完了を待ち、processing 状態を他のテストに持ち越さない
+    // Background processing must finish so its lock does not leak into later tests.
     while (isNoteProcessing(1)) await Bun.sleep(1);
   });
 
-  test("存在しないノートの保存は 404 を返す", async () => {
+  test("returns 404 when saving a missing note", async () => {
     const { app } = createTestApp({
       notes: [],
       tagRepository,

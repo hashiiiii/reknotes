@@ -2,32 +2,31 @@ import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { LocalEmbeddingProvider } from "./local-embedding-provider";
 
-// 実モデル (~300MB) が必要なテスト。ローカルの HuggingFace キャッシュがあるときだけ実行する。
-// CI にはキャッシュが無く、毎回ダウンロードさせるのは重すぎるため明示的に skip する。
+// Real-model tests require about 300 MB of cached weights. Skip them without a
+// HuggingFace cache so CI does not download the model on every run.
 const MODEL_CACHED = existsSync("node_modules/@huggingface/transformers/.cache/onnx-community");
 
-// モデルロードを含むため各テストのタイムアウトを長めに取る
+// Model loading needs more time than the default test timeout allows.
 const TEST_TIMEOUT = 120_000;
 
-// worker の失敗経路はモデル不要なので CI でも実行される
-describe("LocalEmbeddingProvider (worker 失敗時)", () => {
+// Worker failure paths need no model and must run in CI too.
+describe("LocalEmbeddingProvider worker failures", () => {
   const brokenUrl = new URL("./does-not-exist-worker.ts", import.meta.url);
 
-  test("worker が起動に失敗したら要求は hang せず reject される", async () => {
+  test("rejects requests without hanging when worker startup fails", async () => {
     const provider = new LocalEmbeddingProvider(brokenUrl);
     await expect(provider.embedNote("テキスト")).rejects.toThrow();
   });
 
-  test("worker 失敗後の再要求も hang せず reject される", async () => {
-    // 失敗した worker を掴んだままだと 2 回目の要求が永久に応答待ちになる回帰の検証
+  test("rejects later requests without hanging after worker failure", async () => {
+    // Retaining the failed worker would leave the second request waiting forever.
     const provider = new LocalEmbeddingProvider(brokenUrl);
     await expect(provider.embedNote("一度目")).rejects.toThrow();
     await expect(provider.embedNote("二度目")).rejects.toThrow();
   });
 
-  test("worker がクラッシュしても次の要求は新しい worker で成功する", async () => {
-    // 死んだ worker を掴み続けるとサーバー再起動まで auto-tagging が失敗し続けるため、
-    // クラッシュ時: in-flight の要求は loud に失敗し、次の要求からは worker を作り直す
+  test("recovers from a worker crash on the next request", async () => {
+    // One crash must fail the pending request without disabling tagging until a server restart.
     const provider = new LocalEmbeddingProvider(new URL("./flaky-embedding-worker.fixture.ts", import.meta.url));
     await expect(provider.embedNote("crash")).rejects.toThrow();
     const embedding = await provider.embedNote("ok");
@@ -39,7 +38,7 @@ describe.skipIf(!MODEL_CACHED)("LocalEmbeddingProvider", () => {
   const provider = new LocalEmbeddingProvider();
 
   test(
-    "embedNote がベクトルを返す",
+    "embedNote returns a vector",
     async () => {
       await provider.load();
       const embedding = await provider.embedNote("TypeScript と Bun でノートアプリを作る話");
@@ -50,7 +49,7 @@ describe.skipIf(!MODEL_CACHED)("LocalEmbeddingProvider", () => {
   );
 
   test(
-    "embedTag は同じタグ名に対して同じベクトルを返す",
+    "embedTag returns the same vector for the same tag",
     async () => {
       const first = await provider.embedTag("typescript");
       const second = await provider.embedTag("typescript");
@@ -60,13 +59,13 @@ describe.skipIf(!MODEL_CACHED)("LocalEmbeddingProvider", () => {
   );
 
   test(
-    "推論中もメインスレッドのイベントループが応答し続ける",
+    "keeps the main event loop responsive during inference",
     async () => {
       await provider.load();
 
-      // suggestTags 相当の負荷 (ノート全文 1 回 + 候補語 40 個の逐次 embed) をかけ、
-      // 20ms 間隔のタイマーの遅延でイベントループの飢餓を計測する。
-      // 推論がメインスレッドで走る実装では maxGap ~800ms / totalDelay ~2500ms になる (issue #178 の実測)。
+      // One note and 40 sequential tag embeddings approximate suggestion work.
+      // A 20 ms timer measures event-loop starvation. Earlier main-thread inference
+      // measurements reached maxGap ~800 ms and totalDelay ~2500 ms (issue #178).
       const noteText =
         "ホーナー法による多項式計算の最適化について調べた。計算量を減らすために乗算の回数を削減する手法で、TypeScript で実装すると再帰よりループの方が速かった。".repeat(
           4,

@@ -33,30 +33,25 @@ async function uploadObjects(primary: IStorageProvider, backup: IStorageProvider
   let count = 0;
   const inflight = new Set<Promise<void>>();
   for await (const key of primary.list()) {
-    // あえて await しない
+    // Start transfers without waiting so up to CONCURRENCY objects can be copied at once.
     const task = (async () => {
       const obj = await primary.get(key);
-      // list 後 get 前にノートが削除された場合や、それ以外の何かしらの原因で null を返すようなケースを想定しておく
+      // An object may disappear between listing and reading, for example when its note is deleted.
       if (!obj) return;
       await backup.uploadStream(`${date}/objects/${key}`, obj.body, obj.contentType);
       count += 1;
     })();
-    // 実行中のタスクを管理することで、並行数を閾値以下に保つ
     inflight.add(task);
     task.then(
-      // 成功・失敗問わずリストからは削除する
       () => inflight.delete(task),
       () => inflight.delete(task),
     );
-    // 実行中のタスク数が閾値に達した場合は待機する
     if (inflight.size >= CONCURRENCY) await Promise.race(inflight);
   }
-  // ループを抜けた後に残っているものを await
   await Promise.all(inflight);
   return count;
 }
 
-// YYYY-MM-DD
 function formatDate(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;

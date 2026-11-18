@@ -7,16 +7,14 @@ import type { Note } from "../../domain/note/note";
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 
-// route テスト用に Hono アプリを mock provider で組み立てるハーネス。
-// DB / S3 / embedding には一切触れず、HTTP -> ルーティング -> テンプレート描画だけを検証する。
+// Route tests isolate HTTP routing and rendering from DB, S3, and inference.
 
-// このテストでスタブしていないメソッドが呼ばれたら、黙って通さず例外にする。
-// silent fallback で「実は別経路を叩いていた」を見逃さないため。
+// Unexpected dependency calls must fail so a test cannot pass through the wrong path.
 function notStubbed<T extends object>(label: string): T {
   return new Proxy({} as T, {
     get(_target, prop) {
       return () => {
-        throw new Error(`${label}.${String(prop)} はこのテストでスタブされていません`);
+        throw new Error(`${label}.${String(prop)} is not configured for this test`);
       };
     },
   });
@@ -34,13 +32,11 @@ export function makeNote(overrides: Partial<Note> = {}): Note {
 }
 
 export interface TestAppOptions {
-  // GET / と GET /api/notes の一覧が返すノート
   notes?: Note[];
-  // searchByQuery が返す行 (検索ハイライトの素材)
+  // Search fixtures supply the content used to verify highlighting.
   searchResults?: Note[];
-  // ノート詳細ページの描画に使う。省略時は未スタブ (呼ばれたら例外)。
+  // Omitted dependencies reject access rather than silently supplying data.
   graphRepository?: IGraphRepository;
-  // PUT /api/notes/:id などタグ生成が絡む route の検証に使う。省略時は未スタブ (呼ばれたら例外)。
   tagRepository?: ITagRepository;
   embeddingProvider?: IEmbeddingProvider;
 }
@@ -48,7 +44,7 @@ export interface TestAppOptions {
 export function createTestApp(options: TestAppOptions = {}) {
   const notes = options.notes ?? [];
   const searchResults = options.searchResults ?? [];
-  // create で採番する id。既存 notes と衝突しないよう大きめから始める
+  // Generated IDs must not collide with the supplied note fixtures.
   let nextId = 1000;
 
   const noteRepository: INoteRepository = {
@@ -73,7 +69,7 @@ export function createTestApp(options: TestAppOptions = {}) {
     findTagsByNoteId: async () => [],
   };
 
-  // upload が呼ばれたかを検証できるよう spy にする (SVG は配信前に弾かれる想定)。
+  // Rejected SVG uploads must never reach storage.
   const storageUpload = mock(async (_key: string, _buffer: Uint8Array, _contentType: string): Promise<void> => {});
   const storageProvider: IStorageProvider = {
     upload: storageUpload,

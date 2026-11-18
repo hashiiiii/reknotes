@@ -14,36 +14,36 @@ function makeNote(overrides: Partial<Note> = {}): Note {
 }
 
 describe("resolveDownloadFilename", () => {
-  test("タイトルに .md を付けたファイル名になる", () => {
+  test("appends .md to the title", () => {
     expect(resolveDownloadFilename(makeNote({ title: "買い物メモ" }))).toBe("買い物メモ.md");
   });
 
-  test("ファイルシステムで使えない文字は - に置換される", () => {
-    // Windows / macOS / Linux いずれかで予約されている文字を網羅する
+  test("replaces reserved filename characters with hyphens", () => {
+    // Downloads must have valid filenames across Windows, macOS, and Linux.
     expect(resolveDownloadFilename(makeNote({ title: 'a/b\\c:d*e?f"g<h>i|j' }))).toBe("a-b-c-d-e-f-g-h-i-j.md");
   });
 
-  test("制御文字も - に置換される", () => {
+  test("replaces control characters with hyphens", () => {
     expect(resolveDownloadFilename(makeNote({ title: "a\tb\nc" }))).toBe("a-b-c.md");
   });
 
-  test("先頭と末尾の空白・ドットは除去される", () => {
-    // 末尾ドットは Windows で不正、先頭ドットは隠しファイルになるため
+  test("removes leading and trailing whitespace and dots", () => {
+    // Windows rejects trailing dots, and leading dots would hide the file.
     expect(resolveDownloadFilename(makeNote({ title: " .draft. " }))).toBe("draft.md");
   });
 
-  test("サニタイズ後に空になったら note-<id>.md にフォールバックする", () => {
+  test("uses note-<id>.md when sanitization leaves an empty title", () => {
     expect(resolveDownloadFilename(makeNote({ id: 42, title: " ... " }))).toBe("note-42.md");
   });
 
-  test("100 文字を超えるタイトルは切り詰められる", () => {
+  test("truncates titles longer than 100 characters", () => {
     const filename = resolveDownloadFilename(makeNote({ title: "あ".repeat(150) }));
     expect(filename).toBe(`${"あ".repeat(100)}.md`);
   });
 
-  test("切り詰め位置がサロゲートペアをまたいでも孤立サロゲートを残さない", () => {
-    // UTF-16 単位の slice だと 100 文字目でペアが分断され、
-    // 孤立サロゲートを含むファイル名は encodeURIComponent が URIError を投げる
+  test("does not split surrogate pairs when truncating", () => {
+    // Splitting a surrogate pair at the 100-character boundary leaves a lone
+    // surrogate, which makes encodeURIComponent throw URIError.
     const filename = resolveDownloadFilename(makeNote({ title: `${"a".repeat(99)}😀x` }));
     expect(filename).toBe(`${"a".repeat(99)}😀.md`);
     expect(() => encodeURIComponent(filename)).not.toThrow();

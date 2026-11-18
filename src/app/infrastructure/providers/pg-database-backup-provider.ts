@@ -9,7 +9,7 @@ export class PgDatabaseBackupProvider implements IDatabaseBackupProvider {
   ) {}
 
   async dump(): Promise<Uint8Array<ArrayBuffer>> {
-    // --no-owner / --no-privileges: restore 先がオリジナルと別ロール構成でも動くようにする。
+    // Restores must work even when the destination has different roles and grants.
     const proc = Bun.spawn(
       [...this.dockerArgs(), "pg_dump", this.resolveDatabaseUrl(), "--format=plain", "--no-owner", "--no-privileges"],
       {
@@ -31,7 +31,7 @@ export class PgDatabaseBackupProvider implements IDatabaseBackupProvider {
   }
 
   async restore(sql: Uint8Array<ArrayBuffer>): Promise<void> {
-    // ON_ERROR_STOP=1: SQL のエラーで即時 abort
+    // Stop at the first SQL error rather than continuing a partially failed restore.
     const proc = Bun.spawn([...this.dockerArgs(), "psql", this.resolveDatabaseUrl(), "-v", "ON_ERROR_STOP=1"], {
       stdin: sql,
       stdout: "pipe",

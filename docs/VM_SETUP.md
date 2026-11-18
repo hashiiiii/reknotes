@@ -44,7 +44,6 @@ production VM の構築を例に書く。development VM は最後のセクショ
 VM にログインするための鍵を作る。GitHub Actions からも同じ鍵で SSH するので、後で秘密鍵を `VM_SSH_KEY` secret に登録する。
 
 ```sh
-# ~/.ssh/reknotes_production と ~/.ssh/reknotes_production.pub が生成される
 ssh-keygen -t ed25519 -f ~/.ssh/reknotes_production -N ""
 ```
 
@@ -106,7 +105,7 @@ sudo netfilter-persistent save
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg git
 
-# Docker の公式リポジトリを追加
+# Use Docker's signed repository for the deployment tools.
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -115,7 +114,7 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# ubuntu ユーザーが sudo 無しで docker を叩けるようにする (deploy.yml はそうしている)
+# The deployment connects as ubuntu and runs Docker without sudo.
 sudo usermod -aG docker ubuntu
 ```
 
@@ -124,7 +123,7 @@ sudo usermod -aG docker ubuntu
 ```sh
 exit
 ssh -i ~/.ssh/reknotes_production ubuntu@<Public IPv4 address>
-docker compose version  # コマンドが通れば OK
+docker compose version
 ```
 
 `VM.Standard.E2.1.Micro` は RAM が 1GB しかなく、Caddy + oauth2-proxy + アプリ + Docker daemon が常駐すると残量が薄い。OOM kill による謎の停止を避けるため、ここで 2GB の swapfile も作っておく。
@@ -168,7 +167,7 @@ DNS provider のコンソールで、`DOMAIN` (例: `reknotes.example.com`) の 
 設定が反映されたか手元から確認する。
 
 ```sh
-dig +short reknotes.example.com  # VM の IP が返ってくれば OK
+dig +short reknotes.example.com  # The result must match the VM's IP address.
 ```
 
 DNS が未反映だと Caddy の Let's Encrypt 証明書取得が失敗する (HTTP-01 challenge が VM に到達しない) ので、必ずここで反映を確認してから次に進む。
@@ -193,10 +192,13 @@ callback URL は `compose.remote.yaml` の `OAUTH2_PROXY_REDIRECT_URL` と完全
 
 リポジトリの `Settings > Environments > production` を開き、次の secrets を登録する。
 
+同じ画面の `Deployment branches and tags` は `Selected branches and tags` にし、許可するブランチを `main` に限定する。workflow 内の条件だけでなく、GitHub 側でも production の secret を使えるブランチを制限する。
+
 | Secret 名 | 値 |
 |---|---|
 | `VM_HOST` | VM の Public IPv4 address |
 | `VM_SSH_KEY` | 手元の `~/.ssh/reknotes_production` (private 鍵) の中身全体。`-----BEGIN OPENSSH PRIVATE KEY-----` から `-----END OPENSSH PRIVATE KEY-----` まで、改行込みで貼り付ける |
+| `VM_SSH_KNOWN_HOSTS` | 信頼できる接続で確認した VM の SSH ホスト鍵。`<VM_HOST> ssh-ed25519 <公開鍵>` 形式の行を登録する |
 | `DOMAIN` | `reknotes.example.com` |
 | `DATABASE_URL` | Neon の接続文字列 |
 | `S3_ENDPOINT` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET_NAME` | Cloudflare R2 のエンドポイントとキー |
@@ -204,6 +206,8 @@ callback URL は `compose.remote.yaml` の `OAUTH2_PROXY_REDIRECT_URL` と完全
 | `OAUTH2_PROXY_COOKIE_SECRET` | `openssl rand -base64 32` で生成した 32 byte の base64 文字列 |
 
 `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN` は両環境で共有してよいので、`Settings > Secrets and variables > Actions > Repository secrets` の方に登録する (`docs/INFRASTRUCTURE.md` 参照)。
+
+`VM_SSH_KNOWN_HOSTS` の公開鍵は、OCI のコンソールなど信頼できる経路で VM の `/etc/ssh/ssh_host_ed25519_key.pub` を確認して取得する。行頭に `VM_HOST` と同じホスト名または IP アドレスを付ける。未確認の `ssh-keyscan` 出力をそのまま登録しない。ホスト鍵を変更したときは、同じ手順で確認して secret を更新する。
 
 ### 13. 初回 deploy を流す
 
@@ -217,8 +221,8 @@ callback URL は `compose.remote.yaml` の `OAUTH2_PROXY_REDIRECT_URL` と完全
 
 ```sh
 cd ~/reknotes
-docker compose -f compose.remote.yaml ps     # 各サービスが Up になっているか
-docker compose -f compose.remote.yaml logs caddy | tail -50         # 証明書取得の失敗はここに出る
+docker compose -f compose.remote.yaml ps
+docker compose -f compose.remote.yaml logs caddy | tail -50  # Certificate errors appear here.
 docker compose -f compose.remote.yaml logs oauth2-proxy | tail -50
 docker compose -f compose.remote.yaml logs app | tail -50
 ```

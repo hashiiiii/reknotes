@@ -1,6 +1,5 @@
-// local-embedding-provider.test.ts 専用のテストフィクスチャ。
-// "crash" というテキストの embedNote を受けると応答せずに uncaught error でクラッシュし、
-// それ以外の要求には固定の embedding を返す。worker クラッシュ後の回復挙動の検証に使う。
+// A real worker crash exercises provider recovery without downloading a model.
+// The "crash" request fails without a response; other requests return a fixed vector.
 import type { EmbeddingWorkerRequest, EmbeddingWorkerResponse } from "./local-embedding-worker";
 
 declare var self: Worker;
@@ -8,7 +7,7 @@ declare var self: Worker;
 self.onmessage = (event: MessageEvent<EmbeddingWorkerRequest>) => {
   const request = event.data;
   if (request.kind === "embedNote" && request.text === "crash") {
-    // 応答を返さずに worker 全体を落とす (onerror 経路の再現)
+    // The uncaught error must reach the provider's worker error handler.
     setTimeout(() => {
       throw new Error("boom");
     }, 0);

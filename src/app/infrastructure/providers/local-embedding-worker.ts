@@ -1,11 +1,9 @@
-// LocalEmbeddingProvider (proxy) と対になる Bun Worker。
-// モデルのロードと推論はメインスレッドを飢餓させるため、この worker 内に隔離する (issue #178)。
+// Model loading and inference stay in this worker to keep the main thread responsive (issue #178).
 import type { PreTrainedModel, PreTrainedTokenizer } from "@huggingface/transformers";
 
 declare var self: Worker;
 
-// モデルに与えるノートとタグにそれぞれ prefix をつける必要がある
-// これがついた状態でベクトル変換されることで、ノートとタグの類似度比較が正しく機能する
+// The model needs distinct document and query prefixes to compare notes with tags.
 const NOTE_PREFIX = "title: none | text: ";
 const TAG_PREFIX = "task: search result | query: ";
 
@@ -19,7 +17,7 @@ export type EmbeddingWorkerCommand =
 
 export type EmbeddingWorkerRequest = EmbeddingWorkerCommand & { id: number };
 
-// embedding は structured clone でコピーされて返る (キャッシュ済み Float32Array を transfer すると detach されるため転送はしない)
+// Structured cloning preserves cached arrays; transferring them would detach their buffers.
 export type EmbeddingWorkerResponse =
   | { id: number; ok: true; embedding?: Float32Array }
   | { id: number; ok: false; message: string };
@@ -33,12 +31,9 @@ async function ensureLoaded(): Promise<{ model: PreTrainedModel; tokenizer: PreT
   if (!loading) {
     loading = (async () => {
       const { AutoModel, AutoTokenizer, env } = await import("@huggingface/transformers");
-      // ローカルキャッシュがあればそれを使う
       env.allowLocalModels = true;
       tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
-      // reknotes ではタグの自動提案に embedding モデルを利用しており
-      // タグ候補とノート全体の類似度が高いものをいくつか採用するというプロトコル
-      // 量子化による細かい数値のズレが影響するほど厳密なものではないため 8 bit で十分
+      // Tag suggestions only need relative similarity, so 8-bit quantization is sufficient.
       model = await AutoModel.from_pretrained(MODEL_ID, { dtype: "q8" });
       console.log(`Embedding model loaded: ${MODEL_ID} (q8)`);
     })().catch((err) => {
@@ -49,12 +44,11 @@ async function ensureLoaded(): Promise<{ model: PreTrainedModel; tokenizer: PreT
 
   await loading;
 
-  // type narrowing のため必要
+  // TypeScript needs an explicit guard to narrow the optional model instance.
   if (!model || !tokenizer) throw new Error("Failed to load embedding model");
   return { model, tokenizer };
 }
 
-// 入力をベクトル変換する
 async function embed(text: string): Promise<Float32Array> {
   const loaded = await ensureLoaded();
   const inputs = await loaded.tokenizer(text);

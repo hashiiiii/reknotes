@@ -1,8 +1,8 @@
 import type { INoteRepository } from "../../domain/note/note-repository";
 import type { ITagRepository } from "../../domain/tag/tag-repository";
 
-// notes 削除で note_tags は CASCADE 削除されるが、tags 自体は残るため別途消す。
-// 2 回の delete はトランザクションでまとめていない (途中失敗で orphan tags が残り得るが、再実行で済む seed/reset 用途として許容)。
+// Cascading note deletion removes links but leaves tags, so both repositories are needed.
+// This seed/reset operation accepts orphan tags after a partial failure; rerunning removes them.
 export async function clearAllNotesAndTags(noteRepo: INoteRepository, tagRepo: ITagRepository): Promise<void> {
   await noteRepo.deleteAll();
   await tagRepo.deleteAll();

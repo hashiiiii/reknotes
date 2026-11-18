@@ -79,9 +79,11 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 
 ### Object Storage
 
-- ローカル: MinIO (S3 互換)。コンソールは `localhost:9001`。
+- ローカル: PGSTY SILO (MinIO 互換、旧 `pgsty/minio` の後継)。コンソールは `localhost:9001`。Compose のサービス名と volume 名、`MINIO_*` の設定は継続して使う。
 - リモート: Cloudflare R2 (S3 互換)。
 - アプリ側は `S3_*` 環境変数の向き先しか見ない。同じ S3 互換 API なので、コードは local / remote を区別しない。
+
+旧イメージから更新するときは、既存の volume をバックアップし、`minio` と `minio-backup` を停止してから新イメージで起動する。更新前の確認事項は [SILO のリリースノート](https://silo.pgsty.com/blog/release/silo-20261112/)を参照。起動後は既存オブジェクトの読み出しと新規アップロードを確認する。
 
 ### Embedding
 
@@ -95,7 +97,7 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 `compose.remote.yaml` で 2 つのサービスが app の前段に並ぶ。
 
 1. **Caddy** — `80/443` を公開する。`Caddyfile` で `{$DOMAIN} -> oauth2-proxy:4180` のリバースプロキシのみ設定。TLS 証明書は Let's Encrypt から自動取得。
-2. **oauth2-proxy** — GitHub OAuth で認証し、認証済みリクエストのみ `app:3000` に転送する。許可ユーザーは `OAUTH2_PROXY_GITHUB_USER` で指定 (リモートでは `deploy.yml` がリポジトリオーナー名を自動設定)。
+2. **oauth2-proxy** — GitHub OAuth で認証し、認証済みリクエストのみ `app:3000` に転送する。許可ユーザーは `OAUTH2_PROXY_GITHUB_USERS` で指定 (リモートでは `deploy.yml` がリポジトリオーナー名を自動設定)。空の許可リストでは Compose の起動を拒否する。
 
 ## 環境変数の管理
 
@@ -113,23 +115,23 @@ reknotes の実行・デプロイ環境の設計をまとめたもの。「ど�
 
 ### リモート (`.github/workflows/deploy.yml`)
 
-`workflow_dispatch` で起動し、以下を組み立てて VM 上の `~/reknotes/.env` に SCP で配置する。
+`workflow_dispatch` で起動し、以下を組み立てて VM 上の `~/reknotes/.env` と `~/reknotes/.env.sh` に SCP で配置する。前者は Compose 用、後者は VM 上の Bash コマンド用。Bun と Compose では dotenv の引用符や変数展開の扱いが異なるため、VM 上で復元するときは `source .env.sh` で値を環境変数に読み込んでから実行する。
 
-- **GitHub Secrets から取得**: シークレット全般 (DB 接続文字列、ストレージの API キー、Cloudflare トークン、OAuth secret、Cookie secret など) と、デプロイ先を指す `VM_HOST` / `VM_SSH_KEY`、公開ドメインを指す `DOMAIN`。
+- **GitHub Secrets から取得**: シークレット全般 (DB 接続文字列、ストレージの API キー、Cloudflare トークン、OAuth secret、Cookie secret など) と、デプロイ先を指す `VM_HOST` / `VM_SSH_KEY` / `VM_SSH_KNOWN_HOSTS`、公開ドメインを指す `DOMAIN`。
 - **`deploy.yml` で組み立て**: 公開情報のみ。
   - `ENVIRONMENT`: workflow input
   - `DEPLOYMENT=remote`: 固定値
   - `IMAGE_TAG`: workflow を dispatch した git ref 名 (`github.ref_name`) から組み立てた値
   - `GITHUB_REPOSITORY`: `github.repository` コンテキスト
-  - `OAUTH2_PROXY_GITHUB_USER`: `github.repository_owner` コンテキスト
+  - `OAUTH2_PROXY_GITHUB_USERS`: `github.repository_owner` コンテキスト
 
 GitHub Secrets は **environment-level に分離**されている (`development` / `production`)。`deploy.yml` の `environment: ${{ inputs.environment }}` 指定によって、同じ secret 名でも環境ごとに異なる値が引かれる。VM 接続情報・DB 接続文字列・R2 bucket 名・OAuth App credentials などは環境ごとに別。Cloudflare account 自体は両環境で共有する想定なので `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` のみ repository-level に置いてよい。
 
-具体的にどの変数がどちら経由かは `deploy.yml` の `cat > /tmp/.env` ヒアドキュメントが一次資料。
+具体的にどの変数がどちら経由かは `deploy.yml` の `Deploy to VM` ステップの `env` が一次資料。値はシェルのソースに埋め込まず、環境変数として渡す。アプリのコンテナに渡す変数は `compose.remote.yaml` で限定し、バックアップ用と OAuth 用の secret は含めない。
 
 ## デプロイフロー
 
-`workflow_dispatch` 起動後、`deploy.yml` が以下を順に実行する。
+`workflow_dispatch` 起動後、`deploy.yml` が以下を順に実行する。production へのデプロイは `main` ブランチからの実行に限定する。
 
 ### 1. イメージビルド
 
@@ -149,15 +151,15 @@ runner は破壊的変更 (`DROP TABLE` / `DROP COLUMN` / `SET DATA TYPE` / RENA
 
 ### 4. `.env` 配置
 
-runner 上で組み立てた `.env` を SCP で VM の作業ディレクトリ (`~/reknotes/.env`) に配置する。`IMAGE_TAG` もここに含まれ、`compose.remote.yaml` がアプリと OAuth2 Proxy の image を選ぶ入力になる。Caddy は Compose に記載された公式 image を使う。
+runner 上で組み立てた `.env` と `.env.sh` を SCP で VM の作業ディレクトリに転送し、権限を `600` にして配置する。SSH 接続には事前に確認した `VM_SSH_KNOWN_HOSTS` を使う。`IMAGE_TAG` もここに含まれ、`compose.remote.yaml` がアプリと OAuth2 Proxy の image を選ぶ入力になる。Caddy は Compose に記載された公式 image を使う。
 
-VM に転送するのはこの `.env` だけで、Docker image は VM に直接送らない。
+VM に転送するのはこの 2 つの設定ファイルで、Docker image は VM に直接送らない。
 
 ### 5. VM 反映
 
 SSH で VM にログインし、以下を順に実行する。
 
-- `git pull` (compose ファイルや Caddyfile の更新もここで反映)
+- `git pull --ff-only` (compose ファイルや Caddyfile の更新もここで反映)
 - `docker compose -f compose.remote.yaml pull` で GHCR から `${IMAGE_TAG}` の image を取得
 - `docker compose -f compose.remote.yaml up -d --remove-orphans` で起動
 - `docker image prune` で dangling な image を削除 (タグ付き image は VM に残る)

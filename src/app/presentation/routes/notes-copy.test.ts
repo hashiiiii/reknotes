@@ -2,14 +2,12 @@ import { describe, expect, test } from "bun:test";
 import type { IGraphRepository } from "../../domain/graph/graph-repository";
 import { createTestApp, makeNote } from "./_test-helper";
 
-// The copy button on the note detail page copies the saved Markdown to the clipboard.
-// The button reads the Markdown from the defaultValue of the edit textarea.
-// These tests make sure that the page contains the button and its source element.
+// Copying must use saved Markdown from the textarea's defaultValue, excluding unsaved edits.
 
 describe("Copy as Markdown UI", () => {
   const note = makeNote({ id: 1, title: "買い物メモ", body: "# 見出し\n\n本文" });
 
-  // Empty stub that renders the detail page without graph data
+  // Empty graph data keeps this test focused on the copy button and its source.
   const emptyGraphRepository: IGraphRepository = {
     findAllNoteNodes: async () => [],
     findAllTagNodes: async () => [],

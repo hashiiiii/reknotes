@@ -8,7 +8,7 @@ const config = loadConfig();
 const noteRepository = createNoteRepository(config);
 
 describe("search use cases", () => {
-  test("タイトルで検索できる", async () => {
+  test("searches note titles", async () => {
     const unique = `search-title-${Date.now()}`;
     await createNote(noteRepository, unique, "本文");
     const results = await searchNotes(noteRepository, unique);
@@ -16,24 +16,24 @@ describe("search use cases", () => {
     expect(results[0].title).toContain(unique);
   });
 
-  test("本文で検索できる", async () => {
+  test("searches note bodies", async () => {
     const unique = `search-body-${Date.now()}`;
     await createNote(noteRepository, "検索テスト", unique);
     const results = await searchNotes(noteRepository, unique);
     expect(results.length).toBeGreaterThanOrEqual(1);
   });
 
-  test("空クエリは空配列を返す", async () => {
+  test("returns an empty list for an empty query", async () => {
     const results = await searchNotes(noteRepository, "");
     expect(results).toEqual([]);
   });
 
-  test("空白のみのクエリは空配列を返す", async () => {
+  test("returns an empty list for a whitespace-only query", async () => {
     const results = await searchNotes(noteRepository, "   ");
     expect(results).toEqual([]);
   });
 
-  test("検索結果にハイライトが含まれる", async () => {
+  test("includes highlights in search results", async () => {
     const unique = `highlight-${Date.now()}`;
     await createNote(noteRepository, unique, "本文テスト");
     const results = await searchNotes(noteRepository, unique);
@@ -41,13 +41,13 @@ describe("search use cases", () => {
     expect(results[0].highlightedTitle).toContain("<mark>");
   });
 
-  test("存在しないキーワードは空配列を返す", async () => {
+  test("returns an empty list when no keyword matches", async () => {
     const results = await searchNotes(noteRepository, "zzz-nonexistent-xyz-99999");
     expect(results).toEqual([]);
   });
 
   // GHSA-f36f-v24r-855m
-  test("ハイライト対象のタイトルに含まれる < > は HTML エスケープされる", async () => {
+  test("escapes HTML angle brackets in highlighted titles", async () => {
     const marker = `xss-title-${Date.now()}`;
     const title = `${marker}<script>alert(1)</script>`;
     await createNote(noteRepository, title, "本文");
@@ -58,7 +58,7 @@ describe("search use cases", () => {
     expect(out).toContain("&lt;script&gt;");
   });
 
-  test("ハイライト対象の本文に含まれる < > は HTML エスケープされる", async () => {
+  test("escapes HTML angle brackets in highlighted bodies", async () => {
     const marker = `xss-body-${Date.now()}`;
     const body = `prefix ${marker} <img src=x onerror=alert(1)> suffix`;
     await createNote(noteRepository, "タイトル", body);

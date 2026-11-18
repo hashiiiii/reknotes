@@ -7,17 +7,15 @@ import type { IStorageProvider } from "../port/storage-provider";
 import { isNoteProcessing } from "./is-note-processing";
 import { updateNoteWithTags } from "./update-note-with-tags";
 
-// updateNoteWithTags は DB 行更新だけを同期で行い、タグ再生成と掃除 (S3 の orphan 削除を含む)
-// はバックグラウンドに回す。ここでは「即返すこと」「再入を拒否すること」「バックグラウンドの
-// 掃除が最終的に走ること」を検証する。
+// Saving must return before background tagging and S3 cleanup finish. These tests
+// also guard against overlapping saves and cleanup that never runs.
 
 function makeNote(id: number, body: string): Note {
   return { id, title: "t", body, createdAt: 0, updatedAt: 0 };
 }
 
-// embedNote と embedTag に逆向きベクトルを返させ、全候補のスコアを負にする。
-// suggestTags の相対閾値 (score >= maxScore * 0.5) は maxScore が負だと全候補を弾くため、
-// タグが一つも生成されず addTagsToNote が走らない。これで findOrCreateMany 等の stub が不要になる。
+// Opposite vectors make every score negative. The cutoff score >= maxScore * 0.5
+// then rejects all candidates, so these tests do not need a tag creation path.
 function makeEmbeddingProvider(): IEmbeddingProvider {
   return {
     load: async () => {},
@@ -31,7 +29,7 @@ function makeNoteRepo(oldBody: string, newBody: string): INoteRepository {
   return {
     findById: async (id: number) => makeNote(id, oldBody),
     update: async (id: number) => makeNote(id, newBody),
-    // 旧タグなし = orphan 掃除の経路は走らない。掃除自体の検証は note.test.ts で行う
+    // No old tags means no orphan cleanup here; note.test.ts covers that behavior.
     findTagsByNoteId: async () => [],
   } as unknown as INoteRepository;
 }
@@ -43,15 +41,14 @@ function makeTagRepo(): ITagRepository {
   } as unknown as ITagRepository;
 }
 
-// バックグラウンドジョブの完了 (processing 解除) をポーリングで待つ。
-// ジョブがハングした場合は bun test のタイムアウトが検知する。
+// Assertions need the final background state; the test timeout catches jobs that never finish.
 async function waitForBackground(id: number) {
   while (isNoteProcessing(id)) await Bun.sleep(1);
 }
 
-describe("updateNoteWithTags の非同期化", () => {
-  test("タグ付け完了を待たずに更新結果を返し、処理中フラグが立つ", async () => {
-    // embedNote を手動で解放するまでブロックさせ、「タグ付けが終わる前に返る」ことを決定的に検証する
+describe("updateNoteWithTags background processing", () => {
+  test("returns the update and sets the processing flag before tagging finishes", async () => {
+    // Holding inference makes an early response deterministic rather than dependent on timing.
     let releaseEmbedding: () => void = () => {};
     const gate = new Promise<void>((resolve) => {
       releaseEmbedding = resolve;
@@ -79,7 +76,7 @@ describe("updateNoteWithTags の非同期化", () => {
       "新本文",
     );
 
-    // embedNote がブロックされたままでも更新結果が返り、処理中フラグが立っている
+    // The save must return and remain marked as processing while inference is blocked.
     expect(note).not.toBe("processing");
     expect((note as Note).body).toBe("新本文");
     expect(isNoteProcessing(10)).toBe(true);
@@ -90,7 +87,7 @@ describe("updateNoteWithTags の非同期化", () => {
     expect(unlinkSpy).toHaveBeenCalledWith(10);
   });
 
-  test("処理中の再入は processing を返す", async () => {
+  test("returns processing for overlapping updates", async () => {
     let releaseEmbedding: () => void = () => {};
     const gate = new Promise<void>((resolve) => {
       releaseEmbedding = resolve;
@@ -133,7 +130,7 @@ describe("updateNoteWithTags の非同期化", () => {
     await waitForBackground(11);
   });
 
-  test("存在しないノートは null を返しロックを解除する", async () => {
+  test("returns null and releases the lock for a missing note", async () => {
     const noteRepo = {
       findById: async () => null,
       findTagsByNoteId: async () => [],
@@ -152,11 +149,11 @@ describe("updateNoteWithTags の非同期化", () => {
     );
 
     expect(result).toBeNull();
-    // ロックが解除されていれば、後続の更新は "processing" にならない
+    // A later save must proceed once the processing lock is released.
     expect(isNoteProcessing(12)).toBe(false);
   });
 
-  test("バックグラウンドジョブが失敗してもロックは解除される", async () => {
+  test("releases the lock even when the background job fails", async () => {
     const embeddingProvider: IEmbeddingProvider = {
       load: async () => {},
       embedNote: async () => {
@@ -177,7 +174,7 @@ describe("updateNoteWithTags の非同期化", () => {
       "新本文",
     );
 
-    // 本文の更新は成功したまま返り、失敗はバックグラウンドでログされるだけ
+    // A background failure must not undo the successful body update.
     expect(note).not.toBe("processing");
     expect((note as Note).body).toBe("新本文");
     await waitForBackground(13);
@@ -185,9 +182,9 @@ describe("updateNoteWithTags の非同期化", () => {
   });
 });
 
-describe("updateNoteWithTags のタグ保持", () => {
+describe("updateNoteWithTags tag preservation", () => {
   test.each(["note", "title", "cache", "tag"] as const)(
-    "%s の embedding 失敗時は既存タグを変更・掃除しない",
+    "preserves existing tags without cleanup when %s inference fails",
     async (failure) => {
       let noteCalls = 0;
       const embeddingProvider: IEmbeddingProvider = {
@@ -234,8 +231,8 @@ describe("updateNoteWithTags のタグ保持", () => {
   );
 });
 
-describe("updateNoteWithTags のファイルクリーンアップ", () => {
-  test("旧本文にあって新本文にないキーは削除される", async () => {
+describe("updateNoteWithTags file cleanup", () => {
+  test("deletes file keys removed from the body", async () => {
     const noteRepo = makeNoteRepo("![](/api/files/old.png)", "![](/api/files/new.png)");
     const tagRepo = makeTagRepo();
     const embeddingProvider = makeEmbeddingProvider();
@@ -243,14 +240,14 @@ describe("updateNoteWithTags のファイルクリーンアップ", () => {
     const storageProvider = { delete: deleteSpy } as unknown as IStorageProvider;
 
     await updateNoteWithTags(noteRepo, tagRepo, embeddingProvider, storageProvider, 1, "t", "![](/api/files/new.png)");
-    // S3 掃除はバックグラウンドに移ったので、完了を待ってから観測する
+    // Storage assertions must wait for background cleanup to finish.
     await waitForBackground(1);
 
     expect(deleteSpy).toHaveBeenCalledWith("old.png");
     expect(deleteSpy).not.toHaveBeenCalledWith("new.png");
   });
 
-  test("旧本文と新本文が同じキーを参照する場合は削除しない", async () => {
+  test("preserves file keys referenced by both the old and new body", async () => {
     const noteRepo = makeNoteRepo("![](/api/files/keep.png)", "![](/api/files/keep.png)");
     const tagRepo = makeTagRepo();
     const embeddingProvider = makeEmbeddingProvider();

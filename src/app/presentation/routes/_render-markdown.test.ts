@@ -1,22 +1,20 @@
 import { describe, expect, test } from "bun:test";
 import { renderMarkdown } from "./_render-markdown";
 
-// issue: URL 単独行の前後の単一改行がプレビューで潰れる。
-// zenn-markdown-html は URL 単独行をリンクカードに変換する前提で前後の <br> を
-// display:none にするが、カード生成器が無いとインラインリンクにフォールバックし、
-// 改行だけが消える。生成器をブロック要素のリンクとして与えることで行を保つ。
+// Zenn hides line breaks around standalone URLs even when no card renderer exists.
+// Block links must preserve these lines without replacing supported built-in embeds.
 
 describe("renderMarkdown", () => {
-  test("URL 単独行はブロック要素のリンクとして描画される", async () => {
+  test("renders standalone URLs as block links", async () => {
     const html = await renderMarkdown("あいう\nhttps://example.com/page\nかきく");
 
-    // ブロック要素で包まれていれば、隠された <br> に関係なく行として分かれる
+    // The block wrapper preserves a separate line even when adjacent breaks are hidden.
     expect(html).toContain('<span class="md-block-link">');
     expect(html).toContain('href="https://example.com/page"');
   });
 
-  test("GitHub の blob URL 単独行もブロック要素のリンクとして描画される", async () => {
-    // github URL は card とは別の生成器 (github) に振り分けられるため個別に確認する
+  test("renders standalone GitHub blob URLs as block links", async () => {
+    // GitHub URLs use a separate renderer from ordinary cards and need their own regression.
     const url = "https://github.com/hashiiiii/reknotes/blob/main/README.md";
     const html = await renderMarkdown(`あいう\n${url}\nかきく`);
 
@@ -24,8 +22,8 @@ describe("renderMarkdown", () => {
     expect(html).toContain(`href="${url}"`);
   });
 
-  test("Twitter/X の URL 単独行もブロック要素のリンクとして描画される", async () => {
-    // tweet も card とは別の生成器に振り分けられる
+  test("renders standalone Twitter/X URLs as block links", async () => {
+    // Tweets use another renderer, so the card test alone cannot cover them.
     const url = "https://x.com/hashiiiii/status/1234567890";
     const html = await renderMarkdown(`あいう\n${url}\nかきく`);
 
@@ -33,24 +31,23 @@ describe("renderMarkdown", () => {
     expect(html).toContain(`href="${url}"`);
   });
 
-  test("URL のクエリ文字列はエスケープされて出力される", async () => {
+  test("escapes URL query strings", async () => {
     const html = await renderMarkdown("https://example.com/?a=1&b=2");
 
     expect(html).toContain("?a=1&amp;b=2");
     expect(html).not.toContain('href="https://example.com/?a=1&b=2"');
   });
 
-  test("URL を含まない単一改行は <br> として保持される", async () => {
-    // zenn-markdown-html 標準の挙動 (breaks: true) が壊れていないことの保証
+  test("preserves single line breaks without URLs", async () => {
+    // Custom embeds must preserve Zenn's normal breaks: true behavior.
     const html = await renderMarkdown("あいう\nかきく");
 
     expect(html).toContain("<br />");
     expect(html).not.toContain("display:none");
   });
 
-  test("YouTube の URL 単独行は既定の埋め込みプレイヤーのまま", async () => {
-    // customEmbed はデフォルト生成器とマージされる。card 以外を上書きして
-    // 既定の youtube 埋め込みを潰していないことの保証
+  test("preserves the built-in player for standalone YouTube URLs", async () => {
+    // Merging custom renderers must not replace the built-in YouTube player.
     const html = await renderMarkdown("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
 
     expect(html).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");

@@ -1,6 +1,5 @@
-// バックグラウンド処理 (自動タグ付け) が走っているノートの in-memory レジストリ。
-// 単一プロセス前提 (local は bun プロセス 1 つ、remote も app コンテナ 1 つ)。
-// プロセス再起動で消えるが、その場合カードは通常表示に戻るだけで実害はない。
+// Both deployment modes use one process, so an in-memory registry is sufficient.
+// Restarting clears the registry and returns cards to their normal state.
 const processingNoteIds = new Set<number>();
 
 export function markNoteProcessing(noteId: number): void {

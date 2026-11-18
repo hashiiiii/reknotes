@@ -24,18 +24,10 @@ import { DrizzleTagRepository } from "./repositories/drizzle-tag-repository";
 const HOOKS_DIR = "scripts/migration/hooks";
 const SCHEMA_PATH = "./src/app/infrastructure/db/schema.ts";
 
-// pg_dump は postgres の docker image に内包されています。
-// また pg_dump は自分よりバージョンの高い postgres から dump できないという制約があります。
-// そのため、常に local の image を watch して、バージョンが勝手に揃うように対応する。
-// remote に関しては Neon は free tier だと postgres アップデートできないようなので問題にならない。
-///////// 下記の文言は renovate で regexp しているので消さないこと /////////
+// pg_dump cannot back up a newer server major version. Renovate tracks the
+// PostgreSQL image here as well as the local database image.
 // renovate: datasource=docker depName=postgres
-///////////////////////////////////////////////////////////////////
-const PG_IMAGE = "postgres:18.2@sha256:a688ae5c99f86c1424e046ace0de890608cc0ddb5ec8ef72a6ff8305fdc8f4d2";
-
-///////////////
-// Singleton
-///////////////
+const PG_IMAGE = "postgres:18.7@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc";
 
 let dbInstance: DrizzleDb | null = null;
 function getOrCreateDb(config: Config): DrizzleDb {
@@ -48,7 +40,7 @@ let embeddingInstance: IEmbeddingProvider | null = null;
 export function createEmbeddingProvider(config: Config): IEmbeddingProvider {
   if (embeddingInstance) return embeddingInstance;
 
-  // Cloudflare の認証情報は remote でしか使わないので、provider を構築するここで初めて検証する
+  // Defer credential validation until this provider is needed by a remote deployment.
   const embedding = loadEmbeddingConfig(config.deployment);
   if (embedding.kind === "cloudflare") {
     embeddingInstance = new CloudflareEmbeddingProvider(embedding.accountId, embedding.apiToken);
@@ -72,10 +64,6 @@ export function createStorageProvider(config: Config): IStorageProvider {
   storageInstance = new S3StorageProvider(s3, config.s3BucketName);
   return storageInstance;
 }
-
-///////////////
-// Transient
-///////////////
 
 export function createNoteRepository(config: Config): INoteRepository {
   return new DrizzleNoteRepository(getOrCreateDb(config));
@@ -101,8 +89,8 @@ export function createHookProvider(): IHookProvider {
   return new FsHookProvider(HOOKS_DIR);
 }
 
-// Primary 側はシングルトンで持つが、Backup 側は参照頻度が低いため毎回 new する。
-// BACKUP_S3_* は backup / restore コマンドだけが使うので、呼び出し側が loadBackupStorageConfig で読み込む。
+// Backup clients are infrequent and need not share the application's storage singleton.
+// Callers load their credentials only when running backup or restore commands.
 export function createBackupStorageProvider(config: BackupStorageConfig): IStorageProvider {
   const s3 = new S3Client({
     region: "auto",

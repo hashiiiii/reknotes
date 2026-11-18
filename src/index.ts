@@ -25,5 +25,7 @@ preloadTagCache(embeddingProvider, tagRepository).catch((err) => {
 const app = createApp(noteRepository, tagRepository, graphRepository, storageProvider, embeddingProvider);
 
 export default {
+  // Local deployments have no authentication and must listen on loopback.
+  hostname: config.deployment === "local" ? "127.0.0.1" : "0.0.0.0",
   fetch: app.fetch,
 };

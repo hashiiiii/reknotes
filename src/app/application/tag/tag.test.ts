@@ -11,21 +11,21 @@ const tagRepository = createTagRepository(config);
 
 describe("tag use cases", () => {
   describe("addTagsToNote", () => {
-    test("ノートにタグを追加できる", async () => {
+    test("adds a tag to a note", async () => {
       const note = await createNote(noteRepository, "タグ追加テスト", "本文");
       await addTagsToNote(tagRepository, note.id, ["JavaScript"]);
       const tags = await noteRepository.findTagsByNoteId(note.id);
       expect(tags).toContain("javascript");
     });
 
-    test("タグ名が正規化される（大文字→小文字、前後空白除去）", async () => {
+    test("normalizes tag names by trimming and lowercasing", async () => {
       const note = await createNote(noteRepository, "正規化テスト", "本文");
       await addTagsToNote(tagRepository, note.id, ["  TypeScript  "]);
       const tags = await noteRepository.findTagsByNoteId(note.id);
       expect(tags).toContain("typescript");
     });
 
-    test("同じタグ名は別ノートで再利用される（findOrCreateMany）", async () => {
+    test("reuses the same tag across notes", async () => {
       const note1 = await createNote(noteRepository, "重複テスト1", "本文");
       const note2 = await createNote(noteRepository, "重複テスト2", "本文");
       await addTagsToNote(tagRepository, note1.id, ["rust"]);
@@ -34,13 +34,13 @@ describe("tag use cases", () => {
       const tags2 = await noteRepository.findTagsByNoteId(note2.id);
       expect(tags1).toContain("rust");
       expect(tags2).toContain("rust");
-      // tags テーブルに "rust" 行が1つしか存在しないことを確認（重複行が挿入されていないこと）
+      // Returning the same tag is insufficient if duplicate rows were also inserted.
       const allTags = await tagRepository.findAll();
       const rustRows = allTags.filter((t) => t.name === "rust");
       expect(rustRows.length).toBe(1);
     });
 
-    test("複数タグを一括追加できる", async () => {
+    test("adds multiple tags together", async () => {
       const note = await createNote(noteRepository, "一括追加テスト", "本文");
       await addTagsToNote(tagRepository, note.id, ["Go", "Docker", "K8s"]);
       const tags = await noteRepository.findTagsByNoteId(note.id);
@@ -49,7 +49,7 @@ describe("tag use cases", () => {
       expect(tags).toContain("k8s");
     });
 
-    test("空文字やスペースのみのタグ名はスキップされる", async () => {
+    test("skips empty and whitespace-only tag names", async () => {
       const note = await createNote(noteRepository, "空タグテスト", "本文");
       await addTagsToNote(tagRepository, note.id, ["valid", "", "  ", "also-valid"]);
       const tags = await noteRepository.findTagsByNoteId(note.id);
@@ -58,7 +58,7 @@ describe("tag use cases", () => {
       expect(tags.length).toBe(2);
     });
 
-    test("空配列を渡してもエラーにならない", async () => {
+    test("accepts an empty tag list", async () => {
       const note = await createNote(noteRepository, "空配列テスト", "本文");
       await addTagsToNote(tagRepository, note.id, []);
       const tags = await noteRepository.findTagsByNoteId(note.id);
@@ -67,11 +67,11 @@ describe("tag use cases", () => {
   });
 
   describe("removeOrphanTag", () => {
-    test("ノートに紐づかない孤立タグが削除される", async () => {
+    test("deletes tags that no note references", async () => {
       const note = await createNote(noteRepository, "孤立タグテスト", "本文");
       const tagName = `orphan-${Date.now()}`;
       await addTagsToNote(tagRepository, note.id, [tagName]);
-      // タグとノートの紐付けを解除して孤立させる
+      // The tag must be orphaned before cleanup can remove it.
       await tagRepository.unlinkAllByNoteId(note.id);
       await removeOrphanTag(tagRepository, tagName);
 
@@ -79,7 +79,7 @@ describe("tag use cases", () => {
       expect(found).toBeNull();
     });
 
-    test("ノートに紐づいているタグは削除されない", async () => {
+    test("preserves tags still referenced by a note", async () => {
       const note = await createNote(noteRepository, "非孤立タグテスト", "本文");
       const tagName = `not-orphan-${Date.now()}`;
       await addTagsToNote(tagRepository, note.id, [tagName]);
@@ -89,9 +89,8 @@ describe("tag use cases", () => {
       expect(found).not.toBeNull();
     });
 
-    test("存在しないタグ名でもエラーにならない", async () => {
+    test("accepts a tag name that does not exist", async () => {
       await removeOrphanTag(tagRepository, "nonexistent-tag-xyz");
-      // エラーが発生しなければOK
     });
   });
 });

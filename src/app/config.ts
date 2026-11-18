@@ -1,9 +1,8 @@
 export type Environment = "development" | "test" | "production";
 export type Deployment = "local" | "remote";
 
-// すべてのエントリーポイントが必要とする共通設定。
-// 特定の deployment やコマンドでしか使わない変数はここに入れず、
-// 使う場所で loadEmbeddingConfig / loadBackupStorageConfig を呼んで検証する。
+// Validate optional provider credentials only when that provider is constructed.
+// Local development and unrelated commands must not require placeholder secrets.
 export type Config = {
   deployment: Deployment;
   environment: Environment;
@@ -14,11 +13,10 @@ export type Config = {
   s3BucketName: string;
 };
 
-// embedding provider の構築に必要な設定。Cloudflare の認証情報は remote でしか使わないので、
-// remote のときだけ必須にする (local はダミー値を要求しない)。
+// Only remote embeddings require Cloudflare credentials.
 export type EmbeddingConfig = { kind: "local" } | { kind: "cloudflare"; accountId: string; apiToken: string };
 
-// backup / restore コマンドだけが使う設定。アプリ本体の起動では要求しない。
+// Starting the application must not require backup credentials.
 export type BackupStorageConfig = {
   endpoint: string;
   accessKeyId: string;
