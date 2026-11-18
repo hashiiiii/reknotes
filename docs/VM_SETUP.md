@@ -83,7 +83,7 @@ OCI は VM の OS とは別に、VCN レベルでもファイアウォールが�
 ssh -i ~/.ssh/reknotes_production ubuntu@<Public IPv4 address>
 ```
 
-初回は `The authenticity of host ...` と聞かれるので `yes` で進む。`ubuntu@reknotes-production:~$` のプロンプトに変われば成功。以降のステップはすべて VM 内で実行する。
+初回は OCI コンソールで `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` を実行し、SSH が表示する ED25519 のフィンガープリントと一致することを確認してから `yes` を入力する。`ubuntu@reknotes-production:~$` のプロンプトに変われば成功。以降のステップはすべて VM 内で実行する。
 
 ### 6. VM 内のファイアウォールでも 80 / 443 を開放する
 
@@ -239,5 +239,8 @@ docker compose -f compose.remote.yaml logs app | tail -50
 | SSH 鍵ペア | `~/.ssh/reknotes_development` を新規に生成する (production と分ける) |
 | `DOMAIN` | development 用の別サブドメイン (`docs/INFRASTRUCTURE.md` 参照) |
 | GitHub Secrets の登録先 | `Settings > Environments > development` |
+| `VM_HOST` と `VM_SSH_KNOWN_HOSTS` | 開発 VM の IP アドレスと、その VM で確認したホスト公開鍵を手順 12 の形式で登録する。 |
+
+開発環境へのデプロイは、GitHub の `Actions > Deploy > Run workflow` で対象ブランチと `development` を選ぶ。
 
 OCI を使う場合、Compute インスタンス作成時の Networking で `Select existing virtual cloud network` を選び、production で作った VCN と subnet を再利用できる (Security List も共通で OK)。OCI Always Free の AMD shape は 2 台まで無料なので、production / development を 1 台ずつでも枠内に収まる。

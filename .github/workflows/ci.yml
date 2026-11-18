@@ -6,34 +6,9 @@ on:
 permissions:
   contents: read
 
-# Tests and migrations do not construct the remote embedding or backup providers.
-env:
-  ENVIRONMENT: test
-  DEPLOYMENT: local
-  DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
-  S3_ENDPOINT: dummy
-  S3_ACCESS_KEY_ID: dummy
-  S3_SECRET_ACCESS_KEY: dummy
-  S3_BUCKET_NAME: reknotes-test
-
 jobs:
   test:
     runs-on: ubuntu-latest
-    services: &postgres-service
-      postgres:
-        image: postgres:18.7@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
-        env:
-          POSTGRES_USER: reknotes
-          POSTGRES_PASSWORD: reknotes
-          POSTGRES_DB: reknotes_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U reknotes"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -42,14 +17,14 @@ jobs:
         with:
           bun-version-file: .bun-version
 
-      - name: Install packages
-        run: bun install --frozen-lockfile
-
-      - name: Run migrations
-        run: bun run migrate --apply
+      - name: Set up local services and databases
+        run: bun run setup
 
       - name: Run tests
-        run: bun test
+        run: bun run test
+
+      - name: Back up the local database to object storage
+        run: bun run dump
 
   check:
     runs-on: ubuntu-latest
@@ -82,8 +57,28 @@ jobs:
 
   destructive-check:
     runs-on: ubuntu-latest
-    services: *postgres-service
+    services:
+      postgres:
+        image: postgres:18.7@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
+        env:
+          POSTGRES_USER: reknotes
+          POSTGRES_PASSWORD: reknotes
+          POSTGRES_DB: reknotes_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U reknotes"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
     env:
+      ENVIRONMENT: test
+      DEPLOYMENT: local
+      DATABASE_URL: postgresql://reknotes:reknotes@localhost:5432
+      S3_ENDPOINT: dummy
+      S3_ACCESS_KEY_ID: dummy
+      S3_SECRET_ACCESS_KEY: dummy
+      S3_BUCKET_NAME: reknotes-test
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v7.0.1
