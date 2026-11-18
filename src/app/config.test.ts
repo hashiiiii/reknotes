@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { loadBackupStorageConfig, loadConfig, loadEmbeddingConfig } from "./config";
 
-// process.env を直接操作するので、各テストの前後で対象キーを退避・復元する
+// Environment changes must not leak into other tests that use the real configuration loader.
 const MANAGED_KEYS = [
   "DEPLOYMENT",
   "ENVIRONMENT",
@@ -32,7 +32,6 @@ afterEach(() => {
   }
 });
 
-// loadConfig が要求する共通の変数だけをセットする
 function setCoreEnv() {
   process.env.DEPLOYMENT = "local";
   process.env.ENVIRONMENT = "development";
@@ -56,8 +55,8 @@ function deleteBackupEnv() {
 }
 
 describe("loadConfig", () => {
-  test("Cloudflare と backup の変数なしで読み込める", () => {
-    // ローカル開発 (bun run dev) が dummy 値を要求しないことの担保
+  test("loads without Cloudflare or backup variables", () => {
+    // Local startup must not require credentials for providers it does not use.
     setCoreEnv();
     deleteCloudflareEnv();
     deleteBackupEnv();
@@ -66,19 +65,19 @@ describe("loadConfig", () => {
     expect(config.s3BucketName).toBe("bucket");
   });
 
-  test("local では DATABASE_URL に /reknotes_<environment> を付与する", () => {
+  test("appends /reknotes_<environment> to local database URLs", () => {
     setCoreEnv();
     expect(loadConfig().databaseUrl).toBe("postgres://user:pass@localhost:5432/reknotes_development");
   });
 
-  test("remote では DATABASE_URL をそのまま使う", () => {
+  test("preserves remote database URLs", () => {
     setCoreEnv();
     process.env.DEPLOYMENT = "remote";
     process.env.DATABASE_URL = "postgres://user:pass@db.example.com/neondb";
     expect(loadConfig().databaseUrl).toBe("postgres://user:pass@db.example.com/neondb");
   });
 
-  test("共通の必須変数が無ければ throw する", () => {
+  test("rejects missing required configuration", () => {
     setCoreEnv();
     delete process.env.DATABASE_URL;
     expect(() => loadConfig()).toThrow("DATABASE_URL is required");
@@ -86,17 +85,17 @@ describe("loadConfig", () => {
 });
 
 describe("loadEmbeddingConfig", () => {
-  test("local では Cloudflare の変数なしで local 種別を返す", () => {
+  test("selects local inference without Cloudflare variables", () => {
     deleteCloudflareEnv();
     expect(loadEmbeddingConfig("local")).toEqual({ kind: "local" });
   });
 
-  test("remote で Cloudflare の変数が無ければ throw する", () => {
+  test("rejects missing remote Cloudflare credentials", () => {
     deleteCloudflareEnv();
     expect(() => loadEmbeddingConfig("remote")).toThrow("CLOUDFLARE_ACCOUNT_ID is required");
   });
 
-  test("remote では Cloudflare の認証情報を返す", () => {
+  test("returns Cloudflare credentials for remote inference", () => {
     process.env.CLOUDFLARE_ACCOUNT_ID = "account";
     process.env.CLOUDFLARE_API_TOKEN = "token";
     expect(loadEmbeddingConfig("remote")).toEqual({
@@ -108,12 +107,12 @@ describe("loadEmbeddingConfig", () => {
 });
 
 describe("loadBackupStorageConfig", () => {
-  test("BACKUP_S3_* が無ければ throw する", () => {
+  test("rejects missing backup storage credentials", () => {
     deleteBackupEnv();
     expect(() => loadBackupStorageConfig()).toThrow("BACKUP_S3_ENDPOINT is required");
   });
 
-  test("BACKUP_S3_* が揃っていれば値を返す", () => {
+  test("returns complete backup storage configuration", () => {
     process.env.BACKUP_S3_ENDPOINT = "http://localhost:9002";
     process.env.BACKUP_S3_ACCESS_KEY_ID = "backup-key";
     process.env.BACKUP_S3_SECRET_ACCESS_KEY = "backup-secret";

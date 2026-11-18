@@ -1,13 +1,9 @@
 {
-  // reknotes では実行時のトランスパイルを Bun が担当し、tsc は bun run check の型チェック （tsc --noEmit） 専用として使う。
-  // そのため tsconfig の target は実行ファイルの出力には効かず、型チェック時に許容する構文に影響する。
-  // Bun の組み込みトランスパイラは JavaScriptCore が解釈できる最新の JS をほぼそのまま通す。
-  // reknotes では renovate で Bun を最新に追従させる運用を想定しているため
-  // 型チェック側も ESNext にしておかないと、ランタイムでは動く構文が型チェックで弾かれてしまう。
+  // Bun handles runtime transpilation; tsc only checks types with --noEmit.
+  // ESNext keeps accepted syntax aligned with the Bun runtime tracked by Renovate.
   "compilerOptions": {
     "target": "ESNext",
-    // lib を明示しないと TS が DOM を暗黙ロードし、Worker が ref/unref を持たない DOM 型になる。
-    // サーバーは Bun 専用なので DOM を外し、bun-types の Worker (ref/unref あり) を使う。
+    // The DOM Worker type lacks Bun's ref/unref methods, so omit the implicit DOM library.
     "lib": ["ESNext"],
     "module": "ESNext",
     "moduleResolution": "bundler",
@@ -16,6 +12,6 @@
     "outDir": "dist",
     "types": ["bun"]
   },
-  // ルートの drizzle.config.ts を拾うために *.ts を書いておく
+  // Root TypeScript files include the Drizzle configuration.
   "include": ["*.ts", "src/**/*", "scripts/**/*"],
 }

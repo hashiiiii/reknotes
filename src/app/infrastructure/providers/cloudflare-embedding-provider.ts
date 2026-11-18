@@ -1,7 +1,7 @@
 import type { IEmbeddingProvider } from "../../application/port/embedding-provider";
 
-// EmbeddingGemma の prefix は Qwen に流用しない。ノートは documents、タグは
-// instruction 付き queries として渡す (text は documents の別名)。
+// Qwen expects documents and instructed queries, not EmbeddingGemma's prefixes.
+// The text field is an alias for documents.
 // https://developers.cloudflare.com/workers-ai/models/qwen3-embedding-0.6b/schema-input.json
 const MODEL_ID = "@cf/qwen/qwen3-embedding-0.6b";
 const QUERY_INSTRUCTION = "Given a topic, retrieve relevant notes about that topic";
@@ -17,7 +17,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
   ) {}
 
   async load(): Promise<void> {
-    // この provider は API ベースのためロードは不要
+    // Remote inference has no local model to load.
   }
 
   async embedNote(text: string): Promise<Float32Array> {
@@ -85,7 +85,7 @@ export class CloudflareEmbeddingProvider implements IEmbeddingProvider {
       if (!Number.isFinite(norm) || norm === 0) {
         throw new Error("Cloudflare Workers AI: invalid embedding norm");
       }
-      // suggestTags の内積が cosine similarity になるよう、API の正規化有無に依存しない。
+      // Normalize locally so dot products represent cosine similarity regardless of API behavior.
       return Float32Array.from(arr, (value) => value / norm);
     });
   }

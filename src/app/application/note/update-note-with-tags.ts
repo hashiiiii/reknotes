@@ -10,8 +10,8 @@ import { removeOrphanTag } from "../tag/remove-orphan-tag";
 import { finishNoteProcessing, isProcessing, markNoteProcessing } from "./_processing-notes";
 import { updateNote } from "./update-note";
 
-// 本文の更新だけを同期で行い、タグ再生成と掃除はバックグラウンドに回す。
-// 処理中の再入は "processing" で拒否する (保存連打・複数タブ対策)。
+// Save text before background tagging so edits return promptly. Reject overlapping
+// saves, including repeated clicks and edits from multiple tabs.
 export async function updateNoteWithTags(
   noteRepo: INoteRepository,
   tagRepo: ITagRepository,
@@ -21,8 +21,7 @@ export async function updateNoteWithTags(
   title: string,
   body: string,
 ): Promise<Note | null | "processing"> {
-  // check と mark は最初の await より前の同一 tick で行う。間にイベントループが
-  // 割り込まないので、同時に届いた保存は必ず片方だけが通る。
+  // Checking and marking before the first await prevents concurrent saves from both proceeding.
   if (isProcessing(id)) return "processing";
   markNoteProcessing(id);
 
@@ -30,8 +29,7 @@ export async function updateNoteWithTags(
   let oldTagNames: string[];
   let note: Note | null;
   try {
-    // 更新前の本文とタグを先に押さえておく。バックグラウンドでの S3 差分計算と
-    // 外れたタグの orphan 掃除に使う。
+    // Cleanup needs the previous file references and tags to identify removed objects and orphan tags.
     existing = await noteRepo.findById(id);
     oldTagNames = await noteRepo.findTagsByNoteId(id);
     note = await updateNote(noteRepo, id, title, body);
@@ -57,8 +55,7 @@ export async function updateNoteWithTags(
   return note;
 }
 
-// タグ再生成と掃除を非同期で実行する (レスポンスをブロックしない)。
-// 処理中の間は detail のメニューとカードがロック表示になる。成否に関わらず必ず解除する
+// Both success and failure must unlock the card and detail menu.
 function retagAndCleanupInBackground(
   tagRepo: ITagRepository,
   embeddingProvider: IEmbeddingProvider,
@@ -88,19 +85,18 @@ async function runRetagAndCleanup(
   oldBody: string | null,
   oldTagNames: string[],
 ): Promise<void> {
-  // API エラーやキャッシュ構築失敗時にも既存タグを残すため、生成が完了するまでは
-  // リンクを変更しない。正常に空配列が返った場合は従来どおり旧タグを外す。
+  // Keep existing links if inference or cache building fails. A successful empty
+  // result still removes old tags.
   const generatedTags = await suggestTags(embeddingProvider, tagRepo, title, body);
   await tagRepo.unlinkAllByNoteId(noteId);
   if (generatedTags.length > 0) await addTagsToNote(tagRepo, noteId, generatedTags);
 
-  // 編集で外れた旧タグはどのノートからも参照されなければ消す (delete-note.ts と同じ方式)。
-  // 再選択されたタグはリンクが残るので deleteIfOrphan が残す。
+  // Orphan cleanup preserves tags that were selected again or still belong to other notes.
   for (const tagName of oldTagNames) {
     await removeOrphanTag(tagRepo, tagName);
   }
 
-  // 旧本文にあって新本文にないキーだけを削除する。新本文に残っているキーは消さない。
+  // File cleanup must preserve every key still referenced by the updated body.
   if (oldBody !== null) {
     const newKeys = new Set(extractUploadedFileKeys(body));
     const orphanedKeys = extractUploadedFileKeys(oldBody).filter((key) => !newKeys.has(key));

@@ -15,8 +15,8 @@ export async function createNoteWithTags(
 ) {
   const note = await createNote(noteRepo, title, body);
 
-  // タグ付けを非同期で実行（レスポンスをブロックしない）
-  // ノートが先に削除された場合は FK 制約違反で失敗するが、try-catch で安全に処理される
+  // Background tagging keeps note creation responsive. Foreign-key failures, such
+  // as deletion before tagging finishes, are handled by the background error path.
   autoTagInBackground(tagRepo, embeddingProvider, note.id, title, body);
 
   return { note, tags: [] };
@@ -29,7 +29,7 @@ function autoTagInBackground(
   title: string,
   body: string,
 ) {
-  // 処理中の間はカードが processing 表示になる (issue #162)。成否に関わらず必ず解除する
+  // Cards remain locked until tagging settles, including on failure (issue #162).
   markNoteProcessing(noteId);
   suggestTags(embeddingProvider, tagRepo, title, body)
     .then((generatedTags) => {

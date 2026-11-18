@@ -20,15 +20,13 @@ import type { INoteRepository } from "./domain/note/note-repository";
 import type { ITagRepository } from "./domain/tag/tag-repository";
 import { fileRoutes } from "./presentation/routes/files";
 import { graphRoutes } from "./presentation/routes/graph";
-import { noteRoutes } from "./presentation/routes/notes";
+import { createNoteRoutes } from "./presentation/routes/notes";
 import { pageRoutes } from "./presentation/routes/pages";
 import { searchRoutes } from "./presentation/routes/search";
-import { uploadRoutes } from "./presentation/routes/upload";
+import { createUploadRoutes } from "./presentation/routes/upload";
 
-// LiquidJS エンジン初期化
 const viewsDir = join(import.meta.dir, "presentation/views");
-// outputEscape: 'escape' を有効化してテンプレ全体をデフォルト HTML エスケープ。
-// 意図的に HTML を出力したい変数は `| raw` を明示する。
+// Escape template output by default; intentional HTML must opt in with `| raw`.
 const engine = new Liquid({
   root: viewsDir,
   layouts: join(viewsDir, "layouts"),
@@ -38,8 +36,6 @@ const engine = new Liquid({
   outputEscape: "escape",
 });
 
-// LiquidJS のカスタムフィルター
-// unixtime から "YYYY/MM/DD HH:mm" 形式の日時文字列を生成するフィルター
 engine.registerFilter("formatDate", (timestamp: number) => {
   if (!timestamp) return "";
   const d = new Date(timestamp);
@@ -76,13 +72,11 @@ export function createApp(
   app.use(compress());
   app.use(timeout(30_000));
   app.use(etag());
-  // /api/upload は upload route 側で 50MB の bodyLimit を bind しているので、
-  // こちらは除外する (グローバル制限を先に評価すると小さい上限で 413 になる)
+  // Uploads have their own 50 MiB limit; the global limit would reject them first.
   const globalBodyLimit = bodyLimit({ maxSize: 1 * 1024 * 1024 });
   app.use((c, next) => (c.req.path.startsWith("/api/upload") ? next() : globalBodyLimit(c, next)));
   app.use(secureHeaders());
 
-  // ルーティングで利用するリポジトリやプロバイダをコンテキストに登録するミドルウェア
   app.use("*", async (c, next) => {
     c.set("noteRepository", noteRepository);
     c.set("tagRepository", tagRepository);
@@ -92,7 +86,6 @@ export function createApp(
     await next();
   });
 
-  // LiquidJS のレンダリングミドルウェア
   app.use("*", async (c, next) => {
     c.set("render", async (template: string, data: Record<string, unknown> = {}) => {
       return engine.renderFile(`pages/${template}`, {
@@ -103,31 +96,26 @@ export function createApp(
     await next();
   });
 
-  // 静的ファイル配信（dist/ からビルド済みアセットを配信）
   app.use("/static/*", serveStatic({ root: "./dist/", rewriteRequestPath: (path) => path.replace("/static", "") }));
 
-  // ルート登録
   app.route("/", pageRoutes);
-  app.route("/api/notes", noteRoutes);
+  app.route("/api/notes", createNoteRoutes());
   app.route("/api/search", searchRoutes);
   app.route("/api/graph", graphRoutes);
-  app.route("/api/upload", uploadRoutes);
+  app.route("/api/upload", createUploadRoutes());
   app.route("/api/files", fileRoutes);
 
-  // グローバルエラーハンドラ。
-  // 未設定だと Hono のデフォルトハンドラが例外メッセージ/スタックをクライアントに
-  // 漏らし得るため、ここで一括して握り潰し、汎用 500 のみを返す。
+  // Unexpected failures must not expose internal exception details to clients.
   app.onError((err, c) => {
-    // HTTPException は意図的に投げられたステータスを尊重してそのまま返す。
+    // Preserve deliberate HTTP errors rather than converting them to server errors.
     if (err instanceof HTTPException) {
       return err.getResponse();
     }
 
-    // 想定外の例外はサーバ側に requestId とフルスタックを構造化ログとして残す。
+    // The request ID links a generic client error to its full server-side trace.
     const requestId = c.get("requestId");
     console.error(JSON.stringify({ level: "error", requestId, msg: err.message, stack: err.stack }));
 
-    // クライアントにはスタックや元メッセージを含まない汎用 500 を返す。
     const { status, contentType, body } = buildErrorResponse(err, {
       requestId,
       isApi: c.req.path.startsWith("/api"),

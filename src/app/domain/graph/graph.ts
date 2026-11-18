@@ -1,4 +1,3 @@
-// 3D Force Graph 向けグラフ表示型
 export interface GraphNode {
   id: string;
   label: string;
@@ -19,7 +18,6 @@ export interface GraphData {
   links: GraphLink[];
 }
 
-// リポジトリが返す生データ型
 export interface NoteNode {
   id: number;
   title: string;

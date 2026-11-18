@@ -1,5 +1,3 @@
-// reknotes - home page (compose bar + masonry grid)
-
 function expandCompose() {
   document.getElementById('compose-trigger').hidden = true;
   document.getElementById('compose-body').hidden = false;
@@ -43,7 +41,6 @@ function togglePreview() {
   }
 }
 
-// Masonry layout engine
 (function() {
   var grid = document.getElementById('note-grid');
   if (!grid) return;
@@ -72,10 +69,9 @@ function togglePreview() {
     newCards.forEach(function(card) { card.style.width = colW + 'px'; });
     grid.offsetHeight;
 
-    // Pass 1: read all heights (before any writes dirty the layout)
+    // Reading every height before writing positions avoids repeated layout recalculation.
     var heights = newCards.map(function(card) { return card.offsetHeight; });
 
-    // Pass 2: write positions using cached heights
     newCards.forEach(function(card, idx) {
       var min = 0;
       for (var i = 1; i < cols; i++) {
@@ -111,12 +107,12 @@ function togglePreview() {
     window.scrollTo(0, scrollY);
   });
 
-  // 処理中カードのポーリング (outerHTML swap) で入れ替わった新要素に旧要素の座標を引き継ぐ。
-  // 引き継がないと placeNew が「新規カード」として最短カラムに置いてしまい、カードが飛ぶ。
+  // Preserve coordinates across polling swaps; otherwise a replacement card would
+  // be treated as new and jump to the shortest column.
   var swapGeometries = {};
 
-  // 削除は楽観的に反映する: サーバー応答 (S3 削除等で数秒かかり得る) を待たずにカードを隠して詰め直す。
-  // 成功時は hx-swap="delete" が要素ごと取り除き、失敗時のみ afterRequest で復元してエラーを知らせる。
+  // Storage deletion can take seconds, so hide cards optimistically. A successful
+  // htmx swap removes them; failed requests restore the card and report the error.
   document.body.addEventListener('htmx:beforeRequest', function(e) {
     if (!e.detail.requestConfig || e.detail.requestConfig.verb !== 'delete') return;
     var card = e.detail.elt.closest('.note-card');

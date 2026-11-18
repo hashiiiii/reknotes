@@ -2,25 +2,25 @@ import { describe, expect, test } from "bun:test";
 import { buildFileMarkdown, buildFileUrl, extractUploadedFileKeys } from "./_file-url";
 
 describe("buildFileUrl", () => {
-  test("filename を /api/files プレフィックスで URL 化する", () => {
+  test("prefixes filenames with /api/files", () => {
     expect(buildFileUrl("abc.png")).toBe("/api/files/abc.png");
   });
 });
 
 describe("buildFileMarkdown", () => {
-  test("画像は markdown image syntax で組む", () => {
+  test("uses Markdown image syntax for images", () => {
     expect(buildFileMarkdown({ filename: "abc.png", originalName: "photo.png", contentType: "image/png" })).toBe(
       "![photo.png](/api/files/abc.png)",
     );
   });
 
-  test("動画は <video> タグで組む", () => {
+  test("uses a video element for videos", () => {
     expect(buildFileMarkdown({ filename: "v.mp4", originalName: "clip.mp4", contentType: "video/mp4" })).toBe(
       '<video src="/api/files/v.mp4" controls></video>',
     );
   });
 
-  test("alt テキストの [ ] ( ) はエスケープされる", () => {
+  test("escapes brackets and parentheses in alt text", () => {
     expect(buildFileMarkdown({ filename: "f.png", originalName: "img(1)[draft].png", contentType: "image/png" })).toBe(
       "![img\\(1\\)\\[draft\\].png](/api/files/f.png)",
     );
@@ -28,28 +28,28 @@ describe("buildFileMarkdown", () => {
 });
 
 describe("extractUploadedFileKeys", () => {
-  test("空文字列は空配列を返す", () => {
+  test("returns an empty list for empty input", () => {
     expect(extractUploadedFileKeys("")).toEqual([]);
   });
 
-  test("URL を含まないテキストは空配列を返す", () => {
+  test("returns an empty list for text without file URLs", () => {
     expect(extractUploadedFileKeys("hello world")).toEqual([]);
   });
 
-  test("単一の image markdown からキーを抽出する", () => {
+  test("extracts the key from a Markdown image", () => {
     expect(extractUploadedFileKeys("![photo](/api/files/abc.png)")).toEqual(["abc.png"]);
   });
 
-  test("video タグからキーを抽出する", () => {
+  test("extracts the key from a video element", () => {
     expect(extractUploadedFileKeys('<video src="/api/files/v.mp4" controls></video>')).toEqual(["v.mp4"]);
   });
 
-  test("複数の URL からそれぞれのキーを抽出する", () => {
+  test("extracts every key from multiple file URLs", () => {
     const text = "![](/api/files/a.png) と ![](/api/files/b.jpg)";
     expect(extractUploadedFileKeys(text)).toEqual(["a.png", "b.jpg"]);
   });
 
-  test("alt にエスケープ済みの ] が含まれる markdown でも URL 部分のキーを正しく抽出する", () => {
+  test("extracts the key when alt text contains an escaped closing bracket", () => {
     const text = "![weird\\]name](/api/files/safe.png)";
     expect(extractUploadedFileKeys(text)).toEqual(["safe.png"]);
   });

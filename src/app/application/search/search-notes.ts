@@ -23,8 +23,8 @@ export async function searchNotes(noteRepo: INoteRepository, query: string): Pro
   }));
 }
 
-// HTML として描画される文字列を返すので、`<mark>` で囲む前後で
-// ユーザ入力 (note.title / body / query) を必ず HTML エスケープする。
+// Highlights are rendered as HTML, so note content and queries must be escaped
+// around the intentional <mark> elements.
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

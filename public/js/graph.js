@@ -1,45 +1,40 @@
-// reknotes - 3D knowledge graph with cosmic theme
-// Depends on: force-graph-3d.js (ForceGraph3D global)
+// force-graph-3d.js must load first to provide the ForceGraph3D global.
 
 document.addEventListener("DOMContentLoaded", function () {
   var container = document.getElementById("graph-container");
   if (!container) return;
 
-  // 先行フェッチ済みの Promise があればそれを使う（JS ダウンロードと並列化）
+  // Reuse the early request so graph data loads alongside the rendering script.
   var dataPromise = window.__graphDataPromise
     || fetch("/api/graph").then(function (r) { return r.json(); });
   dataPromise.then(function (data) { initCosmicGraph(container, data); });
 });
 
-// ── カメラ演出パラメータ ──
 var CAMERA = {
-  DISTANCE:          300,   // ノードへのカメラ距離（共通）
-  MINI_PADDING:      10,    // ミニグラフの zoomToFit パディング (px)
-  DURATION:          4000,  // カメラアニメーション時間（共通, ms）
-  DELAY:             2000,  // カメラ移動開始までの待機（共通, ms）— COOLDOWN 終了後に発火させる
-  INIT_FAR_Z_FACTOR: 400,   // 初期俯瞰カメラ Z 距離の係数 (cbrt(nodes) * factor)
+  DISTANCE:          300,
+  MINI_PADDING:      10,    // Pixel padding keeps mini-graph labels inside the viewport.
+  DURATION:          4000,  // Milliseconds, shared by the main and mini graph.
+  DELAY:             2000,  // Wait for physics cooldown before camera movement (milliseconds).
+  INIT_FAR_Z_FACTOR: 400,   // Scale the initial camera distance by the cube root of the node count.
 };
 
-// ── 物理シミュレーションパラメータ ──
 var FORCE = {
-  ALPHA_DECAY:     0.02,   // シミュレーション冷却速度
-  VELOCITY_DECAY:  0.3,    // 速度減衰（摩擦）
-  WARMUP_TICKS:    100,    // 初回描画前の物理演算回数
-  COOLDOWN_TICKS:  110,    // レンダリング開始後のシミュレーション上限（≒1.8s @60fps、CAMERA.DELAY より短く保つ）
-  CHARGE_STRENGTH: -60,    // ノード間の反発力
-  LINK_DISTANCE:   50,     // リンクの自然長
+  ALPHA_DECAY:     0.02,
+  VELOCITY_DECAY:  0.3,
+  WARMUP_TICKS:    100,
+  COOLDOWN_TICKS:  110,    // About 1.8 seconds at 60 fps; keep shorter than CAMERA.DELAY.
+  CHARGE_STRENGTH: -60,
+  LINK_DISTANCE:   50,
 };
 
-// ── 恒星分類: val（ノート数）に応じたタグの見た目 ──
-// 各クラスでスパイクの太さ・長さ・本数、グロウ層数、脈動が大きく異なる
+// Tags with more notes use hotter stellar classes with stronger spikes, glow, and pulses.
 var STAR_CLASSES = [
-  // min, color,                            labelColor,                        spikes, spikeW, spikeLen, glowLayers, pulseAmp, pulseSpeed
-  { min: 0,  color: "rgba(255,160,110,0.85)",  label: "rgba(255,190,150,0.9)",   spikes: 4,  spikeW: 1.0, spikeLen: 0.25, glow: 1, pulseAmp: 0.03, pulseSpd: 0.8  }, // M型: 赤色矮星
-  { min: 3,  color: "rgba(255,210,140,0.88)",  label: "rgba(255,225,170,0.92)",  spikes: 4,  spikeW: 1.4, spikeLen: 0.30, glow: 1, pulseAmp: 0.04, pulseSpd: 1.0  }, // K型: 橙色星
-  { min: 5,  color: "rgba(255,245,200,0.90)",  label: "rgba(255,250,220,0.93)",  spikes: 6,  spikeW: 1.8, spikeLen: 0.35, glow: 2, pulseAmp: 0.05, pulseSpd: 1.2  }, // G型: 太陽型
-  { min: 8,  color: "rgba(240,245,255,0.92)",  label: "rgba(235,240,255,0.95)",  spikes: 6,  spikeW: 2.4, spikeLen: 0.40, glow: 2, pulseAmp: 0.06, pulseSpd: 1.5  }, // A型: 白色星
-  { min: 12, color: "rgba(190,215,255,0.94)",  label: "rgba(195,220,255,0.95)",  spikes: 8,  spikeW: 3.0, spikeLen: 0.44, glow: 3, pulseAmp: 0.08, pulseSpd: 1.8  }, // B型: 青白巨星
-  { min: 20, color: "rgba(150,185,255,0.96)",  label: "rgba(160,195,255,0.97)",  spikes: 8,  spikeW: 3.5, spikeLen: 0.48, glow: 3, pulseAmp: 0.10, pulseSpd: 2.0  }, // O型: 青色超巨星
+  { min: 0,  color: "rgba(255,160,110,0.85)",  label: "rgba(255,190,150,0.9)",   spikes: 4,  spikeW: 1.0, spikeLen: 0.25, glow: 1, pulseAmp: 0.03, pulseSpd: 0.8  }, // M-type red dwarf
+  { min: 3,  color: "rgba(255,210,140,0.88)",  label: "rgba(255,225,170,0.92)",  spikes: 4,  spikeW: 1.4, spikeLen: 0.30, glow: 1, pulseAmp: 0.04, pulseSpd: 1.0  }, // K-type orange star
+  { min: 5,  color: "rgba(255,245,200,0.90)",  label: "rgba(255,250,220,0.93)",  spikes: 6,  spikeW: 1.8, spikeLen: 0.35, glow: 2, pulseAmp: 0.05, pulseSpd: 1.2  }, // G-type Sun-like star
+  { min: 8,  color: "rgba(240,245,255,0.92)",  label: "rgba(235,240,255,0.95)",  spikes: 6,  spikeW: 2.4, spikeLen: 0.40, glow: 2, pulseAmp: 0.06, pulseSpd: 1.5  }, // A-type white star
+  { min: 12, color: "rgba(190,215,255,0.94)",  label: "rgba(195,220,255,0.95)",  spikes: 8,  spikeW: 3.0, spikeLen: 0.44, glow: 3, pulseAmp: 0.08, pulseSpd: 1.8  }, // B-type blue-white giant
+  { min: 20, color: "rgba(150,185,255,0.96)",  label: "rgba(160,195,255,0.97)",  spikes: 8,  spikeW: 3.5, spikeLen: 0.48, glow: 3, pulseAmp: 0.10, pulseSpd: 2.0  }, // O-type blue supergiant
 ];
 
 function getStarClass(val) {
@@ -50,7 +45,6 @@ function getStarClass(val) {
   return cls;
 }
 
-// ── 隣接関係マップ ──
 function buildAdjacency(data) {
   var adj = {};
   for (var i = 0; i < data.nodes.length; i++) adj[data.nodes[i].id] = new Set();
@@ -65,9 +59,8 @@ function buildAdjacency(data) {
 
 var _highlightState = { active: false, nodeId: null, neighborIds: null };
 
-// ── カメラオフセット計算（ノード位置→カメラ位置） ──
-// ノードから見て原点方向の反対側に CAMERA.DISTANCE だけ離れた位置を返す
-// ノードが原点付近にいる場合は +Z 方向にフォールバック
+// Looking inward from beyond the node keeps the graph center behind it.
+// Near the origin, use the positive Z axis because there is no outward direction.
 function cameraOffset(x, y, z) {
   var hyp = Math.hypot(x, y, z);
   if (hyp < 0.01) return { x: 0, y: 0, z: CAMERA.DISTANCE };
@@ -75,10 +68,8 @@ function cameraOffset(x, y, z) {
   return { x: x + x * d, y: y + y * d, z: z + z * d };
 }
 
-// 脈動アニメーション用: タグノードの参照リスト
 var _pulsingTags = [];
 
-// ── ノードごとの色・サイズを事前計算 ──
 var NODE_COLORS = [
   "rgba(107,184,115,0.85)", "rgba(141,212,152,0.85)",
   "rgba(160,210,140,0.85)", "rgba(130,200,180,0.85)",
@@ -164,7 +155,7 @@ function initCosmicGraph(container, data) {
     })
     .onNodeClick(function (node) {
       highlightNeighbors(node, data, adjacency, Graph);
-      // パネル表示前に座標をスナップショット（レイアウト変更で物理座標がずれるのを防ぐ）
+      // Capture coordinates before the panel changes the layout and moves the simulation.
       var nx = node.x, ny = node.y, nz = node.z;
       showPanel(node, data, Graph);
       Graph.cameraPosition(
@@ -187,21 +178,19 @@ function initCosmicGraph(container, data) {
   addStarfield(Graph);
   addBloom(Graph);
 
-  // ── タグ脈動アニメーション開始 ──
   startPulseAnimation();
 
   window._reknGraph = Graph;
 
-  // ── 初期カメラ演出 ──
-  // warmupTicks でレイアウト確定済み → cooldownTicks で残りを消化後に停止
-  // 銀河団を見渡す距離 → ランダムタグへドリフト
+  // Warmup establishes the layout; cooldown ends simulation before the camera
+  // drifts from a wide view toward a random tag.
   var initNodeId = new URL(window.location).searchParams.get("node");
   if (!initNodeId) {
-    // graphData() 完了後に呼ぶことで lastSetCameraZ を上書き → 自動配置が再発しない
+    // Setting the camera after graphData updates lastSetCameraZ and prevents automatic repositioning.
     var farZ = Math.cbrt(data.nodes.length) * CAMERA.INIT_FAR_Z_FACTOR;
     Graph.cameraPosition({ x: 0, y: 0, z: farZ });
 
-    // 2秒眺めてからランダムタグへゆっくり接近
+    // Leave a two-second overview before approaching a random tag.
     setTimeout(function () {
       var tags = data.nodes.filter(function (n) { return n.type === "tag"; });
       if (tags.length === 0) return;
@@ -236,11 +225,11 @@ function initCosmicGraph(container, data) {
   });
 
   if (initNodeId) {
-    // ハイライトは即座に適用（最初に選択外ノードが光るのを防ぐ）
+    // Applying highlights immediately prevents unrelated nodes from flashing first.
     var initNode = data.nodes.find(function (n) { return n.id === initNodeId; });
     if (initNode) {
       highlightNeighbors(initNode, data, adjacency, Graph);
-      // パネルを先に表示してグラフを縮小 → カメラが可視領域の中央にノードを配置
+      // Resize for the panel first so the camera centers the node in the remaining viewport.
       showPanel(initNode, data, Graph);
       setTimeout(function () {
         var nx = initNode.x || 0, ny = initNode.y || 0, nz = initNode.z || 0;
@@ -259,14 +248,13 @@ function initCosmicGraph(container, data) {
   });
 }
 
-// ── タグ脈動アニメーション ──
 var _pulseRunning = false;
 function startPulseAnimation() {
   if (_pulseRunning) return;
   _pulseRunning = true;
   var startTime = performance.now();
   var lastUpdate = 0;
-  var PULSE_INTERVAL = 33; // ~30fps で十分滑らか
+  var PULSE_INTERVAL = 33; // About 30 fps is sufficient for smooth pulses.
   (function tick() {
     var now = performance.now();
     if (now - lastUpdate >= PULSE_INTERVAL) {
@@ -288,7 +276,6 @@ function startPulseAnimation() {
   })();
 }
 
-// ── ハイライト ──
 function highlightNeighbors(node, data, adjacency, Graph) {
   var neighbors = adjacency[node.id] || new Set();
   _highlightState = { active: true, nodeId: node.id, neighborIds: neighbors };
@@ -333,9 +320,6 @@ function setNodeBrightness(group, brightness) {
   });
 }
 
-// ══════════════════════════════════════════════
-//  ノード生成
-// ══════════════════════════════════════════════
 
 function createStarNode(node, DPR) {
   var size = node._size || 4;
@@ -343,11 +327,10 @@ function createStarNode(node, DPR) {
   var isTag = node.type === "tag";
   var group = new THREE.Group();
 
-  // 1. 星本体スプライト
   var starSprite = createStarSprite(node, size, color, isTag, DPR);
   group.add(starSprite);
 
-  // 2. タグ: 外側グロウ層（クラスが上がるほど層が増える）
+  // Higher stellar classes need additional glow layers around their tag sprites.
   var glowSprites = [];
   var glowBaseScales = [];
   if (isTag) {
@@ -358,7 +341,6 @@ function createStarNode(node, DPR) {
       glowSprites.push(gs);
       glowBaseScales.push(gs.scale.x);
     }
-    // 脈動リストに登録
     _pulsingTags.push({
       sprite: starSprite,
       baseScale: starSprite.scale.x,
@@ -369,7 +351,6 @@ function createStarNode(node, DPR) {
     });
   }
 
-  // 3. ラベル
   var label = createTextLabel(node, isTag, DPR);
   label.position.set(0, -(size * 1.2 + 5), 0);
   group.add(label);
@@ -377,7 +358,6 @@ function createStarNode(node, DPR) {
   return group;
 }
 
-// ── 星本体スプライト ──
 function createStarSprite(node, size, color, isTag, DPR) {
   var res = Math.round(128 * DPR);
   var canvas = document.createElement("canvas");
@@ -387,7 +367,6 @@ function createStarSprite(node, size, color, isTag, DPR) {
   var cx = res / 2;
   var cy = res / 2;
 
-  // グロー
   var gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, res / 2);
   gradient.addColorStop(0, color);
   gradient.addColorStop(0.08, color);
@@ -397,7 +376,6 @@ function createStarSprite(node, size, color, isTag, DPR) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, res, res);
 
-  // ブライトコア
   var coreRad = isTag ? res * 0.07 : res * 0.09;
   var coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreRad);
   coreGrad.addColorStop(0, "rgba(255,255,255,0.97)");
@@ -405,7 +383,6 @@ function createStarSprite(node, size, color, isTag, DPR) {
   ctx.fillStyle = coreGrad;
   ctx.fillRect(0, 0, res, res);
 
-  // タグ: ディフラクションスパイク
   if (isTag) {
     var cls = node._starClass || STAR_CLASSES[0];
     drawSpikes(ctx, cx, cy, res, cls, color, DPR);
@@ -427,7 +404,6 @@ function createStarSprite(node, size, color, isTag, DPR) {
   return sprite;
 }
 
-// ── スパイク描画（クラスごとに太さ・長さ・本数が大幅に異なる） ──
 function drawSpikes(ctx, cx, cy, res, cls, color, DPR) {
   var spikeCount = cls.spikes;
   var spikeLen = res * cls.spikeLen;
@@ -438,7 +414,6 @@ function drawSpikes(ctx, cx, cy, res, cls, color, DPR) {
     var endX = cx + Math.cos(angle) * spikeLen;
     var endY = cy + Math.sin(angle) * spikeLen;
 
-    // メインスパイク（太い）
     var sg = ctx.createLinearGradient(cx, cy, endX, endY);
     sg.addColorStop(0, color.replace(/[\d.]+\)$/, "0.7)"));
     sg.addColorStop(0.6, color.replace(/[\d.]+\)$/, "0.2)"));
@@ -451,7 +426,7 @@ function drawSpikes(ctx, cx, cy, res, cls, color, DPR) {
     ctx.lineTo(endX, endY);
     ctx.stroke();
 
-    // サブスパイク（細い、少し長い）— G型以上
+    // Classes G and above add thinner, slightly longer secondary spikes.
     if (cls.glow >= 2) {
       var subLen = spikeLen * 1.3;
       var subEndX = cx + Math.cos(angle) * subLen;
@@ -469,7 +444,6 @@ function drawSpikes(ctx, cx, cy, res, cls, color, DPR) {
   }
 }
 
-// ── 外側グロウ層（タグ専用。クラスが高いほど層が多い） ──
 function createGlowLayer(color, size, layerIndex, DPR) {
   var res = Math.round(64 * DPR);
   var canvas = document.createElement("canvas");
@@ -504,7 +478,6 @@ function createGlowLayer(color, size, layerIndex, DPR) {
   return sprite;
 }
 
-// ── テキストラベル（任天堂UI風カプセル型） ──
 function createTextLabel(node, isTag, DPR) {
   var text = isTag ? "#" + node.label : node.label;
   var baseFontSize = isTag ? 26 : 18;
@@ -520,7 +493,7 @@ function createTextLabel(node, isTag, DPR) {
   var padX = Math.round(20 * DPR);
   var padY = Math.round(14 * DPR);
 
-  // Canvas をテキストにぴったり合わせる（2のべき乗不要）
+  // Exact text dimensions avoid unused canvas space; power-of-two dimensions are unnecessary.
   var cw = textWidth + padX * 2;
   var ch = Math.round(fontSize * 1.2) + padY * 2;
 
@@ -529,13 +502,12 @@ function createTextLabel(node, isTag, DPR) {
   canvas.height = ch;
   var ctx = canvas.getContext("2d");
 
-  // カプセル型背景（角丸 = 高さの半分 → 完全なピル型）
+  // A corner radius of half the height gives the label a pill-shaped background.
   var radius = ch / 2;
   ctx.fillStyle = isTag ? "rgba(12,12,28,0.6)" : "rgba(12,12,28,0.35)";
   roundRect(ctx, 0, 0, cw, ch, radius);
   ctx.fill();
 
-  // テキスト
   ctx.font = fontStr;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -581,7 +553,6 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ── 背景の星空 ──
 function addStarfield(Graph) {
   var scene = Graph.scene();
   var count = 2500;
@@ -589,7 +560,7 @@ function addStarfield(Graph) {
   var spread = 1800;
 
   for (var i = 0; i < count; i++) {
-    // 球状分布: 均一な方向 + 半径の3乗根で密度を均一化
+    // Uniform directions and cube-root-scaled radii give uniform density throughout the sphere.
     var theta = Math.random() * Math.PI * 2;
     var phi = Math.acos(2 * Math.random() - 1);
     var r = Math.cbrt(Math.random()) * spread / 2;
@@ -614,7 +585,6 @@ function addStarfield(Graph) {
   })();
 }
 
-// ── ブルームエフェクト ──
 function addBloom(Graph) {
   if (typeof THREE.EffectComposer === "undefined") return;
   try {
@@ -629,9 +599,6 @@ function addBloom(Graph) {
   }
 }
 
-// ══════════════════════════════════════════════
-//  パネル
-// ══════════════════════════════════════════════
 
 function showPanel(node, data) {
   var panel = document.getElementById("graph-panel");
@@ -718,10 +685,6 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-// ══════════════════════════════════════════════
-//  ミニグラフ（ノート詳細ページ用）
-//  メインと同じノード描画を共有し、クリックで遷移可能
-// ══════════════════════════════════════════════
 
 function initMiniGraph(container, data, focusNodeId) {
   var DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -762,12 +725,11 @@ function initMiniGraph(container, data, focusNodeId) {
 
   addStarfield(Graph);
 
-  // warmupTicks でレイアウト確定済み → zoomToFit で全体を表示（余白多めでラベル重なり回避）
+  // Fit the warmed-up graph with extra padding to keep labels from overlapping its edges.
   setTimeout(function () { Graph.zoomToFit(CAMERA.DURATION, CAMERA.MINI_PADDING); }, CAMERA.DELAY);
 
-  // 脈動アニメーション（ミニでも共有）
   startPulseAnimation();
 }
 
-// グローバルに公開（note.liquid のインラインスクリプトから呼べるように）
+// The note template's inline script needs this global entry point.
 window.initMiniGraph = initMiniGraph;

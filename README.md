@@ -44,7 +44,7 @@ Open `http://localhost:3000` in your browser.
 - **Database** — [PostgreSQL](https://www.postgresql.org/) 18 + [Drizzle ORM](https://orm.drizzle.team/)
 - **Embeddings** — [HuggingFace Transformers.js](https://huggingface.co/docs/transformers.js) (local) / e.g. [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) (remote)
 - **Visualization** — [3D Force Graph](https://github.com/vasturiano/3d-force-graph) + [Three.js](https://threejs.org/)
-- **Storage** — S3-compatible: [MinIO](https://min.io/) (local) / e.g. [Cloudflare R2](https://developers.cloudflare.com/r2/) (remote)
+- **Storage** — S3-compatible: [PGSTY SILO](https://github.com/pgsty/silo), the maintained successor to `pgsty/minio` (local) / e.g. [Cloudflare R2](https://developers.cloudflare.com/r2/) (remote)
 - **Markdown** — [zenn-markdown-html](https://github.com/zenn-dev/zenn-editor)
 - **Tooling** — [Biome](https://biomejs.dev/) v2
 

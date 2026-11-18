@@ -1,16 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended",
+    "customManagers:biomeVersions",
+    "customManagers:githubActionsVersions"
+  ],
+  "dependencyDashboard": { "enabled": true },
+  "enabledManagers": ["bun", "bun-version", "github-actions", "dockerfile", "docker-compose", "custom.regex"],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["* * * * 1"],
+  "updateNotScheduled": false,
+  "automerge": false,
   "labels": ["dependencies"],
   "rangeStrategy": "bump",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 0,
   "minimumReleaseAge": "7 days",
+  "minimumReleaseAgeBehaviour": "timestamp-required",
+  "internalChecksFilter": "strict",
   "osvVulnerabilityAlerts": true,
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": ["src/app/infrastructure/container.ts"],
+      "managerFilePatterns": ["/^src/app/infrastructure/container\\.ts$/"],
       "matchStrings": [
         "// renovate: datasource=(?<datasource>.+?) depName=(?<depName>.+?)\\s+const \\w+ = \"[^:\"]+:(?<currentValue>[^@\"]+)@(?<currentDigest>sha256:[a-f0-9]+)\""
       ]
@@ -30,11 +42,7 @@
       "groupName": "development dependencies (minor/patch)"
     },
     {
-      "matchManagers": ["bun"],
-      "matchUpdateTypes": ["major"],
-      "addLabels": ["major"]
-    },
-    {
+      "description": "The lockfile pins action commits while Renovate updates readable version tags.",
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
       "pinDigests": false,
@@ -42,12 +50,35 @@
     },
     {
       "matchManagers": ["dockerfile", "docker-compose", "custom.regex"],
+      "matchDatasources": ["docker"],
       "groupName": "docker images",
+      "pinDigests": true,
       "addLabels": ["docker"]
+    },
+    {
+      "description": "Keep the Bun runtime and its types compatible across local development and CI.",
+      "matchPackageNames": ["bun", "oven/bun", "@types/bun"],
+      "groupName": "Bun runtime"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "addLabels": ["major"]
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "addLabels": ["minor"]
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "addLabels": ["patch"]
     }
   ],
+  "lockFileMaintenance": {
+    "enabled": false
+  },
   "vulnerabilityAlerts": {
     "labels": ["dependencies", "security"],
-    "minimumReleaseAge": null
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"]
   }
 }

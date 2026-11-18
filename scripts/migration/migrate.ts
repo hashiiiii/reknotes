@@ -97,7 +97,7 @@ async function run(mode: Mode): Promise<number> {
   }
 }
 
-// Bun の entry-point イディオム (Python の `if __name__ == "__main__":` 相当)。
+// Importing the CLI must not execute a migration.
 if (import.meta.main) {
   process.exit(await run(parseArgs(process.argv)));
 }

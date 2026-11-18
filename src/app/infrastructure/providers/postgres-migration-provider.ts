@@ -68,10 +68,10 @@ export class PostgresMigrationProvider implements IMigrationProvider {
     if (hooks.length === 0) return;
     const client = postgres(this.url, { onnotice: () => {} });
     try {
-      // 1 接続 + 1 トランザクションで全 hook を適用 (N+1 接続を避ける)
+      // One connection and transaction avoid opening a connection for every hook.
       await client.begin(async (tx) => {
         for (const hook of hooks) {
-          // tx tagged-template は postgres.js の TransactionSql<{}> 型問題で TS2349 に当たるので unsafe + params を使う
+          // Parameterized unsafe avoids TS2349 on postgres.js transaction template calls.
           await tx.unsafe(hook.content);
           await tx.unsafe(`INSERT INTO "_hooks_applied" (filename, checksum) VALUES ($1, $2)`, [
             hook.filename,
@@ -88,7 +88,7 @@ export class PostgresMigrationProvider implements IMigrationProvider {
     if (hooks.length === 0) return;
     const client = postgres(this.url, { onnotice: () => {} });
     try {
-      // 全件成功 or 全件ロールバックを保証
+      // History must be recorded together so a failed batch leaves no partial bootstrap state.
       await client.begin(async (tx) => {
         for (const h of hooks) {
           await tx.unsafe(

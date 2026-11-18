@@ -9,9 +9,8 @@ import {
 import { Upload } from "@aws-sdk/lib-storage";
 import type { IStorageProvider } from "../../application/port/storage-provider";
 
-// S3/R2/MinIO でキーが存在しないときの GetObject は例外として返る。
-// 「存在しない」は port 契約上 null で表現するため、この種の例外だけを null に変換し、
-// それ以外の障害 (権限・ネットワーク等) は握り潰さず伝播させる (silent fallback を避ける)。
+// S3-compatible services report missing objects as errors, but the port uses null.
+// Permission and network failures must still propagate instead of looking like missing files.
 export function isObjectNotFoundError(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
   const e = err as { name?: string; $metadata?: { httpStatusCode?: number } };
@@ -36,7 +35,7 @@ export class S3StorageProvider implements IStorageProvider {
   }
 
   async uploadStream(key: string, body: ReadableStream, contentType: string): Promise<void> {
-    // 内部で 5MB チャンクずつ読むので RAM 使用量が一定
+    // Upload reads 5 MiB chunks to bound memory use.
     await new Upload({
       client: this.s3,
       params: {
@@ -67,8 +66,7 @@ export class S3StorageProvider implements IStorageProvider {
         }),
       );
     } catch (err) {
-      // キー不在は 500 ではなく「無い (null)」として返す。呼び出し側 (files route) は
-      // null を 404 に変換する。それ以外の例外はそのまま投げて 500 にする。
+      // Routes map missing objects to 404; other failures must remain server errors.
       if (isObjectNotFoundError(err)) return null;
       throw err;
     }

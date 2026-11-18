@@ -1,16 +1,12 @@
-// notes.json の各ノートに対して、本物の embedding モデルで suggestTags を実行し、
-// 結果のタグで notes.json を書き直すワンオフ・ツール。
-//
-// 使い方:
+// Regenerate seed tags with the real embedding model when the seed dataset changes.
+// Usage:
 //   ENVIRONMENT=development bun run scripts/seed/regenerate-tags.ts
 //
-// 副作用:
-//   開発 DB の notes / tags / note_tags を一度全削除し、本スクリプトが順番にノートを
-//   挿入し直す。タグは「これまでに作られたタグの累積プールに対する suggestTags」で
-//   決まるため、入力 (title, body) の順序に依存する。
+// This deletes development notes, tags, and links before inserting notes in order.
+// Suggestions depend on previously created tags, so input order affects the results.
 //
-// 実行後はそのまま開発 DB に notes.json と整合した seed が積まれた状態になる。
-// 別の件数で seed したい場合は `bun run seed --count <N>` を再実行する。
+// The development database is left matching notes.json. To seed a different count,
+// rerun `bun run seed --count <N>` afterward.
 import { suggestTags } from "../../src/app/application/embedding/suggest-tags";
 import { clearAllNotesAndTags } from "../../src/app/application/maintenance/clear-all-notes-and-tags";
 import { createNote } from "../../src/app/application/note/create-note";
@@ -50,8 +46,8 @@ for (let i = 0; i < samples.length; i++) {
   const note = await createNote(noteRepo, title, body);
   const tags = await suggestTags(embeddingProvider, tagRepo, title, body);
   if (tags.length > 0) await addTagsToNote(tagRepo, note.id, tags);
-  // DB に書き込まれる normalizeTagName (= trim + lowercase) と同じ正規化を JSON にも適用する。
-  // そうしないと JSON 上は "TS" / "ts" 別タグに見えるが DB では同一タグ扱いされ、件数が食い違う。
+  // Match database normalization so variants such as TS and ts do not appear as
+  // separate JSON tags while sharing one database row.
   const normalizedTags = [...new Set(tags.map((t) => t.trim().toLowerCase()))];
   updated.push({ title, body, tags: normalizedTags });
 

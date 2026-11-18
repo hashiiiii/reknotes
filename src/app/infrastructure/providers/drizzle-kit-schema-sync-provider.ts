@@ -3,8 +3,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { DiffResult, ISchemaSyncProvider } from "../../application/port/schema-sync-provider";
 
-// drizzle-kit の import 解決が project の node_modules を辿れるよう、tmp は project 内の
-// node_modules/.cache 配下に作る (/tmp だと module 解決が失敗する)
+// Temporary configuration files must stay under the project so drizzle-kit imports resolve
+// through its node_modules; a system temporary directory breaks module resolution.
 const CACHE_PARENT = "node_modules/.cache/reknotes-migrate";
 
 export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
@@ -17,10 +17,9 @@ export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
     mkdirSync(CACHE_PARENT, { recursive: true });
     const tmpOut = await mkdtemp(join(CACHE_PARENT, "run-"));
     try {
-      // drizzle-kit は --config と他 CLI 引数 (--url など) を併用できない仕様。
-      // --url を CLI に出すとクレデンシャルが ps aux に漏れるため、tmp 配下に config を動的生成し --config だけで呼ぶ。
-      // DATABASE_URL は spawn() が env で子プロセスへ渡し、tmp config 内の `process.env.DATABASE_URL!` を子プロセスが評価する。
-      // (= writeTempConfig が出力する文字列リテラル中の process.env は親プロセスの実行時には評価されない)
+      // Passing the URL on the command line exposes credentials in process listings.
+      // drizzle-kit cannot combine --config with --url, so the temporary config
+      // reads DATABASE_URL from the child process's environment instead.
       const tmpConfigPath = this.writeTempConfig(tmpOut);
 
       const introspectCode = this.spawn(["introspect", `--config=${tmpConfigPath}`]);
@@ -28,7 +27,7 @@ export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
         return { sql: null, error: "drizzle-kit introspect failed" };
       }
 
-      // introspect 直後に存在する SQL ファイル (現 DB 構造の再構築 SQL)。空 DB では 0 件のこともある
+      // An empty database may produce no introspection SQL.
       const beforeGenerate = listSqlFiles(tmpOut);
       const generateCode = this.spawn(["generate", `--config=${tmpConfigPath}`]);
       if (generateCode !== 0) {
@@ -40,11 +39,11 @@ export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
         };
       }
 
-      // generate が新規追加した SQL ファイルだけが diff。introspect のファイル数に依存しないので空 DB でも正しく検出できる
+      // Comparing file sets also works when introspection produced no SQL.
       const afterGenerate = [...listSqlFiles(tmpOut)].filter((f) => !beforeGenerate.has(f)).sort();
       if (afterGenerate.length === 0) return { sql: "", error: null };
-      // drizzle-kit generate は通常 1 実行 1 ファイル。複数生成された場合は仕様変更の可能性があり、
-      // 黙って末尾だけ読むと変更を取りこぼすため明示的にエラーにする。
+      // The generate command normally writes one file. Reject unexpected output rather than
+      // silently ignoring part of a migration if the tool's behavior changes.
       if (afterGenerate.length > 1) {
         return {
           sql: null,
@@ -59,7 +58,7 @@ export class DrizzleKitSchemaSyncProvider implements ISchemaSyncProvider {
   }
 
   async push(): Promise<void> {
-    // TTY ありなら対話的に確認、なければ --force で自動適用
+    // Interactive terminals can confirm changes; unattended runs need --force.
     const args = ["push", ...(process.stdin.isTTY ? [] : ["--force"])];
     const code = this.spawn(args);
     if (code !== 0) throw new Error(`drizzle-kit push exited with code ${code}`);
@@ -75,8 +74,7 @@ export default defineConfig({
   dialect: "postgresql",
   schema: ${JSON.stringify(absSchema)},
   out: ${JSON.stringify(tmpOut)},
-  // ここの process.env.DATABASE_URL は drizzle-kit 子プロセス内で評価される。親の Config から URL を渡しても意味がない (子プロセスは自身の env を読む)。
-  // 親側は spawn() の env: { ...process.env, DATABASE_URL: this.url } で URL を子へ注入している。
+  // The child evaluates this expression after spawn supplies its DATABASE_URL.
   dbCredentials: { url: process.env.DATABASE_URL! },
 });
 `,
@@ -89,7 +87,7 @@ export default defineConfig({
       env: { ...process.env, DATABASE_URL: this.url },
       stdio: ["inherit", "inherit", "inherit"],
     });
-    // SIGKILL / OOM kill 等で exitCode が null になった場合は失敗扱い
+    // A signal or out-of-memory termination can leave no exit code and must count as failure.
     return proc.exitCode ?? 1;
   }
 }

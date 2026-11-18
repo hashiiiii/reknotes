@@ -37,27 +37,23 @@ async function restoreObjects(backup: IStorageProvider, target: IStorageProvider
   let count = 0;
   const inflight = new Set<Promise<void>>();
   for await (const fullKey of backup.list(prefix)) {
-    // アプリは key をフラットに参照するので、target へ書き戻すときは date prefix を剥がす
+    // Notes reference keys at the bucket root, without the backup date prefix.
     const key = fullKey.slice(prefix.length);
-    // あえて await しない
+    // Start transfers without waiting so up to CONCURRENCY objects can be restored at once.
     const task = (async () => {
       const obj = await backup.get(fullKey);
-      // backup bucket は lifecycle 以外で消えない静的データなので、list 後に get できないなら異常
+      // Backup objects are static except for lifecycle expiry; a missing object invalidates the restore.
       if (!obj) throw new Error(`backup object disappeared during restore: ${fullKey}`);
       await target.uploadStream(key, obj.body, obj.contentType);
       count += 1;
     })();
-    // 実行中のタスクを管理することで、並行数を閾値以下に保つ
     inflight.add(task);
     task.then(
-      // 成功・失敗問わずリストからは削除する
       () => inflight.delete(task),
       () => inflight.delete(task),
     );
-    // 実行中のタスク数が閾値に達した場合は待機する
     if (inflight.size >= CONCURRENCY) await Promise.race(inflight);
   }
-  // ループを抜けた後に残っているものを await
   await Promise.all(inflight);
   return count;
 }

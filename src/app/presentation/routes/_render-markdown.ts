@@ -1,11 +1,9 @@
 import markdownToHtml from "zenn-markdown-html";
 
-// zenn-markdown-html は URL 単独行をリンクカードに変換する前提で前後の <br> を
-// display:none にする。カード生成器が無い種別 (card / github / tweet) は
-// インラインリンクにフォールバックし、改行だけが消えて行が潰れる。
-// ブロック表示のリンクを生成器として与えることで行を保つ。
-// youtube などデフォルト生成器を持つ種別はマージで既定の埋め込みが優先される。
-// <p> 内に挿入されるため span (+ CSS で display:block) を使う。
+// Zenn hides line breaks around standalone URLs, even without a card renderer.
+// Block links preserve those lines for card, GitHub, and tweet URLs. Built-in
+// renderers, including YouTube, take precedence when the options are merged.
+// A span stays valid inside a paragraph; CSS supplies its block layout.
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

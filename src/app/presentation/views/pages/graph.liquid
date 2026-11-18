@@ -8,7 +8,7 @@
   </aside>
 </div>
 <script>
-  // JS ダウンロードと並列にデータを先行フェッチ
+  // Fetch graph data while the browser downloads the rendering script.
   window.__graphDataPromise = fetch("/api/graph").then(function (r) { return r.json(); });
 </script>
 <script src="/static/js/force-graph-3d.js"></script>

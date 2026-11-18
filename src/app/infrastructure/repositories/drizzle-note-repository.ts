@@ -35,7 +35,7 @@ export class DrizzleNoteRepository implements INoteRepository {
   }
 
   async deleteAll(): Promise<void> {
-    // note_tags は notes への FK CASCADE で同時に消える。tags は別途 ITagRepository.deleteAll で消す。
+    // Foreign keys cascade to note_tags, but tags need separate deletion through their repository.
     await this.db.delete(notes);
   }
 

@@ -65,11 +65,11 @@ B2 は AWS S3 互換 API を提供しているので、`@aws-sdk/client-s3` を�
 
 いずれも **必須**。primary と backup は物理的に別環境であるべきという原則を強制するため、ローカルでも `S3_*` からの fallback はしない。
 
-本番では B2 が primary とは別ベンダーなので、token は必然的に分離される (R2 の token で B2 を読めないし、その逆も無理)。app container が侵害されても backup を破壊できない (write 権限を付けなければ)。
+本番では B2 が primary とは別ベンダーなので、token は分離される (R2 の token で B2 を読めないし、その逆も無理)。バックアップ用の認証情報はアプリのコンテナに渡さず、GitHub Actions のバックアップ処理と VM 上の復元コマンドだけで使う。
 
 ### restore 固有
 
-なし。restore は他のスクリプトと同じ `loadConfig()` の値をそのまま使う (= `DATABASE_URL` が復旧先 DB、`S3_*` が復旧先 bucket = 新 primary)。災害時は先に GitHub Secrets を新 infra に向けて deploy workflow を回し、その時点で VM 上の `.env` が新値になっているので、`bun run restore --date <YYYY-MM-DD>` を打つだけでよい。詳細は[restore (本番障害時)](#restore-本番障害時)。
+なし。restore は他のスクリプトと同じ `loadConfig()` の値をそのまま使う (= `DATABASE_URL` が復旧先 DB、`S3_*` が復旧先 bucket = 新 primary)。災害時は先に GitHub Secrets を新 infra に向けて deploy workflow を回し、VM 上の `.env.sh` を `source` してから `bun run restore --date <YYYY-MM-DD>` を実行する。詳細は[restore (本番障害時)](#restore-本番障害時)。
 
 ## 初回セットアップ (人間がやる作業)
 
@@ -108,13 +108,13 @@ bucket 名は機密ではないがハードコードもしていない (= 別名
 本番障害時の restore は VM host で `bun run restore` を叩く運用 ([restore (本番障害時)](#restore-本番障害時))。app container (`oven/bun:1.4.4-slim`) には docker CLI が無く、`pg_dump` / `psql` を `docker run` で呼ぶ実装上、container 内では走らない。よって VM host 側に bun と node_modules を 1 回だけ揃えておく:
 
 ```bash
-# VM に SSH した上で 1 回だけ
+# Restore runs on the VM host, which needs its own Bun installation.
 curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc   # PATH を反映 (or 再 login)
+source ~/.bashrc   # Refresh PATH after installing Bun, or log in again.
 cd ~/reknotes && bun install --frozen-lockfile
 ```
 
-VM 上の `~/reknotes` は deploy workflow が `git pull` するリポジトリと scp された `.env` が同居しているので、これで `cd ~/reknotes && bun run restore ...` が `.env` を自動 load して動く。`bun.lock` が更新された後は `bun install --frozen-lockfile` の再実行が必要 (現状 deploy workflow は VM 側で `bun install` を走らせない)。
+VM 上の `~/reknotes` にはリポジトリと、deploy workflow が転送した `.env` / `.env.sh` を置く。Bash で `source .env.sh` を実行してから `bun run restore ...` を実行する。アプリのコンテナには復元用の認証情報を渡さない。`bun.lock` が更新された後は `bun install --frozen-lockfile` の再実行が必要 (現状 deploy workflow は VM 側で `bun install` を走らせない)。
 
 ### retention (30 日 / 14 日 / 7 日) の選び方
 
@@ -208,8 +208,9 @@ VM 上の `.env` は deploy workflow が scp で上書きするので、SSH で�
    → app は起動するがデータは空の状態
 5. SSH で VM に入り、~/reknotes で restore を実行
    $ cd ~/reknotes
+   $ source .env.sh
    $ bun run restore --date 2026-05-13
-   → ~/reknotes/.env (= app と同じ env) を bun が自動 load し、B2 から新 R2 と新 DB に復元
+   → .env.sh の値を使い、BACKUP_S3_* で B2 から、S3_* と DATABASE_URL で新 R2 と新 DB に復元
 6. 動作確認 → 終わり
 ```
 
@@ -219,7 +220,7 @@ restore は VM host で叩く想定 ([VM (本番) の事前準備](#vm-本番-�
 
 なお `bun run migrate --apply` の `ensureDatabaseExists()` は `DEPLOYMENT=remote` 時は no-op で抜けるよう実装されている ([postgres-migration-provider.ts:23-24](file:///Users/hashiiiii/workspace/reknotes/src/app/infrastructure/providers/postgres-migration-provider.ts))。これは「managed Postgres では DB の出自はサービス側の provisioning が握っていて、アプリ側が `CREATE DATABASE` を発行する権限も妥当性も無い」という前提のため。ローカルでだけ「`POSTGRES_DB` を渡していないので postgres image が default で `reknotes` DB を作ってしまう。アプリが欲しいのは `reknotes_development` なのでアプリ側で作る」という補正が走る、という非対称になっている。
 
-restore.ts は `loadConfig()` の `DATABASE_URL` / `S3_*` を復旧先として書き込む。step 3-4 で deploy workflow が `.env` を新 infra に向け終わっていることが前提なので、その手順を飛ばすと**旧 (= 死んでいる) infra に向かって restore しようとしてエラーになるか、最悪まだ生きている旧 bucket に書き戻して状態を壊す**。先に Secrets 更新 → deploy する手順を厳守すること。
+restore.ts は `loadConfig()` の `DATABASE_URL` / `S3_*` を復旧先として書き込む。step 3-4 で deploy workflow が `.env` と `.env.sh` を新 infra に向け終わっていることが前提なので、その手順を飛ばすと**旧 (= 死んでいる) infra に向かって restore しようとしてエラーになるか、最悪まだ生きている旧 bucket に書き戻して状態を壊す**。先に Secrets 更新 → deploy する手順を厳守すること。
 
 #### B2 自体が落ちている場合
 
@@ -230,20 +231,19 @@ restore.ts は `loadConfig()` の `DATABASE_URL` / `S3_*` を復旧先として�
 実施しないと「いざという時に動かない」状態になりがち。本番 env は触らず、ローカルで env を override して回す。primary を破壊しないために、復旧先用に別 Postgres と別 bucket を用意する点が[ローカル restore](#restore) との違い。
 
 ```bash
-# 1. 復旧先用の空 Postgres を host port 5434 で立てる (primary は 5433 占有)。
-#    DB 名は loadConfig() の "DEPLOYMENT=local だと /reknotes_<env> を append" に合わせる。
+# The primary occupies port 5433; isolate the restore drill on port 5434.
+# The database name must match the suffix added by local configuration.
 docker run --rm -d --name reknotes-drill-pg \
-  -p 5434:5432 \
+  -p 127.0.0.1:5434:5432 \
   -e POSTGRES_USER=reknotes -e POSTGRES_PASSWORD=reknotes \
   -e POSTGRES_DB=reknotes_development \
   postgres:18
 
-# 2. primary 用 MinIO の console (http://localhost:9001) で復旧先 bucket
-#    `reknotes-restored` を作成 (drill 間で再利用するなら毎回空にすること)。
+# Create an empty reknotes-restored bucket in the primary MinIO console
+# at http://localhost:9001. Empty it before reusing it for another drill.
 
-# 3. 最新の backup を B2 から、復旧先に流し込む。
-#    primary 側の S3_* はローカル MinIO primary、BACKUP_S3_* は本番 B2 を指す。
-#    既存 .env の primary S3_BUCKET_NAME / DATABASE_URL を上書きするのが重要。
+# Primary S3 settings point to local MinIO; backup settings point to production B2.
+# Override the primary bucket and database so the drill cannot overwrite live data.
 DEPLOYMENT=local \
 ENVIRONMENT=development \
 DATABASE_URL=postgres://reknotes:reknotes@localhost:5434 \
@@ -257,16 +257,16 @@ BACKUP_S3_SECRET_ACCESS_KEY=<B2 applicationKey> \
 BACKUP_S3_BUCKET_NAME=reknotes-backup \
   bun run restore --date <最新の日付>
 
-# 4. アプリを復旧先に向けて起動して目視確認。
+# The application must use the drill database and bucket for visual verification.
 DEPLOYMENT=local \
 ENVIRONMENT=development \
 DATABASE_URL=postgres://reknotes:reknotes@localhost:5434 \
 S3_BUCKET_NAME=reknotes-restored \
   bun run dev
 
-# 5. 後片付け
+# Only the temporary drill resources should be removed afterward.
 docker rm -f reknotes-drill-pg
-# (MinIO の reknotes-restored bucket は console から削除)
+# Remove the reknotes-restored bucket through the MinIO console too.
 ```
 
 `CLOUDFLARE_*` 等の他の必須 env は `.env` に残っているものを bun が自動で load する。

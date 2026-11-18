@@ -18,17 +18,17 @@ env:
 jobs:
   dump:
     runs-on: ubuntu-latest
-    # backup 用の secret は production / development の GitHub Environment に格納されている。
-    # environment を宣言しないと secrets.* が空文字に解決され dump が DATABASE_URL is required で落ちる。
-    # schedule (cron) 起動時は inputs.environment が空なので production にフォールバックする。
+    # Environment secrets require this binding; scheduled runs have no input.
     environment: ${{ inputs.environment || 'production' }}
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@v7.0.1
         with:
-          bun-version: "1.4.4"
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2.2.0
+        with:
+          bun-version-file: .bun-version
 
       - name: Install packages
         run: bun install --frozen-lockfile

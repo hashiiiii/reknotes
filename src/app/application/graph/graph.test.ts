@@ -12,7 +12,7 @@ const tagRepository = createTagRepository(config);
 const graphRepository = createGraphRepository(config);
 
 describe("graph use cases", () => {
-  test("getFullGraph でノードとリンクを取得できる", async () => {
+  test("getFullGraph returns nodes and links", async () => {
     const note = await createNote(noteRepository, "グラフテスト", "本文");
     const tagName = `graph-${Date.now()}`;
     await addTagsToNote(tagRepository, note.id, [tagName]);
@@ -30,7 +30,7 @@ describe("graph use cases", () => {
     expect(tagNode?.type).toBe("tag");
   });
 
-  test("getNoteSubgraph で特定ノートのサブグラフを取得できる", async () => {
+  test("getNoteSubgraph returns a note's subgraph", async () => {
     const note = await createNote(noteRepository, "サブグラフテスト", "本文");
     const tagName = `subgraph-${Date.now()}`;
     await addTagsToNote(tagRepository, note.id, [tagName]);
@@ -42,13 +42,13 @@ describe("graph use cases", () => {
     expect(noteNode).toBeDefined();
   });
 
-  test("getNoteSubgraph で存在しないノートは空グラフを返す", async () => {
+  test("getNoteSubgraph returns an empty graph for a missing note", async () => {
     const subgraph = await getNoteSubgraph(graphRepository, 99999);
     const noteNode = subgraph.nodes.find((n) => n.id === "note-99999");
     expect(noteNode).toBeUndefined();
   });
 
-  test("同じタグを持つノート同士がサブグラフに含まれる", async () => {
+  test("includes notes that share a tag in the subgraph", async () => {
     const sharedTag = `shared-${Date.now()}`;
     const note1 = await createNote(noteRepository, "共有1", "本文");
     const note2 = await createNote(noteRepository, "共有2", "本文");
