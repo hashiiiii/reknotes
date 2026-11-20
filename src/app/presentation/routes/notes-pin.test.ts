@@ -48,12 +48,14 @@ test("pinning a note moves it above newer notes until it is unpinned", async () 
     expect(await noteRepo.findById(older.id)).toEqual({ ...older, pinned: true });
     expect(cardIds(await (await app.request("/")).text()).slice(0, 2)).toEqual([older.id, newer.id]);
     const card = await (await app.request(`/api/notes/${older.id}/card`)).text();
-    expect(card).toContain("ピン留め中");
+    expect(card).toContain('aria-pressed="true"');
     expect(card).toContain("ピン留めを解除");
 
     expect((await pin(older.id, "invalid")).status).toBe(400);
     expect((await pin(older.id, "false")).status).toBe(200);
     expect(await noteRepo.findById(older.id)).toEqual(older);
+    const unpinnedCard = await (await app.request(`/api/notes/${older.id}/card`)).text();
+    expect(unpinnedCard).toContain('aria-pressed="false"');
     expect(cardIds(await (await app.request("/")).text()).slice(0, 2)).toEqual([newer.id, older.id]);
   } finally {
     await db.delete(notes).where(inArray(notes.id, [older.id, newer.id]));

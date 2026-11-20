@@ -107,9 +107,22 @@ body {
 .note-card:hover { box-shadow: 0 2px 12px var(--shadow-hover); border-color: var(--text-secondary); }
 .note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }
-.note-card .kebab-menu { opacity: 0; transition: opacity 0.15s; }
-.note-card:hover .kebab-menu, .note-card:focus-within .kebab-menu, .note-card .kebab-menu.open { opacity: 1; }
-@media (hover: none) { .note-card .kebab-menu { opacity: 1; } }
+.note-pin-button {
+  display: inline-grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px;
+  border: 0; border-radius: 50%; color: var(--text-secondary); background: transparent; cursor: pointer;
+}
+.note-pin-button[aria-pressed="true"] { color: var(--accent); background: var(--accent-light); }
+.note-pin-button[aria-pressed="true"] .pin-head { fill: currentColor; }
+.note-pin-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .note-card .kebab-menu, .note-pin-button { transition: opacity 0.15s; }
+  :where(.note-card:not(:hover):not(:focus-within)) .kebab-menu:not(.open),
+  :where(.note-card:not(:hover):not(:focus-within)) .note-pin-button:where([aria-pressed="false"]) { opacity: 0; }
+  .note-pin-button:hover { background: var(--bg-secondary); color: var(--fg); }
+}
+@media (any-pointer: coarse) {
+  .note-card .note-pin-button { min-width: 44px; min-height: 44px; opacity: 1; }
+}
 .note-card .kebab-dropdown { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 4px; }
 .note-card-pin { display: inline-block; margin-bottom: 0.35rem; padding: 0 0.5rem; border-radius: var(--radius-pill); background: var(--accent-light); color: var(--fg); font-size: 0.75rem; font-weight: 700; }
 .note-card-link { text-decoration: none; color: inherit; display: block; }
