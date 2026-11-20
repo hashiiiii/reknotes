@@ -1,5 +1,22 @@
 <article class="note-card{% if processing %} processing{% endif %}" {% if note.id %}id="note-{{ note.id }}"{% endif %}
+  {% if showMenu and note.pinned %}data-pinned{% endif %}
   {% if processing %}hx-get="/api/notes/{{ note.id }}/card" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  {% if showMenu %}
+  <button type="button" class="note-pin-button" id="pin-note-{{ note.id }}"
+    aria-label="ピン留め" aria-pressed="{{ note.pinned }}"
+    title="{% if note.pinned %}ピン留めを解除{% else %}ピン留め{% endif %}"
+    hx-put="/api/notes/{{ note.id }}/pin" name="pinned" value="{% if note.pinned %}false{% else %}true{% endif %}"
+    hx-target="#note-grid" hx-swap="innerHTML show:window:top">
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <g transform="rotate(35 12 12)">
+        <path class="pin-head" d="M8 3h8l-1 2v5l3 3v2H6v-2l3-3V5z"/>
+        <path d="M12 15v6"/>
+      </g>
+    </svg>
+  </button>
+  {% elsif note.pinned %}
+  <span class="note-card-pin">ピン留め中</span>
+  {% endif %}
   {% if processing %}
   {%- comment -%} 処理中は詳細ページを開けない。完了すると上のポーリングが通常カードに置き換える {%- endcomment -%}
   <div class="note-card-link">

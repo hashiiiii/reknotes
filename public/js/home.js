@@ -1,4 +1,5 @@
 function expandCompose() {
+  document.getElementById('compose-status').textContent = '';
   document.getElementById('compose-trigger').hidden = true;
   document.getElementById('compose-body').hidden = false;
   document.querySelector('.compose-title').focus();
@@ -8,7 +9,8 @@ function expandCompose() {
   });
 }
 
-function collapseCompose(form) {
+function collapseCompose(form, posted) {
+  document.getElementById('compose-status').textContent = posted ? '投稿しました' : '';
   form.reset();
   document.getElementById('compose-trigger').hidden = false;
   document.getElementById('compose-body').hidden = true;
@@ -49,6 +51,7 @@ function togglePreview() {
   var colHeights = [];
   var placed = new WeakSet();
   var currentCols = 0;
+  var lastWasPinned = false;
 
   function colCount() {
     var w = grid.clientWidth;
@@ -73,6 +76,10 @@ function togglePreview() {
     var heights = newCards.map(function(card) { return card.offsetHeight; });
 
     newCards.forEach(function(card, idx) {
+      var pinned = card.hasAttribute('data-pinned');
+      // Start the unpinned group below the tallest pinned column, including on a later page.
+      if (lastWasPinned && !pinned) colHeights.fill(Math.max.apply(null, colHeights));
+      lastWasPinned = pinned;
       var min = 0;
       for (var i = 1; i < cols; i++) {
         if (colHeights[i] < colHeights[min]) min = i;
@@ -93,6 +100,7 @@ function togglePreview() {
   function fullLayout() {
     var cols = colCount();
     currentCols = cols;
+    lastWasPinned = false;
     colHeights = [];
     for (var i = 0; i < cols; i++) colHeights[i] = 0;
     placed = new WeakSet();

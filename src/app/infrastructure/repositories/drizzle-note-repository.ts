@@ -1,6 +1,6 @@
-import { desc, eq, ilike, inArray, lt, or } from "drizzle-orm";
+import { desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { Note } from "../../domain/note/note";
-import type { INoteRepository } from "../../domain/note/note-repository";
+import type { INoteRepository, NoteCursor } from "../../domain/note/note-repository";
 import type { DrizzleDb } from "../db";
 import { notes, noteTags, tags } from "../db/schema";
 
@@ -29,6 +29,11 @@ export class DrizzleNoteRepository implements INoteRepository {
     return note ?? null;
   }
 
+  async setPinned(id: number, pinned: boolean): Promise<boolean> {
+    const updated = await this.db.update(notes).set({ pinned }).where(eq(notes.id, id)).returning({ id: notes.id });
+    return updated.length > 0;
+  }
+
   async delete(id: number): Promise<boolean> {
     const [result] = await this.db.delete(notes).where(eq(notes.id, id)).returning();
     return result != null;
@@ -39,17 +44,22 @@ export class DrizzleNoteRepository implements INoteRepository {
     await this.db.delete(notes);
   }
 
-  async list(cursor?: number): Promise<{ notes: Note[]; hasMore: boolean; nextCursor?: number }> {
-    const base = this.db.select().from(notes);
-    const filtered = cursor ? base.where(lt(notes.id, cursor)) : base;
-    const rows = await filtered.orderBy(desc(notes.id)).limit(PAGE_SIZE + 1);
+  async list(cursor?: NoteCursor) {
+    // The ID alone cannot locate the boundary between pinned and unpinned notes.
+    const rows = await this.db
+      .select()
+      .from(notes)
+      .where(cursor && sql`(${notes.pinned}, ${notes.id}) < (${cursor.pinned}, ${cursor.id})`)
+      .orderBy(desc(notes.pinned), desc(notes.id))
+      .limit(PAGE_SIZE + 1);
     const hasMore = rows.length > PAGE_SIZE;
     if (hasMore) rows.pop();
 
+    const last = rows.at(-1);
     return {
       notes: rows,
       hasMore,
-      nextCursor: hasMore ? rows[rows.length - 1]?.id : undefined,
+      nextCursor: hasMore && last ? { pinned: last.pinned, id: last.id } : undefined,
     };
   }
 

@@ -60,6 +60,7 @@ body {
 .compose-collapsed {
   padding: 0.75rem 1rem; color: var(--muted); cursor: text; font-size: 0.95rem;
 }
+#compose-status:not(:empty) { padding: 0 1rem 0.75rem; font-size: 0.82rem; color: var(--text-secondary); }
 .compose-collapsed:hover { color: var(--fg); }
 .compose-expanded { padding: 0.75rem 1rem; flex-direction: column; gap: 0.5rem; }
 .compose-expanded:not([hidden]) { display: flex; }
@@ -104,17 +105,34 @@ body {
 /* Hide pending deletions immediately; home.js restores them if the request fails. */
 .note-grid .note-card.deleting { display: none; }
 .note-card:hover { box-shadow: 0 2px 12px var(--shadow-hover); border-color: var(--text-secondary); }
-.note-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
+.note-card-footer { clear: right; display: flex; align-items: center; justify-content: space-between; margin-top: 0.5rem; }
 .note-card-footer .note-card-time { margin-top: 0; }
-.note-card .kebab-menu { opacity: 0; transition: opacity 0.15s; }
-.note-card:hover .kebab-menu, .note-card .kebab-menu.open { opacity: 1; }
+.note-pin-button {
+  /* Offset the card padding to leave the same inset above and beside the pin. */
+  float: right; margin: -0.375rem -0.625rem 0 0.5rem;
+  display: grid; place-items: center; width: 32px; height: 32px;
+  border: 0; border-radius: 50%; color: var(--text-secondary); background: transparent; cursor: pointer;
+}
+.note-pin-button[aria-pressed="true"] { color: var(--accent); background: var(--accent-light); }
+.note-pin-button[aria-pressed="true"] .pin-head { fill: currentColor; }
+.note-pin-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .note-card .kebab-menu, .note-pin-button { transition: opacity 0.15s; }
+  :where(.note-card:not(:hover):not(:focus-within)) .kebab-menu:not(.open),
+  :where(.note-card:not(:hover):not(:focus-within)) .note-pin-button:where([aria-pressed="false"]) { opacity: 0; }
+  .note-pin-button:hover { background: var(--bg-secondary); color: var(--fg); }
+}
+@media (any-pointer: coarse) {
+  .note-card .note-pin-button { min-width: 44px; min-height: 44px; opacity: 1; }
+}
 .note-card .kebab-dropdown { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 4px; }
+.note-card-pin { display: inline-block; margin-bottom: 0.35rem; padding: 0 0.5rem; border-radius: var(--radius-pill); background: var(--accent-light); color: var(--fg); font-size: 0.75rem; font-weight: 700; }
 .note-card-link { text-decoration: none; color: inherit; display: block; }
 .note-card h3 { font-size: 0.95rem; margin-bottom: 0.35rem; line-height: 1.4; color: var(--fg); overflow-wrap: anywhere; }
 /* Plain-text bodies need pre-line to preserve their line breaks. */
 .note-snippet { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-line; }
 .note-card-time { display: block; margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted); }
-.note-grid-sentinel { position: absolute; left: 0; width: 100%; height: 1px; }
+.note-grid-sentinel { position: absolute; top: 100%; left: 0; width: 100%; height: 1px; }
 
 /* Muted cards signal that background tagging still prevents opening the note. */
 .note-card.processing { opacity: 0.55; }

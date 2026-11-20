@@ -9,9 +9,15 @@ import { getNote } from "../../application/note/get-note";
 import { getNoteTags } from "../../application/note/get-note-tags";
 import { isNoteProcessing } from "../../application/note/is-note-processing";
 import { listNotesWithTags } from "../../application/note/list-notes";
+import { setNotePinned } from "../../application/note/set-note-pinned";
 import { updateNoteWithTags } from "../../application/note/update-note-with-tags";
+import type { INoteRepository, NoteCursor } from "../../domain/note/note-repository";
 import { parseId } from "./_parse-id";
 import { renderMarkdown } from "./_render-markdown";
+
+async function renderNoteList(repo: INoteRepository, cursor?: NoteCursor) {
+  return engine.renderFile("partials/note-list", await listNotesWithTags(repo, cursor));
+}
 
 export function createNoteRoutes() {
   const noteRoutes = new Hono<AppEnv>();
@@ -68,6 +74,15 @@ export function createNoteRoutes() {
       body,
     );
 
+    if (c.req.header("HX-Target") === "note-grid") {
+      // Home pages opened before the pinning update still ask to prepend a single card.
+      c.header("HX-Reswap", "innerHTML");
+      const query = String(form.q ?? "").trim();
+      if (query) return c.redirect(`/api/search?q=${encodeURIComponent(query)}`, 303);
+      // A new note can belong on a later page when the first page is full of pins.
+      return c.html(await renderNoteList(c.var.noteRepository));
+    }
+
     // The card must stay locked until polling observes that background tagging
     // has finished (issue #162).
     const html = await engine.renderFile("partials/note-card", {
@@ -80,26 +95,23 @@ export function createNoteRoutes() {
 
   noteRoutes.get("/", async (c) => {
     const cursorRaw = c.req.query("cursor");
-    let cursor: number | undefined;
+    let cursor: NoteCursor | undefined;
     if (cursorRaw) {
-      const parsed = parseId(cursorRaw);
-      if (parsed === null) return c.text("cursor が不正です", 400);
-      cursor = parsed;
+      const pinned = cursorRaw.startsWith("pinned-");
+      const id = parseId(pinned ? cursorRaw.slice("pinned-".length) : cursorRaw);
+      if (id === null) return c.text("cursor が不正です", 400);
+      cursor = { pinned, id };
     }
-    const { notes, hasMore, nextCursor } = await listNotesWithTags(c.var.noteRepository, cursor);
+    return c.html(await renderNoteList(c.var.noteRepository, cursor));
+  });
 
-    let html = "";
-    for (const note of notes) {
-      html += await engine.renderFile("partials/note-card", {
-        note,
-        showMenu: true,
-        processing: isNoteProcessing(note.id),
-      });
-    }
-    if (hasMore) {
-      html += `<div class="note-grid-sentinel" hx-get="/api/notes?cursor=${nextCursor}" hx-trigger="revealed" hx-swap="outerHTML"></div>`;
-    }
-    return c.html(html);
+  noteRoutes.put("/:id/pin", async (c) => {
+    const id = parseId(c.req.param("id"));
+    if (id === null) return c.text("ID が不正です", 400);
+    const { pinned } = await c.req.parseBody();
+    if (pinned !== "true" && pinned !== "false") return c.text("ピン留めの指定が不正です", 400);
+    if (!(await setNotePinned(c.var.noteRepository, id, pinned === "true"))) return c.notFound();
+    return c.html(await renderNoteList(c.var.noteRepository));
   });
 
   // Polling refreshes the card when background tagging finishes.

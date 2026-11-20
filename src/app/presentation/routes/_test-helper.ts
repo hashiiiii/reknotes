@@ -23,6 +23,7 @@ function notStubbed<T extends object>(label: string): T {
 export function makeNote(overrides: Partial<Note> = {}): Note {
   return {
     id: 1,
+    pinned: false,
     title: "タイトル",
     body: "本文",
     createdAt: 1_700_000_000_000,
@@ -48,6 +49,7 @@ export function createTestApp(options: TestAppOptions = {}) {
   let nextId = 1000;
 
   const noteRepository: INoteRepository = {
+    setPinned: notStubbed<INoteRepository>("noteRepository").setPinned,
     list: async () => ({ notes, hasMore: false }),
     findTagsByNoteIds: async () => new Map<number, string[]>(),
     searchByQuery: async () => searchResults,

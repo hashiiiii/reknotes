@@ -5,6 +5,7 @@ import { resolveDownloadFilename } from "./note";
 function makeNote(overrides: Partial<Note> = {}): Note {
   return {
     id: 1,
+    pinned: false,
     title: "タイトル",
     body: "本文",
     createdAt: 1_700_000_000_000,
